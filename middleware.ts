@@ -1,40 +1,11 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  // Refresh session if expired
-  const { data: { user } } = await supabase.auth.getUser()
 
   // Public routes that don't require authentication
   const publicRoutes = ['/login', '/api/auth/callback']
@@ -45,21 +16,25 @@ export async function middleware(request: NextRequest) {
   // In development mode, allow access without auth
   const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
 
-  // Check if user has dev auth in localStorage (handled client-side)
-  // For now, in dev mode, we skip auth check
+  // For now, in dev mode, we skip auth check entirely
+  // Auth will be handled client-side via Zustand store
   if (isDevMode) {
     return response
   }
 
+  // Check for Supabase auth cookie
+  const supabaseAuthToken = request.cookies.get('sb-eftwoxknsaulyptnswxe-auth-token')
+  const hasAuth = !!supabaseAuthToken
+
   // Redirect to login if not authenticated and not on a public route
-  if (!user && !isPublicRoute) {
+  if (!hasAuth && !isPublicRoute) {
     const redirectUrl = new URL('/login', request.url)
     redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
   // Redirect to dashboard if authenticated and on login page
-  if (user && request.nextUrl.pathname === '/login') {
+  if (hasAuth && request.nextUrl.pathname === '/login') {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
