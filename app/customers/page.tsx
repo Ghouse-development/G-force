@@ -17,6 +17,8 @@ import {
   ArrowRight,
   TrendingUp,
   Download,
+  LayoutList,
+  LayoutGrid,
 } from 'lucide-react'
 import { exportToCSV, customerExportColumns } from '@/lib/export'
 import {
@@ -27,6 +29,7 @@ import {
   PIPELINE_LOST,
   getCurrentFiscalYear,
 } from '@/types/database'
+import { PipelineKanban } from '@/components/customers/pipeline-kanban'
 
 // モックデータ（パイプライン対応版）
 const mockCustomers: Partial<Customer>[] = [
@@ -150,9 +153,12 @@ function calculateConversionRates(customers: Partial<Customer>[]) {
   }
 }
 
+type ViewMode = 'list' | 'kanban'
+
 export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStatus, setSelectedStatus] = useState<PipelineStatus | 'all'>('all')
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
   const fiscalYear = getCurrentFiscalYear()
 
   const filteredCustomers = mockCustomers.filter((customer) => {
@@ -185,6 +191,25 @@ export default function CustomersPage() {
             </p>
           </div>
           <div className="flex items-center space-x-3">
+            {/* ビュー切り替え */}
+            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className={viewMode === 'list' ? 'bg-white shadow-sm' : ''}
+              >
+                <LayoutList className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('kanban')}
+                className={viewMode === 'kanban' ? 'bg-white shadow-sm' : ''}
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </Button>
+            </div>
             <Button
               variant="outline"
               onClick={() => exportToCSV(
@@ -296,77 +321,91 @@ export default function CustomersPage() {
           />
         </div>
 
-        {/* Customers List */}
-        <div className="space-y-3">
-          {filteredCustomers.length === 0 ? (
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-12 text-center">
-                <Users className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500">顧客が見つかりません</p>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredCustomers.map((customer) => {
-              const statusConfig = PIPELINE_CONFIG[customer.pipeline_status as PipelineStatus]
-              return (
-                <Link key={customer.id} href={`/customers/${customer.id}`}>
-                  <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer group">
-                    <CardContent className="p-5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-yellow-100 rounded-xl flex items-center justify-center shrink-0">
-                            <Users className="w-6 h-6 text-orange-600" />
+        {/* Customers View */}
+        {viewMode === 'kanban' ? (
+          /* カンバンビュー */
+          <div className="bg-white rounded-xl shadow-lg p-4">
+            <PipelineKanban
+              customers={filteredCustomers as Partial<Customer>[]}
+              onStatusChange={(customerId, newStatus) => {
+                console.log(`Customer ${customerId} moved to ${newStatus}`)
+                // TODO: APIでステータス更新
+              }}
+            />
+          </div>
+        ) : (
+          /* リストビュー */
+          <div className="space-y-3">
+            {filteredCustomers.length === 0 ? (
+              <Card className="border-0 shadow-lg">
+                <CardContent className="p-12 text-center">
+                  <Users className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                  <p className="text-gray-500">顧客が見つかりません</p>
+                </CardContent>
+              </Card>
+            ) : (
+              filteredCustomers.map((customer) => {
+                const statusConfig = PIPELINE_CONFIG[customer.pipeline_status as PipelineStatus]
+                return (
+                  <Link key={customer.id} href={`/customers/${customer.id}`}>
+                    <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer group">
+                      <CardContent className="p-5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-yellow-100 rounded-xl flex items-center justify-center shrink-0">
+                              <Users className="w-6 h-6 text-orange-600" />
+                            </div>
+                            <div>
+                              <div className="flex items-center space-x-3 mb-1">
+                                <h3 className="text-lg font-bold text-gray-900">
+                                  {customer.tei_name}
+                                </h3>
+                                <Badge
+                                  variant="outline"
+                                  className={`${statusConfig?.bgColor} ${statusConfig?.color} border-0`}
+                                >
+                                  {statusConfig?.label}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                <span>{customer.name}</span>
+                                {customer.phone && (
+                                  <span className="flex items-center">
+                                    <Phone className="w-3 h-3 mr-1" />
+                                    {customer.phone}
+                                  </span>
+                                )}
+                                {customer.lead_date && (
+                                  <span className="flex items-center">
+                                    <Calendar className="w-3 h-3 mr-1" />
+                                    反響: {new Date(customer.lead_date).toLocaleDateString('ja-JP')}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="flex items-center space-x-3 mb-1">
-                              <h3 className="text-lg font-bold text-gray-900">
-                                {customer.tei_name}
-                              </h3>
-                              <Badge
-                                variant="outline"
-                                className={`${statusConfig?.bgColor} ${statusConfig?.color} border-0`}
-                              >
-                                {statusConfig?.label}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center space-x-4 text-sm text-gray-500">
-                              <span>{customer.name}</span>
-                              {customer.phone && (
-                                <span className="flex items-center">
-                                  <Phone className="w-3 h-3 mr-1" />
-                                  {customer.phone}
-                                </span>
-                              )}
-                              {customer.lead_date && (
-                                <span className="flex items-center">
-                                  <Calendar className="w-3 h-3 mr-1" />
-                                  反響: {new Date(customer.lead_date).toLocaleDateString('ja-JP')}
-                                </span>
-                              )}
-                            </div>
+                          <div className="flex items-center space-x-4">
+                            {(customer.estimated_amount || customer.contract_amount) && (
+                              <div className="text-right hidden md:block">
+                                <p className="text-xs text-gray-500">
+                                  {customer.contract_amount ? '契約金額' : '見込金額'}
+                                </p>
+                                <p className="font-bold text-gray-900">
+                                  ¥{((customer.contract_amount || customer.estimated_amount) ?? 0).toLocaleString()}
+                                </p>
+                              </div>
+                            )}
+                            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-orange-500 transition-colors" />
                           </div>
                         </div>
-                        <div className="flex items-center space-x-4">
-                          {(customer.estimated_amount || customer.contract_amount) && (
-                            <div className="text-right hidden md:block">
-                              <p className="text-xs text-gray-500">
-                                {customer.contract_amount ? '契約金額' : '見込金額'}
-                              </p>
-                              <p className="font-bold text-gray-900">
-                                ¥{((customer.contract_amount || customer.estimated_amount) ?? 0).toLocaleString()}
-                              </p>
-                            </div>
-                          )}
-                          <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-orange-500 transition-colors" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              )
-            })
-          )}
-        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                )
+              })
+            )}
+          </div>
+        )}
       </div>
     </Layout>
   )

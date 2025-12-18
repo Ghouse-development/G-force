@@ -57,12 +57,29 @@ const pipelineCounts: Record<PipelineStatus, number> = {
 
 // 遷移率データ（モックデータ）
 const conversionRates = {
-  leadToEvent: 60.0,      // 反響→イベント参加
-  eventToMember: 66.7,    // イベント参加→限定会員
-  memberToMeeting: 100.0, // 限定会員→面談
-  meetingToApp: 50.0,     // 面談→建築申込
-  appToContract: 75.0,    // 建築申込→契約
-  totalConversion: 12.5,  // 反響→契約（全体）
+  leadToEvent: 60.0,           // 反響→イベント参加
+  eventToMember: 66.7,         // イベント参加→限定会員
+  memberToMeeting: 100.0,      // 限定会員→面談
+  meetingToApp: 50.0,          // 面談→建築申込
+  appToContract: 75.0,         // 建築申込→契約
+  totalConversion: 12.5,       // 反響→契約（全体）
+  // 新しい遷移率
+  memberToApp: 41.7,           // 限定会員～建築申込
+  memberToContract: 25.0,      // 限定会員～契約
+  lecturerToMember: 33.3,      // 講師～限定会員
+  lecturerToContract: 8.3,     // 講師～契約
+}
+
+// 今期の詳細データ（モックデータ）
+const fiscalYearDetailStats = {
+  limitedMembers: 24,          // 限定会員数
+  thisMonthMeetings: 8,        // 今月面談数
+  buildingApplications: 10,    // 建築申込数
+  newContracts: 6,             // 今期請負契約数（棟）
+  newContractsAmount: 240000000, // 今期請負契約金額（税別）
+  changeContracts: 4,          // 今期変更契約数（棟）
+  changeContractsAmount: 48000000, // 今期変更契約金額（税別）
+  completedHandovers: 8,       // 今期引渡済数
 }
 
 // 今期の実績（引渡ベース）
@@ -240,84 +257,104 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-4">
+                {/* パイプライン遷移 */}
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-gray-500 mb-2">パイプライン遷移</p>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">反響→イベント</span>
-                    <span className="font-bold text-blue-600">{conversionRates.leadToEvent}%</span>
+                    <span className="text-sm text-gray-600">限定会員→建築申込</span>
+                    <span className="font-bold text-blue-600">{conversionRates.memberToApp}%</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">イベント→会員</span>
-                    <span className="font-bold text-blue-600">{conversionRates.eventToMember}%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">面談→申込</span>
-                    <span className="font-bold text-blue-600">{conversionRates.meetingToApp}%</span>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">申込→契約</span>
+                    <span className="text-sm text-gray-600">建築申込→契約</span>
                     <span className="font-bold text-blue-600">{conversionRates.appToContract}%</span>
                   </div>
-                  <div className="pt-3 border-t">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-700">全体契約率</span>
-                      <span className="font-bold text-xl text-indigo-600">{conversionRates.totalConversion}%</span>
-                    </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">限定会員→契約</span>
+                    <span className="font-bold text-emerald-600">{conversionRates.memberToContract}%</span>
                   </div>
+                </div>
+                {/* 講師起点 */}
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-gray-500 mb-2">講師起点の遷移率</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">講師→限定会員</span>
+                    <span className="font-bold text-purple-600">{conversionRates.lecturerToMember}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">講師→契約</span>
+                    <span className="font-bold text-purple-600">{conversionRates.lecturerToContract}%</span>
+                  </div>
+                </div>
+                {/* 全体 */}
+                <div className="flex flex-col justify-center items-center bg-white rounded-lg p-3">
+                  <span className="text-xs text-gray-500 mb-1">全体契約率</span>
+                  <span className="font-bold text-3xl text-indigo-600">{conversionRates.totalConversion}%</span>
+                  <span className="text-[10px] text-gray-400">反響→契約</span>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Stats Cards - 6つの主要指標 */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100 text-xs font-medium">商談中</p>
-                  <p className="text-3xl font-bold mt-1">{activePipelineTotal}</p>
-                </div>
-                <Users className="w-8 h-8 text-blue-200" />
+            <CardContent className="p-4">
+              <div className="flex flex-col">
+                <p className="text-blue-100 text-xs font-medium">限定会員数</p>
+                <p className="text-3xl font-bold mt-1">{fiscalYearDetailStats.limitedMembers}</p>
+                <p className="text-blue-200 text-[10px] mt-1">累計</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-500 to-yellow-500 text-white">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-orange-100 text-xs font-medium">今期契約</p>
-                  <p className="text-3xl font-bold mt-1">{pipelineCounts['契約']}</p>
-                </div>
-                <FileSignature className="w-8 h-8 text-orange-200" />
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-cyan-500 to-teal-500 text-white">
+            <CardContent className="p-4">
+              <div className="flex flex-col">
+                <p className="text-cyan-100 text-xs font-medium">今月面談数</p>
+                <p className="text-3xl font-bold mt-1">{fiscalYearDetailStats.thisMonthMeetings}</p>
+                <p className="text-cyan-200 text-[10px] mt-1">{new Date().getMonth() + 1}月</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-500 to-green-500 text-white">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-green-100 text-xs font-medium">着工中</p>
-                  <p className="text-3xl font-bold mt-1">{pipelineCounts['着工']}</p>
-                </div>
-                <Building className="w-8 h-8 text-green-200" />
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-500 to-orange-500 text-white">
+            <CardContent className="p-4">
+              <div className="flex flex-col">
+                <p className="text-amber-100 text-xs font-medium">建築申込数</p>
+                <p className="text-3xl font-bold mt-1">{fiscalYearDetailStats.buildingApplications}</p>
+                <p className="text-amber-200 text-[10px] mt-1">今期</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-indigo-500 text-white">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-100 text-xs font-medium">今期引渡</p>
-                  <p className="text-3xl font-bold mt-1">{fiscalYearStats.actualHandovers}</p>
-                </div>
-                <Home className="w-8 h-8 text-purple-200" />
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-500 to-green-600 text-white">
+            <CardContent className="p-4">
+              <div className="flex flex-col">
+                <p className="text-green-100 text-xs font-medium">今期請負契約</p>
+                <p className="text-2xl font-bold mt-1">{fiscalYearDetailStats.newContracts}<span className="text-base">棟</span></p>
+                <p className="text-green-200 text-[10px] mt-1">¥{(fiscalYearDetailStats.newContractsAmount / 100000000).toFixed(2)}億(税別)</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-indigo-600 text-white">
+            <CardContent className="p-4">
+              <div className="flex flex-col">
+                <p className="text-purple-100 text-xs font-medium">今期変更契約</p>
+                <p className="text-2xl font-bold mt-1">{fiscalYearDetailStats.changeContracts}<span className="text-base">棟</span></p>
+                <p className="text-purple-200 text-[10px] mt-1">¥{(fiscalYearDetailStats.changeContractsAmount / 10000).toLocaleString()}万(税別)</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-rose-500 to-pink-600 text-white">
+            <CardContent className="p-4">
+              <div className="flex flex-col">
+                <p className="text-rose-100 text-xs font-medium">今期引渡済</p>
+                <p className="text-3xl font-bold mt-1">{fiscalYearDetailStats.completedHandovers}</p>
+                <p className="text-rose-200 text-[10px] mt-1">今期</p>
               </div>
             </CardContent>
           </Card>
@@ -409,37 +446,37 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* クイックアクション */}
+          {/* クイックアクション - 書類作成 */}
           <Card className="border-0 shadow-lg">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-lg">
                 <Plus className="w-5 h-5 mr-2 text-orange-500" />
-                クイックアクション
+                書類作成
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Link href="/customers/new" className="block">
+              <Link href="/fund-plans/new" className="block">
                 <Button variant="outline" className="w-full justify-start hover:bg-orange-50 hover:border-orange-300">
-                  <UserPlus className="w-4 h-4 mr-3 text-orange-500" />
-                  新規反響登録
+                  <FileText className="w-4 h-4 mr-3 text-orange-500" />
+                  資金計画書作成
                 </Button>
               </Link>
               <Link href="/plan-requests/new" className="block">
                 <Button variant="outline" className="w-full justify-start hover:bg-orange-50 hover:border-orange-300">
                   <FileEdit className="w-4 h-4 mr-3 text-orange-500" />
-                  プラン依頼作成
+                  新規プラン依頼
+                </Button>
+              </Link>
+              <Link href="/handovers/new" className="block">
+                <Button variant="outline" className="w-full justify-start hover:bg-orange-50 hover:border-orange-300">
+                  <Download className="w-4 h-4 mr-3 text-orange-500" />
+                  引継書作成
                 </Button>
               </Link>
               <Link href="/contracts/new" className="block">
                 <Button variant="outline" className="w-full justify-start hover:bg-orange-50 hover:border-orange-300">
                   <FileSignature className="w-4 h-4 mr-3 text-orange-500" />
-                  契約書作成
-                </Button>
-              </Link>
-              <Link href="/fund-plans/new" className="block">
-                <Button variant="outline" className="w-full justify-start hover:bg-orange-50 hover:border-orange-300">
-                  <FileText className="w-4 h-4 mr-3 text-orange-500" />
-                  資金計画書作成
+                  請負契約書作成
                 </Button>
               </Link>
             </CardContent>

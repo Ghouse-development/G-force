@@ -32,7 +32,9 @@ import {
   FileSignature,
   Megaphone,
   TrendingUp,
+  Upload,
 } from 'lucide-react'
+import { MeetingRecordDropzone } from '@/components/customers/meeting-record-dropzone'
 import { toast } from 'sonner'
 import {
   type Customer,
@@ -451,9 +453,29 @@ export default function CustomerDetailPage() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="activity">
+              <TabsContent value="activity" className="space-y-4">
+                {/* 商談記録ドロップゾーン */}
+                <MeetingRecordDropzone
+                  customerId={customer.id}
+                  onUpload={(files) => {
+                    console.log('Uploaded files:', files)
+                    // TODO: APIでファイルをアップロード
+                  }}
+                  onDelete={(recordId) => {
+                    console.log('Deleted record:', recordId)
+                    // TODO: APIで削除
+                  }}
+                />
+
+                {/* 活動履歴 */}
                 <Card className="border-0 shadow-lg">
-                  <CardContent className="p-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-lg">
+                      <Clock className="w-5 h-5 mr-2 text-orange-500" />
+                      活動履歴
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
                     <div className="space-y-4">
                       <div className="flex items-start space-x-3">
                         <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
