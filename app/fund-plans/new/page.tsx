@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { FundPlanForm } from '@/components/fund-plans/fund-plan-form'
-import { FundPlanPrintView } from '@/components/fund-plans/fund-plan-print-view'
+import { FundPlanA3PrintView } from '@/components/fund-plans/fund-plan-a3-print-view'
 import type { FundPlanData, FundPlanCalculation } from '@/types/fund-plan'
 import { generatePDFFromElement } from '@/lib/fund-plan/pdf-generator'
 
@@ -43,7 +43,7 @@ export default function NewFundPlanPage() {
 
       await new Promise<void>((resolve) => {
         root.render(
-          <FundPlanPrintView
+          <FundPlanA3PrintView
             data={data}
             calculation={calculation}
             ref={(el) => {
@@ -53,10 +53,10 @@ export default function NewFundPlanPage() {
                   try {
                     await generatePDFFromElement(el, {
                       filename: `資金計画書_${data.teiName || '未設定'}.pdf`,
-                      orientation: 'portrait',
-                      format: 'a4',
+                      orientation: 'landscape',
+                      format: 'a3',
                     })
-                    toast.success('PDFを出力しました')
+                    toast.success('PDFを出力しました（A3横向き）')
                   } catch (error) {
                     console.error('PDF generation error:', error)
                     toast.error('PDF出力に失敗しました')
