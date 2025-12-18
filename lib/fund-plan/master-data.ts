@@ -1,4 +1,4 @@
-import type { ProductType, FireProtectionZone, BuildingStructure, FloorCount } from '@/types/fund-plan'
+import type { ProductType, FireProtectionZone, BuildingStructure, FloorCount, StorageBatteryType } from '@/types/fund-plan'
 
 // 商品マスタ（坪単価）
 export const productMaster: Record<ProductType, number> = {
@@ -40,6 +40,7 @@ export const productList: ProductType[] = [
 
 // 防火区分マスタ
 export const fireProtectionZones: FireProtectionZone[] = [
+  'なし',
   '防火地域',
   '準防火地域',
   '法22条地域',
@@ -47,7 +48,7 @@ export const fireProtectionZones: FireProtectionZone[] = [
 
 // 建物構造マスタ
 export const buildingStructures: BuildingStructure[] = [
-  '在来軸組工法 ガルバリウム鋼板葺',
+  '木造軸組工法 ガルバリウム鋼板葺',
   'テクノストラクチャー工法',
 ]
 
@@ -89,21 +90,90 @@ export const defaultIncidentalCostA = {
   temporaryConstructionFee: 300000, // 仮設工事費用
 }
 
+// === 付帯工事費用B 関連 ===
+
 // 太陽光パネル単価（1kWあたり）
 export const solarPanelPricePerKw = 209500
 
+// 太陽光パネル1枚あたりのkW
+export const solarPanelKwPerUnit = 0.465 // 約465W/枚
+
+// 蓄電池タイプリスト
+export const storageBatteryTypes: StorageBatteryType[] = [
+  'なし',
+  '蓄電池',
+  'V2H/V2X',
+]
+
 // 蓄電池価格
-export const storageBatteryPrices = {
-  none: 0,
-  standard: 1500000,
-  v2h: 2000000,
+export const storageBatteryPrices: Record<StorageBatteryType, number> = {
+  'なし': 0,
+  '蓄電池': 1500000,
+  'V2H/V2X': 2000000,
 }
+
+// 軒出工事・オーバーハング工事 単価（円/㎡）
+export const eaveOverhangPricePerSqm = 42000
+
+// 下屋工事 単価（円/㎡）
+export const lowerRoofPricePerSqm = 30000
+
+// バルコニー工事・吹抜工事 単価（円/㎡）
+export const balconyVoidPricePerSqm = 66000
 
 // 3階建て差額（1坪あたり）
 export const threeStoryExtraPerTsubo = 40000
 
+// === 付帯工事費用C 関連 ===
+
+// 準防火地域追加費用
+export const quasiFireProofZoneCost = 900000
+
+// 天空率費用（1面あたり）
+export const skyFactorCostPerSide = 50000
+
+// 電線防護管設置費
+export const electricProtectionPipeCosts = {
+  standard: 250000, // 標準（接道1面）
+  corner: 400000, // 角地（接道2面）
+}
+
+// 狭小道路割増（レッカー車不可・手揚げ工事）
+export const narrowRoadHandLiftCost = 450000
+
+// 時間指定費用（1時間あたり）
+export const timeRestrictionCostPerHour = 250000
+
+// === 借入計画 関連 ===
+
+// 金利タイプ
+export const interestRateTypes = ['固定', '変動'] as const
+
+// デフォルト金利
+export const defaultInterestRate = 0.0082 // 0.82%
+
+// つなぎ融資デフォルト金利
+export const defaultBridgeLoanRate = 0.02 // 2%
+
+// === 太陽光経済効果 関連 ===
+
+// 1kWあたりの年間予測発電量（kWh）
+export const annualProductionPerKw = 1200
+
+// 売電単価（円/kWh）- 2025年10月以降（10kW未満）
+export const feedInTariffPrice = 24
+
+// 夜間電力比率（平均電気代の試算用）
+export const nightPowerRatio = 0.624
+
+// 平均電気代（試算用）
+export const averageElectricityCost = 16533
+
 // 消費税率
 export const taxRate = 0.10
+
+// 粗利益率（概算用）
+export const grossProfitRate = 0.30
 
 // 標準仕様（表示用）
 export const standardSpecifications = {
@@ -142,3 +212,47 @@ export const standardSpecifications = {
     '蓄電システム or V2H 推奨',
   ],
 }
+
+// 標準仕様の注釈
+export const specificationNotes = [
+  '※平均C値は2024年8月～2025年7月時点完工実績。建物形状や窓位置により変動',
+  '※３階建てや建物形状・窓位置によっては耐震等級3・長期優良認定を取得できない場合があります',
+]
+
+// 工程スケジュールの項目名
+export const scheduleItems = [
+  { key: 'landContract', label: '土地契約' },
+  { key: 'buildingContract', label: '建物契約' },
+  { key: 'initialPlanHearing', label: '初回間取ヒアリング' },
+  { key: 'landSettlement', label: '土地決済' },
+  { key: 'planFinalized', label: '間取確定' },
+  { key: 'finalSpecMeeting', label: '仕様最終打合せ' },
+  { key: 'changeContract', label: '変更契約' },
+  { key: 'constructionStart', label: '着工' },
+  { key: 'roofRaising', label: '上棟' },
+  { key: 'completion', label: '竣工（完了検査）' },
+  { key: 'finalPaymentDate', label: '最終金お支払い' },
+] as const
+
+// 支払計画（工事請負金額）の項目
+export const paymentPlanConstructionItems = [
+  { key: 'applicationFee', label: '建築申込金', standardLabel: '3万円', standardValue: 30000 },
+  { key: 'contractFee', label: '契約金', standardLabel: '10%', standardRate: 0.1 },
+  { key: 'interimPayment1', label: '中間時金(1)', standardLabel: '30%', standardRate: 0.3 },
+  { key: 'interimPayment2', label: '中間時金(2)', standardLabel: '30%', standardRate: 0.3 },
+  { key: 'finalPayment', label: '最終金', standardLabel: '残代金', standardRate: 0 },
+] as const
+
+// 会社情報
+export const companyInfo = {
+  name: '株式会社Gハウス',
+  postalCode: '535-0022',
+  address: '大阪市旭区新森２丁目２３−１２',
+}
+
+// 備考の固定文言
+export const defaultRemarks = [
+  '打合せの結果、計画が変更となった場合は、構造検討の結果により追加費用が発生する場合があります',
+  '地中障害物が判明した際の撤去費用は、本見積には含まれておりません',
+  '※ 本資金計画は概算です。実際の費用は条件により変動します',
+]
