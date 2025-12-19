@@ -39,20 +39,76 @@ export type LeadSource =
   | 'Instagram'
   | 'その他'
 
-// プラン依頼ステータス
+// プラン依頼ステータス（詳細ワークフロー）
 export type PlanRequestStatus =
-  | '依頼中'
-  | '作成中'
-  | '確認待ち'
-  | '修正依頼'
-  | '完了'
+  | '新規依頼'       // 営業から依頼が来た
+  | '役調依頼中'     // 役所調査を依頼中
+  | '役調完了'       // 役所調査完了、チェック待ち
+  | 'チェック待ち'   // 役調チェック待ち
+  | '設計割り振り'   // 設計事務所割り振り完了
+  | '設計中'         // プラン作成中
+  | 'プレゼン作成中' // パース・プレゼン作成中
+  | '確認待ち'       // 営業確認待ち
+  | '修正依頼'       // 修正が必要
+  | '完了'           // 完了
 
-// 契約書ステータス
+// 役所調査タイプ
+export type InvestigationType = 'ネット/TEL調査' | '役所往訪'
+
+// 仕上がりタイプ
+export type DeliverableType = 'ラフプラン' | 'プレゼン（パース無）' | 'プレゼン（パース有）' | '契約図'
+
+// 施工エリア
+export type ConstructionArea = 'Gハウス施工' | '業者施工'
+
+// 土地の状況
+export type LandStatus = '決済済' | '買付提出済' | '土地検討中' | '所有地'
+
+// 設計事務所
+export type DesignOffice =
+  | 'ラリーケー'
+  | 'ライフプラス'
+  | 'Nデザイン'
+  | 'L&A'
+  | 'JIN'
+  | 'その他'
+
+// 契約書ステータス（kintone承認フロー準拠）
 export type ContractStatus =
-  | '作成中'
-  | '確認中'
-  | '承認待ち'
-  | '締結済'
+  | '作成中'       // 初期状態：営業が作成
+  | '書類確認'     // 書類確認者が確認中
+  | '上長承認待ち'  // 上長の承認待ち
+  | '契約完了'     // 承認済み・契約完了
+
+// 契約書アクション
+export type ContractAction =
+  | '承認申請'     // 作成中 → 書類確認
+  | '承認'         // 各ステータスの承認
+  | '差戻し'       // 前のステータスに戻す
+  | '保存'         // 一時保存
+
+// 支払い条件タイプ
+export type PaymentTermType =
+  | '契約時'
+  | '着工時'
+  | '上棟時'
+  | '完了時'
+  | 'その他'
+
+// 本人確認書類タイプ
+export type IdentityDocType =
+  | '免許証'
+  | 'パスポート'
+  | 'マイナンバーカード'
+  | '住民票'
+  | 'その他'
+
+// ローンタイプ
+export type LoanType =
+  | '銀行ローン'
+  | 'フラット35'
+  | '自己資金'
+  | 'その他'
 
 export interface Database {
   public: {
@@ -277,29 +333,70 @@ export interface Database {
           created_at?: string
         }
       }
-      // プラン依頼
+      // プラン依頼（拡張版）
       plan_requests: {
         Row: {
           id: string
           tenant_id: string | null
           customer_id: string
+          tei_name: string | null // 邸名
+          customer_name: string | null // 顧客名
+          partner_name: string | null // 共有者名
+          ownership_type: OwnershipType // 名義
           requested_by: string | null // 依頼者（営業）
           assigned_to: string | null // 担当設計士
+          designer_name: string | null // 設計担当者名
+          presenter_name: string | null // プレゼン担当者名
+          design_office: DesignOffice | null // 設計事務所
           status: PlanRequestStatus
-          // 依頼内容
-          land_address: string | null
-          land_area: number | null
-          request_details: string | null
-          budget_min: number | null
-          budget_max: number | null
+          // 日程
+          proposal_date: string | null // 提案日
+          contract_date: string | null // 契約日
+          deadline: string | null // 依頼期限
+          investigation_deadline: string | null // 役調期限
+          // 商品・仕上がり
+          product_name: string | null // 商品名（LIFE+, Limited等）
+          deliverable_type: DeliverableType | null // 仕上がり
+          // 土地情報
+          land_address: string | null // 建築地住所
+          land_lot_number: string | null // 地番/号地
+          land_area: number | null // 土地面積（坪）
+          building_area: number | null // 施工面積（坪）
+          floors: number | null // 階数
+          land_status: LandStatus | null // 土地の状況
+          construction_area: ConstructionArea | null // 施工対応エリア
+          land_marked: boolean // 計画土地赤枠済
+          // 調査関連
+          investigation_type: InvestigationType | null // 役所調査タイプ
+          water_survey_needed: boolean // 水道調査
+          demolition_needed: boolean // 解体必要
+          land_development_needed: boolean // 宅地造成必要
+          // 競合
+          has_competitor: boolean // 競合有無
+          competitor_name: string | null // 競合先
+          // 世帯
+          household_type: string | null // 世帯数（単一世帯/二世帯等）
+          // 希望条件
           preferred_rooms: string | null
           preferred_style: string | null
-          deadline: string | null
-          // 添付ファイル
-          attachments: Json | null
+          budget_min: number | null
+          budget_max: number | null
+          // 備考・詳細
+          request_details: string | null // 依頼詳細
+          notes: string | null // 備考
+          // ファイル関連
+          photo_date: string | null // 写真撮影日
+          hearing_sheet_date: string | null // ヒアリングシート日
+          attachments: Json | null // 添付ファイル
+          drive_folder_url: string | null // Googleドライブフォルダ
+          // 役調関連
+          investigation_notes: string | null // 役調備考
+          investigation_completed_at: string | null // 役調完了日
+          investigation_pdf_url: string | null // 役調書PDF
           // 完了情報
           completed_at: string | null
           plan_url: string | null
+          presentation_url: string | null // プレゼンURL
           created_at: string
           updated_at: string
         }
@@ -307,20 +404,53 @@ export interface Database {
           id?: string
           tenant_id?: string | null
           customer_id: string
+          tei_name?: string | null
+          customer_name?: string | null
+          partner_name?: string | null
+          ownership_type?: OwnershipType
           requested_by?: string | null
           assigned_to?: string | null
+          designer_name?: string | null
+          presenter_name?: string | null
+          design_office?: DesignOffice | null
           status?: PlanRequestStatus
+          proposal_date?: string | null
+          contract_date?: string | null
+          deadline?: string | null
+          investigation_deadline?: string | null
+          product_name?: string | null
+          deliverable_type?: DeliverableType | null
           land_address?: string | null
+          land_lot_number?: string | null
           land_area?: number | null
-          request_details?: string | null
-          budget_min?: number | null
-          budget_max?: number | null
+          building_area?: number | null
+          floors?: number | null
+          land_status?: LandStatus | null
+          construction_area?: ConstructionArea | null
+          land_marked?: boolean
+          investigation_type?: InvestigationType | null
+          water_survey_needed?: boolean
+          demolition_needed?: boolean
+          land_development_needed?: boolean
+          has_competitor?: boolean
+          competitor_name?: string | null
+          household_type?: string | null
           preferred_rooms?: string | null
           preferred_style?: string | null
-          deadline?: string | null
+          budget_min?: number | null
+          budget_max?: number | null
+          request_details?: string | null
+          notes?: string | null
+          photo_date?: string | null
+          hearing_sheet_date?: string | null
           attachments?: Json | null
+          drive_folder_url?: string | null
+          investigation_notes?: string | null
+          investigation_completed_at?: string | null
+          investigation_pdf_url?: string | null
           completed_at?: string | null
           plan_url?: string | null
+          presentation_url?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -328,20 +458,53 @@ export interface Database {
           id?: string
           tenant_id?: string | null
           customer_id?: string
+          tei_name?: string | null
+          customer_name?: string | null
+          partner_name?: string | null
+          ownership_type?: OwnershipType
           requested_by?: string | null
           assigned_to?: string | null
+          designer_name?: string | null
+          presenter_name?: string | null
+          design_office?: DesignOffice | null
           status?: PlanRequestStatus
+          proposal_date?: string | null
+          contract_date?: string | null
+          deadline?: string | null
+          investigation_deadline?: string | null
+          product_name?: string | null
+          deliverable_type?: DeliverableType | null
           land_address?: string | null
+          land_lot_number?: string | null
           land_area?: number | null
-          request_details?: string | null
-          budget_min?: number | null
-          budget_max?: number | null
+          building_area?: number | null
+          floors?: number | null
+          land_status?: LandStatus | null
+          construction_area?: ConstructionArea | null
+          land_marked?: boolean
+          investigation_type?: InvestigationType | null
+          water_survey_needed?: boolean
+          demolition_needed?: boolean
+          land_development_needed?: boolean
+          has_competitor?: boolean
+          competitor_name?: string | null
+          household_type?: string | null
           preferred_rooms?: string | null
           preferred_style?: string | null
-          deadline?: string | null
+          budget_min?: number | null
+          budget_max?: number | null
+          request_details?: string | null
+          notes?: string | null
+          photo_date?: string | null
+          hearing_sheet_date?: string | null
           attachments?: Json | null
+          drive_folder_url?: string | null
+          investigation_notes?: string | null
+          investigation_completed_at?: string | null
+          investigation_pdf_url?: string | null
           completed_at?: string | null
           plan_url?: string | null
+          presentation_url?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -391,7 +554,7 @@ export interface Database {
           updated_at?: string
         }
       }
-      // 契約書
+      // 契約書（kintone承認フロー対応）
       contracts: {
         Row: {
           id: string
@@ -400,15 +563,75 @@ export interface Database {
           fund_plan_id: string | null
           status: ContractStatus
           contract_number: string | null
-          contract_date: string | null
-          contract_amount: number | null
-          // 契約内容
-          data: Json
-          // 承認フロー
-          created_by: string | null
-          checked_by: string | null
-          approved_by: string | null
-          approved_at: string | null
+          // === 基本情報 ===
+          contract_date: string | null // 契約日
+          tei_name: string | null // 邸名
+          customer_name: string | null // お客様名
+          partner_name: string | null // 共有者名
+          ownership_type: OwnershipType // 名義
+          // === 受注情報 ===
+          sales_person: string | null // 営業担当
+          design_person: string | null // 設計担当
+          construction_person: string | null // 工事担当
+          ic_person: string | null // IC担当
+          // === 物件情報 ===
+          land_address: string | null // 建築地住所
+          land_area: number | null // 土地面積（坪）
+          building_area: number | null // 建物面積（坪）
+          product_name: string | null // 商品名
+          // === 見積・金額情報 ===
+          building_price: number | null // 建物本体価格
+          option_price: number | null // オプション価格
+          exterior_price: number | null // 外構価格
+          other_price: number | null // その他費用
+          discount_amount: number | null // 値引額
+          tax_amount: number | null // 消費税
+          total_amount: number | null // 合計金額
+          // === 支払い条件 ===
+          payment_at_contract: number | null // 契約時金
+          payment_at_start: number | null // 着工時金
+          payment_at_frame: number | null // 上棟時金
+          payment_at_completion: number | null // 完了時金
+          // === 本人確認 ===
+          identity_verified: boolean // 本人確認済
+          identity_doc_type: string | null // 本人確認書類種類
+          identity_verified_date: string | null // 確認日
+          identity_verified_by: string | null // 確認者
+          // === 住宅ローン関連 ===
+          loan_type: string | null // ローン種類
+          loan_bank: string | null // 金融機関名
+          loan_amount: number | null // 借入額
+          loan_approved: boolean // ローン承認済
+          loan_approved_date: string | null // ローン承認日
+          // === 重要事項 ===
+          important_notes: string | null // 重要事項説明済
+          important_notes_date: string | null // 説明日
+          // === 添付ファイル ===
+          attachments: Json | null // 添付ファイル情報
+          // === 承認フロー ===
+          created_by: string | null // 作成者
+          created_by_name: string | null // 作成者名
+          // 書類確認
+          checked_by: string | null // 書類確認者
+          checked_by_name: string | null // 書類確認者名
+          checked_at: string | null // 確認日時
+          check_comment: string | null // 確認コメント
+          // 上長承認
+          approved_by: string | null // 承認者
+          approved_by_name: string | null // 承認者名
+          approved_at: string | null // 承認日時
+          approval_comment: string | null // 承認コメント
+          // 差戻し情報
+          returned_by: string | null // 差戻し者
+          returned_by_name: string | null // 差戻し者名
+          returned_at: string | null // 差戻し日時
+          return_comment: string | null // 差戻しコメント
+          return_count: number // 差戻し回数
+          // === 履歴 ===
+          history: Json | null // ステータス変更履歴
+          // === その他 ===
+          notes: string | null // 備考
+          kintone_record_id: string | null // kintoneレコードID
           created_at: string
           updated_at: string
         }
@@ -420,12 +643,59 @@ export interface Database {
           status?: ContractStatus
           contract_number?: string | null
           contract_date?: string | null
-          contract_amount?: number | null
-          data?: Json
+          tei_name?: string | null
+          customer_name?: string | null
+          partner_name?: string | null
+          ownership_type?: OwnershipType
+          sales_person?: string | null
+          design_person?: string | null
+          construction_person?: string | null
+          ic_person?: string | null
+          land_address?: string | null
+          land_area?: number | null
+          building_area?: number | null
+          product_name?: string | null
+          building_price?: number | null
+          option_price?: number | null
+          exterior_price?: number | null
+          other_price?: number | null
+          discount_amount?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          payment_at_contract?: number | null
+          payment_at_start?: number | null
+          payment_at_frame?: number | null
+          payment_at_completion?: number | null
+          identity_verified?: boolean
+          identity_doc_type?: string | null
+          identity_verified_date?: string | null
+          identity_verified_by?: string | null
+          loan_type?: string | null
+          loan_bank?: string | null
+          loan_amount?: number | null
+          loan_approved?: boolean
+          loan_approved_date?: string | null
+          important_notes?: string | null
+          important_notes_date?: string | null
+          attachments?: Json | null
           created_by?: string | null
+          created_by_name?: string | null
           checked_by?: string | null
+          checked_by_name?: string | null
+          checked_at?: string | null
+          check_comment?: string | null
           approved_by?: string | null
+          approved_by_name?: string | null
           approved_at?: string | null
+          approval_comment?: string | null
+          returned_by?: string | null
+          returned_by_name?: string | null
+          returned_at?: string | null
+          return_comment?: string | null
+          return_count?: number
+          history?: Json | null
+          notes?: string | null
+          kintone_record_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -437,12 +707,59 @@ export interface Database {
           status?: ContractStatus
           contract_number?: string | null
           contract_date?: string | null
-          contract_amount?: number | null
-          data?: Json
+          tei_name?: string | null
+          customer_name?: string | null
+          partner_name?: string | null
+          ownership_type?: OwnershipType
+          sales_person?: string | null
+          design_person?: string | null
+          construction_person?: string | null
+          ic_person?: string | null
+          land_address?: string | null
+          land_area?: number | null
+          building_area?: number | null
+          product_name?: string | null
+          building_price?: number | null
+          option_price?: number | null
+          exterior_price?: number | null
+          other_price?: number | null
+          discount_amount?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          payment_at_contract?: number | null
+          payment_at_start?: number | null
+          payment_at_frame?: number | null
+          payment_at_completion?: number | null
+          identity_verified?: boolean
+          identity_doc_type?: string | null
+          identity_verified_date?: string | null
+          identity_verified_by?: string | null
+          loan_type?: string | null
+          loan_bank?: string | null
+          loan_amount?: number | null
+          loan_approved?: boolean
+          loan_approved_date?: string | null
+          important_notes?: string | null
+          important_notes_date?: string | null
+          attachments?: Json | null
           created_by?: string | null
+          created_by_name?: string | null
           checked_by?: string | null
+          checked_by_name?: string | null
+          checked_at?: string | null
+          check_comment?: string | null
           approved_by?: string | null
+          approved_by_name?: string | null
           approved_at?: string | null
+          approval_comment?: string | null
+          returned_by?: string | null
+          returned_by_name?: string | null
+          returned_at?: string | null
+          return_comment?: string | null
+          return_count?: number
+          history?: Json | null
+          notes?: string | null
+          kintone_record_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -689,4 +1006,351 @@ export function getFiscalYearRange(fiscalYear: number, fiscalStartMonth: number 
 // 現在の期を取得
 export function getCurrentFiscalYear(fiscalStartMonth: number = 8): number {
   return getFiscalYear(new Date(), fiscalStartMonth)
+}
+
+// プラン依頼ステータス順序
+export const PLAN_REQUEST_STATUS_ORDER: PlanRequestStatus[] = [
+  '新規依頼',
+  '役調依頼中',
+  '役調完了',
+  'チェック待ち',
+  '設計割り振り',
+  '設計中',
+  'プレゼン作成中',
+  '確認待ち',
+  '修正依頼',
+  '完了',
+]
+
+// プラン依頼ステータスの表示設定
+export const PLAN_REQUEST_STATUS_CONFIG: Record<PlanRequestStatus, { label: string; color: string; bgColor: string; icon: string }> = {
+  '新規依頼': { label: '新規', color: 'text-blue-700', bgColor: 'bg-blue-100', icon: 'FileText' },
+  '役調依頼中': { label: '役調中', color: 'text-purple-700', bgColor: 'bg-purple-100', icon: 'Search' },
+  '役調完了': { label: '役調完了', color: 'text-indigo-700', bgColor: 'bg-indigo-100', icon: 'FileCheck' },
+  'チェック待ち': { label: 'チェック待', color: 'text-cyan-700', bgColor: 'bg-cyan-100', icon: 'ClipboardCheck' },
+  '設計割り振り': { label: '割振済', color: 'text-teal-700', bgColor: 'bg-teal-100', icon: 'Users' },
+  '設計中': { label: '設計中', color: 'text-orange-700', bgColor: 'bg-orange-100', icon: 'Ruler' },
+  'プレゼン作成中': { label: 'プレゼン中', color: 'text-amber-700', bgColor: 'bg-amber-100', icon: 'Presentation' },
+  '確認待ち': { label: '確認待', color: 'text-yellow-700', bgColor: 'bg-yellow-100', icon: 'Eye' },
+  '修正依頼': { label: '修正', color: 'text-red-700', bgColor: 'bg-red-100', icon: 'AlertCircle' },
+  '完了': { label: '完了', color: 'text-green-700', bgColor: 'bg-green-100', icon: 'CheckCircle' },
+}
+
+// 設計事務所の設定
+export const DESIGN_OFFICE_CONFIG: Record<DesignOffice, { label: string; color: string }> = {
+  'ラリーケー': { label: 'ラリーケー', color: 'text-blue-600' },
+  'ライフプラス': { label: 'ライフプラス', color: 'text-green-600' },
+  'Nデザイン': { label: 'Nデザイン', color: 'text-purple-600' },
+  'L&A': { label: 'L&A', color: 'text-orange-600' },
+  'JIN': { label: 'JIN', color: 'text-red-600' },
+  'その他': { label: 'その他', color: 'text-gray-600' },
+}
+
+// 商品リスト（仮）
+export const PRODUCT_LIST = [
+  { value: 'LIFE+ Limited', label: 'LIFE+ Limited（55万/坪）' },
+  { value: 'LIFE+ Standard', label: 'LIFE+ Standard（50万/坪）' },
+  { value: 'LIFE+ Basic', label: 'LIFE+ Basic（45万/坪）' },
+  { value: 'Custom', label: 'カスタム仕様' },
+]
+
+// === 契約承認フロー設定 ===
+
+// 契約ステータス順序
+export const CONTRACT_STATUS_ORDER: ContractStatus[] = [
+  '作成中',
+  '書類確認',
+  '上長承認待ち',
+  '契約完了',
+]
+
+// 契約ステータスの表示設定
+export const CONTRACT_STATUS_CONFIG: Record<ContractStatus, {
+  label: string
+  color: string
+  bgColor: string
+  icon: string
+  description: string
+}> = {
+  '作成中': {
+    label: '作成中',
+    color: 'text-blue-700',
+    bgColor: 'bg-blue-100',
+    icon: 'FileEdit',
+    description: '営業担当が契約書を作成中',
+  },
+  '書類確認': {
+    label: '書類確認',
+    color: 'text-purple-700',
+    bgColor: 'bg-purple-100',
+    icon: 'FileSearch',
+    description: '書類確認者が内容を確認中',
+  },
+  '上長承認待ち': {
+    label: '上長承認待ち',
+    color: 'text-orange-700',
+    bgColor: 'bg-orange-100',
+    icon: 'UserCheck',
+    description: '上長の承認を待っています',
+  },
+  '契約完了': {
+    label: '契約完了',
+    color: 'text-green-700',
+    bgColor: 'bg-green-100',
+    icon: 'CheckCircle2',
+    description: '承認完了・契約締結済み',
+  },
+}
+
+// 契約アクションの設定
+export const CONTRACT_ACTION_CONFIG: Record<ContractAction, {
+  label: string
+  color: string
+  bgColor: string
+  icon: string
+  confirmMessage: string
+}> = {
+  '承認申請': {
+    label: '承認申請',
+    color: 'text-blue-700',
+    bgColor: 'bg-blue-600',
+    icon: 'Send',
+    confirmMessage: '承認申請を送信しますか？',
+  },
+  '承認': {
+    label: '承認',
+    color: 'text-green-700',
+    bgColor: 'bg-green-600',
+    icon: 'Check',
+    confirmMessage: 'この契約を承認しますか？',
+  },
+  '差戻し': {
+    label: '差戻し',
+    color: 'text-red-700',
+    bgColor: 'bg-red-600',
+    icon: 'RotateCcw',
+    confirmMessage: 'この契約を差戻しますか？理由を入力してください。',
+  },
+  '保存': {
+    label: '保存',
+    color: 'text-gray-700',
+    bgColor: 'bg-gray-600',
+    icon: 'Save',
+    confirmMessage: '変更を保存しますか？',
+  },
+}
+
+// ステータスごとに実行可能なアクション
+export const CONTRACT_STATUS_ACTIONS: Record<ContractStatus, ContractAction[]> = {
+  '作成中': ['保存', '承認申請'],
+  '書類確認': ['承認', '差戻し'],
+  '上長承認待ち': ['承認', '差戻し'],
+  '契約完了': [], // 完了後はアクションなし
+}
+
+// 承認フローの遷移マップ
+export const CONTRACT_STATUS_TRANSITIONS: Record<ContractStatus, {
+  next: ContractStatus | null // 承認時の次のステータス
+  prev: ContractStatus | null // 差戻し時の前のステータス
+}> = {
+  '作成中': { next: '書類確認', prev: null },
+  '書類確認': { next: '上長承認待ち', prev: '作成中' },
+  '上長承認待ち': { next: '契約完了', prev: '書類確認' },
+  '契約完了': { next: null, prev: null },
+}
+
+// 契約履歴エントリの型
+export interface ContractHistoryEntry {
+  id: string
+  action: ContractAction | 'ステータス変更'
+  fromStatus: ContractStatus
+  toStatus: ContractStatus
+  userId: string | null
+  userName: string | null
+  comment: string | null
+  timestamp: string
+}
+
+// 本人確認書類タイプリスト
+export const IDENTITY_DOC_TYPES = [
+  { value: '免許証', label: '運転免許証' },
+  { value: 'パスポート', label: 'パスポート' },
+  { value: 'マイナンバーカード', label: 'マイナンバーカード' },
+  { value: '住民票', label: '住民票' },
+  { value: 'その他', label: 'その他' },
+]
+
+// ローンタイプリスト
+export const LOAN_TYPES = [
+  { value: '銀行ローン', label: '銀行ローン' },
+  { value: 'フラット35', label: 'フラット35' },
+  { value: '自己資金', label: '自己資金' },
+  { value: 'その他', label: 'その他' },
+]
+
+// === 契約承認権限設定 ===
+
+// 承認権限ロール
+export type ContractApprovalRole =
+  | '作成者'       // 契約書を作成した人
+  | '書類確認者'   // 書類確認を行う人（事務・管理）
+  | '承認者'       // 最終承認者（上長・マネージャー）
+
+// ユーザーロールと承認権限のマッピング
+export const USER_ROLE_TO_APPROVAL_ROLES: Record<UserRole, ContractApprovalRole[]> = {
+  'admin': ['作成者', '書類確認者', '承認者'], // 管理者は全て可能
+  'manager': ['作成者', '書類確認者', '承認者'], // マネージャーも全て可能
+  'staff': ['作成者'], // スタッフは作成のみ
+}
+
+// 各ステータスでアクションを実行できる権限
+export const CONTRACT_ACTION_PERMISSIONS: Record<ContractStatus, {
+  actions: Record<ContractAction, {
+    allowedRoles: ContractApprovalRole[]
+    allowCreator?: boolean // 作成者本人のみ可能か
+    requireDifferentUser?: boolean // 別ユーザーが必要か（自己承認禁止）
+  }>
+}> = {
+  '作成中': {
+    actions: {
+      '保存': {
+        allowedRoles: ['作成者'],
+        allowCreator: true, // 作成者のみ保存可能
+      },
+      '承認申請': {
+        allowedRoles: ['作成者'],
+        allowCreator: true, // 作成者のみ申請可能
+      },
+      '承認': { allowedRoles: [] }, // このステータスでは不可
+      '差戻し': { allowedRoles: [] }, // このステータスでは不可
+    },
+  },
+  '書類確認': {
+    actions: {
+      '保存': { allowedRoles: [] }, // 編集不可
+      '承認申請': { allowedRoles: [] }, // 不可
+      '承認': {
+        allowedRoles: ['書類確認者', '承認者'],
+        requireDifferentUser: true, // 作成者以外が確認
+      },
+      '差戻し': {
+        allowedRoles: ['書類確認者', '承認者'],
+        requireDifferentUser: true,
+      },
+    },
+  },
+  '上長承認待ち': {
+    actions: {
+      '保存': { allowedRoles: [] },
+      '承認申請': { allowedRoles: [] },
+      '承認': {
+        allowedRoles: ['承認者'],
+        requireDifferentUser: true, // 作成者・確認者以外が承認
+      },
+      '差戻し': {
+        allowedRoles: ['承認者'],
+        requireDifferentUser: true,
+      },
+    },
+  },
+  '契約完了': {
+    actions: {
+      '保存': { allowedRoles: [] },
+      '承認申請': { allowedRoles: [] },
+      '承認': { allowedRoles: [] },
+      '差戻し': { allowedRoles: [] },
+    },
+  },
+}
+
+// 権限チェックのインターフェース
+export interface ContractPermissionCheckParams {
+  userRole: UserRole
+  userId: string
+  contractStatus: ContractStatus
+  action: ContractAction
+  contractCreatedBy?: string | null // 契約作成者
+  contractCheckedBy?: string | null // 書類確認者
+}
+
+// 権限チェック結果
+export interface ContractPermissionResult {
+  allowed: boolean
+  reason?: string // 許可されない理由
+}
+
+// 権限チェック関数
+export function checkContractPermission(params: ContractPermissionCheckParams): ContractPermissionResult {
+  const { userRole, userId, contractStatus, action, contractCreatedBy, contractCheckedBy } = params
+
+  // ステータスに対応するアクションを取得
+  const statusConfig = CONTRACT_ACTION_PERMISSIONS[contractStatus]
+  if (!statusConfig) {
+    return { allowed: false, reason: '無効なステータスです' }
+  }
+
+  const actionConfig = statusConfig.actions[action]
+  if (!actionConfig) {
+    return { allowed: false, reason: '無効なアクションです' }
+  }
+
+  // 許可されたロールがない場合
+  if (actionConfig.allowedRoles.length === 0) {
+    return { allowed: false, reason: `${contractStatus}のステータスでは${action}は実行できません` }
+  }
+
+  // ユーザーの承認権限を取得
+  const userApprovalRoles = USER_ROLE_TO_APPROVAL_ROLES[userRole]
+
+  // 作成者のみ許可の場合
+  if (actionConfig.allowCreator) {
+    if (contractCreatedBy && userId !== contractCreatedBy) {
+      return { allowed: false, reason: '作成者のみがこの操作を行えます' }
+    }
+  }
+
+  // 別ユーザー必須の場合（自己承認禁止）
+  if (actionConfig.requireDifferentUser) {
+    if (contractCreatedBy && userId === contractCreatedBy) {
+      return { allowed: false, reason: '自分が作成した契約は承認できません' }
+    }
+    if (contractStatus === '上長承認待ち' && contractCheckedBy && userId === contractCheckedBy) {
+      return { allowed: false, reason: '書類確認者は上長承認できません' }
+    }
+  }
+
+  // ロールチェック
+  const hasPermission = actionConfig.allowedRoles.some(role => userApprovalRoles.includes(role))
+  if (!hasPermission) {
+    return { allowed: false, reason: `この操作には${actionConfig.allowedRoles.join('または')}の権限が必要です` }
+  }
+
+  return { allowed: true }
+}
+
+// ステータスごとに実行可能なアクションを取得（権限フィルター付き）
+export function getAvailableContractActions(
+  status: ContractStatus,
+  userRole: UserRole,
+  userId: string,
+  contractCreatedBy?: string | null,
+  contractCheckedBy?: string | null
+): { action: ContractAction; enabled: boolean; reason?: string }[] {
+  const allActions = CONTRACT_STATUS_ACTIONS[status]
+
+  return allActions.map(action => {
+    const result = checkContractPermission({
+      userRole,
+      userId,
+      contractStatus: status,
+      action,
+      contractCreatedBy,
+      contractCheckedBy,
+    })
+    return {
+      action,
+      enabled: result.allowed,
+      reason: result.reason,
+    }
+  })
 }

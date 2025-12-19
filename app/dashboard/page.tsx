@@ -33,6 +33,7 @@ import {
 } from '@/types/database'
 import { PipelineFunnel } from '@/components/dashboard/pipeline-funnel'
 import { DeadlineAlerts } from '@/components/dashboard/deadline-alerts'
+import { PendingApprovals } from '@/components/dashboard/pending-approvals'
 import { OnboardingGuide, HelpButton } from '@/components/help/onboarding-guide'
 
 // 今期の期間を取得
@@ -399,10 +400,11 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* ファネルグラフと期限アラート */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* ファネルグラフ・期限アラート・承認待ち */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <PipelineFunnel data={funnelData} title="今期遷移率ファネル" />
           <DeadlineAlerts items={deadlineItems} maxItems={4} />
+          <PendingApprovals maxItems={5} />
         </div>
 
         {/* Main Content Grid */}

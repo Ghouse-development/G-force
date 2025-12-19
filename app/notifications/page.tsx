@@ -1,128 +1,296 @@
-'use client';
+'use client'
 
-import { Layout } from '@/components/layout/layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useNotificationStore } from '@/store';
-import { Bell, Calendar, FileText, BookOpen, CheckCircle } from 'lucide-react';
-import { format } from 'date-fns';
-import { ja } from 'date-fns/locale';
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Layout } from '@/components/layout/layout'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import {
+  Bell,
+  Check,
+  CheckCheck,
+  Trash2,
+  ArrowRight,
+  FileSignature,
+  FileEdit,
+  Users,
+  Settings,
+  Info,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { useNotificationStore, type NotificationCategory, type NotificationType } from '@/store'
+import { cn } from '@/lib/utils'
+
+// 通知タイプに応じたアイコン
+const getNotificationIcon = (type: NotificationType) => {
+  switch (type) {
+    case 'success':
+      return <CheckCircle className="w-5 h-5 text-green-500" />
+    case 'warning':
+      return <AlertTriangle className="w-5 h-5 text-yellow-500" />
+    case 'error':
+      return <XCircle className="w-5 h-5 text-red-500" />
+    case 'info':
+    default:
+      return <Info className="w-5 h-5 text-blue-500" />
+  }
+}
+
+// カテゴリに応じたアイコン
+const getCategoryIcon = (category: NotificationCategory) => {
+  switch (category) {
+    case 'contract':
+      return <FileSignature className="w-4 h-4" />
+    case 'plan_request':
+      return <FileEdit className="w-4 h-4" />
+    case 'customer':
+      return <Users className="w-4 h-4" />
+    case 'system':
+    default:
+      return <Settings className="w-4 h-4" />
+  }
+}
+
+// カテゴリ名
+const categoryLabels: Record<NotificationCategory, string> = {
+  contract: '契約',
+  plan_request: 'プラン依頼',
+  customer: '顧客',
+  system: 'システム',
+}
+
+// 相対時間の表示
+const formatRelativeTime = (dateStr: string) => {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffSec = Math.floor(diffMs / 1000)
+  const diffMin = Math.floor(diffSec / 60)
+  const diffHour = Math.floor(diffMin / 60)
+  const diffDay = Math.floor(diffHour / 24)
+
+  if (diffSec < 60) return 'たった今'
+  if (diffMin < 60) return `${diffMin}分前`
+  if (diffHour < 24) return `${diffHour}時間前`
+  if (diffDay < 7) return `${diffDay}日前`
+  return date.toLocaleDateString('ja-JP')
+}
 
 export default function NotificationsPage() {
-  const { notifications, markAsRead, clearAll } = useNotificationStore();
+  const router = useRouter()
+  const [mounted, setMounted] = useState(false)
+  const [filter, setFilter] = useState<'all' | 'unread'>('all')
 
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'meeting_reminder':
-        return <Calendar className="h-5 w-5 text-blue-500" />;
-      case 'summary_ready':
-        return <FileText className="h-5 w-5 text-green-500" />;
-      case 'kb_updated':
-        return <BookOpen className="h-5 w-5 text-purple-500" />;
-      default:
-        return <Bell className="h-5 w-5 text-gray-500" />;
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    clearAll,
+  } = useNotificationStore()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500" />
+        </div>
+      </Layout>
+    )
+  }
+
+  const filteredNotifications = filter === 'unread'
+    ? notifications.filter(n => !n.read)
+    : notifications
+
+  const handleNotificationClick = (notification: typeof notifications[0]) => {
+    markAsRead(notification.id)
+    if (notification.linkUrl) {
+      router.push(notification.linkUrl)
     }
-  };
+  }
+
+  const handleMarkAllAsRead = () => {
+    markAllAsRead()
+    toast.success('すべて既読にしました')
+  }
+
+  const handleClearAll = () => {
+    clearAll()
+    toast.success('すべての通知を削除しました')
+  }
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="max-w-3xl mx-auto space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">通知</h1>
-            <p className="text-muted-foreground mt-2">
-              重要な更新と予定をお知らせ
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+              <Bell className="w-6 h-6 mr-2 text-orange-500" />
+              通知
+              {unreadCount > 0 && (
+                <Badge className="ml-2 bg-red-500">{unreadCount}件未読</Badge>
+              )}
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">
+              承認フローやシステムからの通知
             </p>
           </div>
-          {notifications.length > 0 && (
-            <Button variant="outline" onClick={clearAll}>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleMarkAllAsRead}
+              disabled={unreadCount === 0}
+            >
+              <CheckCheck className="w-4 h-4 mr-1" />
+              すべて既読
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearAll}
+              disabled={notifications.length === 0}
+              className="text-red-600 hover:text-red-700"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
               すべて削除
             </Button>
-          )}
+          </div>
         </div>
 
-        {notifications.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Bell className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">新しい通知はありません</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {notifications.map((notification) => (
-              <Card 
-                key={notification.id} 
-                className={notification.read ? 'opacity-60' : ''}
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-3">
-                      {getIcon(notification.type)}
-                      <div className="flex-1">
-                        <CardTitle className="text-base">
-                          {notification.title}
-                        </CardTitle>
-                        <CardDescription className="mt-1">
+        {/* Filter */}
+        <div className="flex space-x-2">
+          <Button
+            variant={filter === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('all')}
+            className={filter === 'all' ? 'bg-orange-500 hover:bg-orange-600' : ''}
+          >
+            すべて ({notifications.length})
+          </Button>
+          <Button
+            variant={filter === 'unread' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('unread')}
+            className={filter === 'unread' ? 'bg-orange-500 hover:bg-orange-600' : ''}
+          >
+            未読 ({unreadCount})
+          </Button>
+        </div>
+
+        {/* Notifications List */}
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-0">
+            {filteredNotifications.length === 0 ? (
+              <div className="p-12 text-center">
+                <Bell className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">
+                  {filter === 'unread' ? '未読の通知はありません' : '通知はありません'}
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y">
+                {filteredNotifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={cn(
+                      'p-4 hover:bg-gray-50 transition-colors cursor-pointer',
+                      !notification.read && 'bg-orange-50/50'
+                    )}
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <div className="flex items-start space-x-4">
+                      {/* Icon */}
+                      <div className="shrink-0 mt-0.5">
+                        {getNotificationIcon(notification.type)}
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <span className={cn(
+                            'font-semibold text-gray-900',
+                            !notification.read && 'text-orange-700'
+                          )}>
+                            {notification.title}
+                          </span>
+                          <Badge variant="outline" className="text-xs">
+                            {getCategoryIcon(notification.category)}
+                            <span className="ml-1">{categoryLabels[notification.category]}</span>
+                          </Badge>
+                          {!notification.read && (
+                            <span className="w-2 h-2 rounded-full bg-orange-500" />
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 line-clamp-2">
                           {notification.message}
-                        </CardDescription>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {format(notification.createdAt, 'yyyy年MM月dd日 HH:mm', { locale: ja })}
                         </p>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-xs text-gray-400">
+                            {formatRelativeTime(notification.createdAt)}
+                          </span>
+                          {notification.linkUrl && (
+                            <span className="text-xs text-orange-500 flex items-center">
+                              {notification.linkLabel || '詳細'}
+                              <ArrowRight className="w-3 h-3 ml-1" />
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="shrink-0 flex items-center space-x-1">
+                        {!notification.read && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              markAsRead(notification.id)
+                            }}
+                          >
+                            <Check className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-gray-400 hover:text-red-500"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            deleteNotification(notification.id)
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      {!notification.read && (
-                        <>
-                          <Badge variant="default">未読</Badge>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => markAsRead(notification.id)}
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
                   </div>
-                </CardHeader>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* Sample notifications for demo */}
-        <Card className="border-dashed">
-          <CardHeader>
-            <CardTitle className="text-sm">デモ用通知サンプル</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center space-x-3">
-              <Calendar className="h-4 w-4 text-blue-500" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">14:00 山田様との商談</p>
-                <p className="text-xs text-muted-foreground">30分前にリマインド</p>
+                ))}
               </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <FileText className="h-4 w-4 text-green-500" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">議事録が完成しました</p>
-                <p className="text-xs text-muted-foreground">佐藤様との商談記録</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <BookOpen className="h-4 w-4 text-purple-500" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">知識ベース更新</p>
-                <p className="text-xs text-muted-foreground">新しい補助金情報追加</p>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
+
+        {/* Info */}
+        {notifications.length > 0 && (
+          <p className="text-center text-xs text-gray-400">
+            通知は最大100件まで保存されます
+          </p>
+        )}
       </div>
     </Layout>
-  );
+  )
 }
