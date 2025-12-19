@@ -31,6 +31,9 @@ import {
 } from '@/types/database'
 import { PipelineKanban } from '@/components/customers/pipeline-kanban'
 import { useCustomerStore } from '@/store'
+import { sampleCustomers } from '@/lib/sample-data'
+import { Database } from 'lucide-react'
+import { toast } from 'sonner'
 
 // モックデータ（パイプライン対応版）- 初期データ用
 const initialMockCustomers: Partial<Customer>[] = [
@@ -162,7 +165,25 @@ export default function CustomersPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const fiscalYear = getCurrentFiscalYear()
 
-  const { customers: storeCustomers, setCustomers, updateCustomerStatus } = useCustomerStore()
+  const { customers: storeCustomers, setCustomers, addCustomer, updateCustomerStatus } = useCustomerStore()
+
+  // サンプルデータを読み込む
+  const handleLoadSampleData = () => {
+    let count = 0
+    for (const customer of sampleCustomers) {
+      // 重複チェック（同じ名前がすでに存在するかどうか）
+      const exists = storeCustomers.some(c => c.name === customer.name)
+      if (!exists) {
+        addCustomer(customer)
+        count++
+      }
+    }
+    if (count > 0) {
+      toast.success(`${count}件のサンプル顧客データを追加しました`)
+    } else {
+      toast.info('すでにすべてのサンプルデータが存在します')
+    }
+  }
 
   // 初期データの読み込み（ストアが空の場合のみ）
   useEffect(() => {
@@ -225,6 +246,13 @@ export default function CustomersPage() {
                 <LayoutGrid className="w-4 h-4" />
               </Button>
             </div>
+            <Button
+              variant="outline"
+              onClick={handleLoadSampleData}
+            >
+              <Database className="w-4 h-4 mr-2" />
+              サンプルデータ
+            </Button>
             <Button
               variant="outline"
               onClick={() => exportToCSV(
