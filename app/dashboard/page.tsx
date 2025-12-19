@@ -301,61 +301,61 @@ export default function DashboardPage() {
         {/* Stats Cards - 6つの主要指標 */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-            <CardContent className="p-4">
+            <CardContent className="p-5">
               <div className="flex flex-col">
-                <p className="text-blue-100 text-xs font-medium">限定会員数</p>
-                <p className="text-3xl font-bold mt-1">{fiscalYearDetailStats.limitedMembers}</p>
-                <p className="text-blue-200 text-[10px] mt-1">累計</p>
+                <p className="text-blue-100 text-base font-medium">限定会員数</p>
+                <p className="text-5xl font-bold mt-2">{fiscalYearDetailStats.limitedMembers}</p>
+                <p className="text-blue-200 text-sm mt-2">累計</p>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-lg bg-gradient-to-br from-cyan-500 to-teal-500 text-white">
-            <CardContent className="p-4">
+            <CardContent className="p-5">
               <div className="flex flex-col">
-                <p className="text-cyan-100 text-xs font-medium">今月面談数</p>
-                <p className="text-3xl font-bold mt-1">{fiscalYearDetailStats.thisMonthMeetings}</p>
-                <p className="text-cyan-200 text-[10px] mt-1">{new Date().getMonth() + 1}月</p>
+                <p className="text-cyan-100 text-base font-medium">今月面談数</p>
+                <p className="text-5xl font-bold mt-2">{fiscalYearDetailStats.thisMonthMeetings}</p>
+                <p className="text-cyan-200 text-sm mt-2">{new Date().getMonth() + 1}月</p>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-500 to-orange-500 text-white">
-            <CardContent className="p-4">
+            <CardContent className="p-5">
               <div className="flex flex-col">
-                <p className="text-amber-100 text-xs font-medium">建築申込数</p>
-                <p className="text-3xl font-bold mt-1">{fiscalYearDetailStats.buildingApplications}</p>
-                <p className="text-amber-200 text-[10px] mt-1">今期</p>
+                <p className="text-amber-100 text-base font-medium">建築申込数</p>
+                <p className="text-5xl font-bold mt-2">{fiscalYearDetailStats.buildingApplications}</p>
+                <p className="text-amber-200 text-sm mt-2">今期</p>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-500 to-green-600 text-white">
-            <CardContent className="p-4">
+            <CardContent className="p-5">
               <div className="flex flex-col">
-                <p className="text-green-100 text-xs font-medium">今期請負契約</p>
-                <p className="text-2xl font-bold mt-1">{fiscalYearDetailStats.newContracts}<span className="text-base">棟</span></p>
-                <p className="text-green-200 text-[10px] mt-1">¥{(fiscalYearDetailStats.newContractsAmount / 100000000).toFixed(2)}億(税別)</p>
+                <p className="text-green-100 text-base font-medium">今期請負契約</p>
+                <p className="text-4xl font-bold mt-2">{fiscalYearDetailStats.newContracts}<span className="text-xl ml-1">棟</span></p>
+                <p className="text-green-200 text-sm mt-2">¥{(fiscalYearDetailStats.newContractsAmount / 100000000).toFixed(2)}億(税別)</p>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-indigo-600 text-white">
-            <CardContent className="p-4">
+            <CardContent className="p-5">
               <div className="flex flex-col">
-                <p className="text-purple-100 text-xs font-medium">今期変更契約</p>
-                <p className="text-2xl font-bold mt-1">{fiscalYearDetailStats.changeContracts}<span className="text-base">棟</span></p>
-                <p className="text-purple-200 text-[10px] mt-1">¥{(fiscalYearDetailStats.changeContractsAmount / 10000).toLocaleString()}万(税別)</p>
+                <p className="text-purple-100 text-base font-medium">今期変更契約</p>
+                <p className="text-4xl font-bold mt-2">{fiscalYearDetailStats.changeContracts}<span className="text-xl ml-1">棟</span></p>
+                <p className="text-purple-200 text-sm mt-2">¥{(fiscalYearDetailStats.changeContractsAmount / 10000).toLocaleString()}万(税別)</p>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-lg bg-gradient-to-br from-rose-500 to-pink-600 text-white">
-            <CardContent className="p-4">
+            <CardContent className="p-5">
               <div className="flex flex-col">
-                <p className="text-rose-100 text-xs font-medium">今期引渡済</p>
-                <p className="text-3xl font-bold mt-1">{fiscalYearDetailStats.completedHandovers}</p>
-                <p className="text-rose-200 text-[10px] mt-1">今期</p>
+                <p className="text-rose-100 text-base font-medium">今期引渡済</p>
+                <p className="text-5xl font-bold mt-2">{fiscalYearDetailStats.completedHandovers}</p>
+                <p className="text-rose-200 text-sm mt-2">今期</p>
               </div>
             </CardContent>
           </Card>
