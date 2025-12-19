@@ -55,23 +55,23 @@ export const FundPlanA3PrintView = forwardRef<HTMLDivElement, FundPlanA3PrintVie
     return (
       <div
         ref={ref}
-        className="bg-white text-[7px] leading-tight"
+        className="bg-white text-[9px] leading-tight"
         style={{
           width: '420mm',
           height: '297mm',
-          padding: '5mm',
+          padding: '6mm',
           fontFamily: "'Noto Sans JP', 'Hiragino Kaku Gothic Pro', 'メイリオ', sans-serif",
           boxSizing: 'border-box',
         }}
       >
         {/* ===== ヘッダー ===== */}
-        <div className="flex justify-between items-start mb-1 pb-1 border-b-2 border-orange-500">
+        <div className="flex justify-between items-start mb-2 pb-1 border-b-2 border-orange-500">
           <div className="flex items-baseline gap-3">
-            <h1 className="text-base font-bold">{data.teiName || '○○'}様邸 資金計画書</h1>
+            <h1 className="text-lg font-bold">{data.teiName || '○○'}様邸 資金計画書</h1>
             <span className="text-sm font-bold text-orange-600 border border-orange-600 px-2 py-0.5">{data.productType}</span>
-            <span className="text-[8px]">仕様</span>
+            <span className="text-[9px]">仕様</span>
           </div>
-          <div className="text-right text-[6px] space-y-0.5">
+          <div className="text-right text-[8px] space-y-0.5">
             <div className="flex gap-4 justify-end">
               <span>工事名称: {data.constructionName || `${data.teiName}様邸　新築工事`}</span>
               <span>建築場所: {data.constructionAddress || '-'}</span>
@@ -94,14 +94,14 @@ export const FundPlanA3PrintView = forwardRef<HTMLDivElement, FundPlanA3PrintVie
           {/* ===== 左カラム: 標準仕様 + 建築費用 + 諸費用・土地費用 ===== */}
           <div className="space-y-1" style={{ width: '38%' }}>
             {/* 標準仕様 */}
-            <div className="border rounded p-1">
-              <div className="text-[7px] font-bold mb-0.5 bg-gray-100 px-1 py-0.5">標準仕様</div>
-              <div className="grid grid-cols-4 gap-1 text-[5px]">
+            <div className="border rounded p-1.5">
+              <div className="text-[9px] font-bold mb-1 bg-gray-100 px-1.5 py-0.5">標準仕様</div>
+              <div className="grid grid-cols-4 gap-1.5 text-[7px]">
                 <div>
                   <p className="font-bold text-orange-600 mb-0.5">高性能</p>
                   <ul className="space-y-0.5">
                     {standardSpecifications.highPerformance.map((item, i) => (
-                      <li key={i}>● {item}</li>
+                      <li key={i} className="break-words">● {item}</li>
                     ))}
                   </ul>
                 </div>
@@ -109,7 +109,7 @@ export const FundPlanA3PrintView = forwardRef<HTMLDivElement, FundPlanA3PrintVie
                   <p className="font-bold text-blue-600 mb-0.5">断熱・気密・快適性能</p>
                   <ul className="space-y-0.5">
                     {standardSpecifications.insulationAirtight.map((item, i) => (
-                      <li key={i}>● {item}</li>
+                      <li key={i} className="break-words">● {item}</li>
                     ))}
                   </ul>
                 </div>
@@ -117,7 +117,7 @@ export const FundPlanA3PrintView = forwardRef<HTMLDivElement, FundPlanA3PrintVie
                   <p className="font-bold text-green-600 mb-0.5">耐久性能</p>
                   <ul className="space-y-0.5">
                     {standardSpecifications.durability.map((item, i) => (
-                      <li key={i}>● {item}</li>
+                      <li key={i} className="break-words">● {item}</li>
                     ))}
                   </ul>
                 </div>
@@ -125,99 +125,99 @@ export const FundPlanA3PrintView = forwardRef<HTMLDivElement, FundPlanA3PrintVie
                   <p className="font-bold text-purple-600 mb-0.5">テクノロジー</p>
                   <ul className="space-y-0.5">
                     {standardSpecifications.technology.map((item, i) => (
-                      <li key={i}>● {item}</li>
+                      <li key={i} className="break-words">● {item}</li>
                     ))}
                   </ul>
                 </div>
               </div>
-              <div className="text-[4px] text-gray-500 mt-0.5 border-t pt-0.5">
+              <div className="text-[6px] text-gray-500 mt-0.5 border-t pt-0.5">
                 {specificationNotes.map((note, i) => (
-                  <div key={i}>{note}</div>
+                  <div key={i} className="break-words">{note}</div>
                 ))}
               </div>
             </div>
 
             {/* 建築費用 */}
-            <div className="border rounded p-1">
-              <div className="text-[7px] font-bold mb-0.5 bg-orange-100 px-1 py-0.5">建築費用</div>
+            <div className="border rounded p-1.5">
+              <div className="text-[9px] font-bold mb-1 bg-orange-100 px-1.5 py-0.5">建築費用</div>
 
               {/* ❶建物本体工事 */}
-              <div className="mb-1 pb-0.5 border-b">
-                <div className="flex justify-between text-[6px]">
+              <div className="mb-1 pb-1 border-b">
+                <div className="flex justify-between text-[8px]">
                   <span className="font-bold">❶建物本体工事</span>
                   <span>小計①（税抜）<span className="font-bold ml-1">{formatCurrency(calculation.subtotalBuildingMain)}円</span></span>
                 </div>
-                <div className="text-[5px] text-gray-600 mt-0.5">
+                <div className="text-[7px] text-gray-600 mt-0.5">
                   仕様: {data.productType} | 施工面積: {data.constructionArea}坪 × 坪単価: {formatCurrency(data.pricePerTsubo)}円 = {formatCurrency(calculation.subtotalBuildingMain)}円
                 </div>
               </div>
 
               {/* ❷付帯工事費用A */}
-              <div className="mb-1 pb-0.5 border-b">
-                <div className="flex justify-between text-[6px]">
+              <div className="mb-1 pb-1 border-b">
+                <div className="flex justify-between text-[8px]">
                   <span className="font-bold">❷付帯工事費用Ａ（建物本体工事以外にかかる費用）</span>
                   <span>小計②（税抜）<span className="font-bold ml-1">{formatCurrency(calculation.subtotalIncidentalA)}円</span></span>
                 </div>
-                <div className="grid grid-cols-2 gap-x-2 text-[5px] text-gray-600 mt-0.5">
-                  <div className="flex justify-between"><span>確認申請費用</span><span>一式 {formatCurrency(data.incidentalCostA.confirmationApplicationFee)}</span></div>
-                  <div className="flex justify-between"><span>屋外電気・給水・排水・雨水工事</span><span>一式 {formatCurrency(data.incidentalCostA.outdoorElectricWaterDrainageFee)}</span></div>
-                  <div className="flex justify-between"><span>構造計算</span><span>一式 {formatCurrency(data.incidentalCostA.structuralCalculation)}</span></div>
-                  <div className="flex justify-between"><span>瑕疵保険・地盤保証・シロアリ保証</span><span>一式 {formatCurrency(data.incidentalCostA.defectInsuranceGroundTermiteWarranty)}</span></div>
-                  <div className="flex justify-between"><span>構造図作成費用</span><span>一式 {formatCurrency(data.incidentalCostA.structuralDrawingFee)}</span></div>
-                  <div className="flex justify-between"><span>設計・工事監理費用</span><span>一式 {formatCurrency(data.incidentalCostA.designSupervisionFee)}</span></div>
-                  <div className="flex justify-between"><span>BELS評価書申請費用</span><span>一式 {formatCurrency(data.incidentalCostA.belsApplicationFee)}</span></div>
-                  <div className="flex justify-between"><span>安全対策費用</span><span>一式 {formatCurrency(data.incidentalCostA.safetyMeasuresFee)}</span></div>
-                  <div className="flex justify-between"><span>長期優良住宅申請費用</span><span>一式 {formatCurrency(data.incidentalCostA.longTermHousingApplicationFee)}</span></div>
-                  <div className="flex justify-between"><span>仮設工事費用（仮設電気、仮設水道含む）</span><span>一式 {formatCurrency(data.incidentalCostA.temporaryConstructionFee)}</span></div>
+                <div className="grid grid-cols-2 gap-x-2 text-[6px] text-gray-600 mt-0.5">
+                  <div className="flex justify-between"><span>確認申請費用</span><span className="whitespace-nowrap">一式 {formatCurrency(data.incidentalCostA.confirmationApplicationFee)}</span></div>
+                  <div className="flex justify-between"><span>屋外電気・給水・排水・雨水工事</span><span className="whitespace-nowrap">一式 {formatCurrency(data.incidentalCostA.outdoorElectricWaterDrainageFee)}</span></div>
+                  <div className="flex justify-between"><span>構造計算</span><span className="whitespace-nowrap">一式 {formatCurrency(data.incidentalCostA.structuralCalculation)}</span></div>
+                  <div className="flex justify-between"><span>瑕疵保険・地盤保証・シロアリ保証</span><span className="whitespace-nowrap">一式 {formatCurrency(data.incidentalCostA.defectInsuranceGroundTermiteWarranty)}</span></div>
+                  <div className="flex justify-between"><span>構造図作成費用</span><span className="whitespace-nowrap">一式 {formatCurrency(data.incidentalCostA.structuralDrawingFee)}</span></div>
+                  <div className="flex justify-between"><span>設計・工事監理費用</span><span className="whitespace-nowrap">一式 {formatCurrency(data.incidentalCostA.designSupervisionFee)}</span></div>
+                  <div className="flex justify-between"><span>BELS評価書申請費用</span><span className="whitespace-nowrap">一式 {formatCurrency(data.incidentalCostA.belsApplicationFee)}</span></div>
+                  <div className="flex justify-between"><span>安全対策費用</span><span className="whitespace-nowrap">一式 {formatCurrency(data.incidentalCostA.safetyMeasuresFee)}</span></div>
+                  <div className="flex justify-between"><span>長期優良住宅申請費用</span><span className="whitespace-nowrap">一式 {formatCurrency(data.incidentalCostA.longTermHousingApplicationFee)}</span></div>
+                  <div className="flex justify-between"><span>仮設工事費用（仮設電気、仮設水道含む）</span><span className="whitespace-nowrap">一式 {formatCurrency(data.incidentalCostA.temporaryConstructionFee)}</span></div>
                 </div>
               </div>
 
               {/* ❸付帯工事費用B */}
-              <div className="mb-1 pb-0.5 border-b">
-                <div className="flex justify-between text-[6px]">
+              <div className="mb-1 pb-1 border-b">
+                <div className="flex justify-between text-[8px]">
                   <span className="font-bold">❸付帯工事費用B（間取・オプションによって変わる費用）</span>
                   <span>小計③（税抜）<span className="font-bold ml-1">{formatCurrency(calculation.subtotalIncidentalB)}円</span></span>
                 </div>
-                <div className="grid grid-cols-2 gap-x-2 text-[5px] text-gray-600 mt-0.5">
-                  <div className="flex justify-between"><span>太陽光発電システム {data.incidentalCostB.solarPanelCount}枚 {data.incidentalCostB.solarPanelKw}kW</span><span>{formatCurrency(data.incidentalCostB.solarPanelCost)}</span></div>
-                  <div className="flex justify-between"><span>3階建て差額(＋40,000円/坪）</span><span>{data.floorCount === 3 ? `${data.constructionArea}坪 ${formatCurrency(data.constructionArea * 40000)}` : '--坪 0'}</span></div>
-                  <div className="flex justify-between"><span>蓄電池 {data.incidentalCostB.storageBatteryType}</span><span>一式 {formatCurrency(data.incidentalCostB.storageBatteryCost)}</span></div>
-                  <div className="flex justify-between"><span>屋根長さ割増 前面道路4m未満</span><span>(仮) 要相談</span></div>
-                  <div className="flex justify-between"><span>軒出工事・オーバーハング工事</span><span>{data.incidentalCostB.eaveOverhangArea}㎡ 一式 {formatCurrency(data.incidentalCostB.eaveOverhangCost)}</span></div>
-                  <div className="flex justify-between"><span>30坪未満/以上割増</span><span>{data.constructionArea < 30 ? `${data.constructionArea}坪` : '0坪'} {formatCurrency(data.constructionArea < 30 ? (30 - data.constructionArea) * 50000 : 0)}</span></div>
-                  <div className="flex justify-between"><span>下屋工事</span><span>{data.incidentalCostB.lowerRoofArea}㎡ 一式 {formatCurrency(data.incidentalCostB.lowerRoofCost)}</span></div>
-                  <div className="flex justify-between"><span>照明器具費用</span><span>(仮) {formatCurrency(data.incidentalCostB.lightingCost)}</span></div>
-                  <div className="flex justify-between"><span>バルコニー工事・吹抜工事</span><span>{data.incidentalCostB.balconyVoidArea}㎡ 一式 {formatCurrency(data.incidentalCostB.balconyVoidCost)}</span></div>
-                  <div className="flex justify-between"><span>オプション工事</span><span>(仮) {formatCurrency(data.incidentalCostB.optionCost)}</span></div>
+                <div className="grid grid-cols-2 gap-x-2 text-[6px] text-gray-600 mt-0.5">
+                  <div className="flex justify-between"><span>太陽光発電システム {data.incidentalCostB.solarPanelCount}枚 {data.incidentalCostB.solarPanelKw}kW</span><span className="whitespace-nowrap">{formatCurrency(data.incidentalCostB.solarPanelCost)}</span></div>
+                  <div className="flex justify-between"><span>3階建て差額(＋40,000円/坪）</span><span className="whitespace-nowrap">{data.floorCount === 3 ? `${data.constructionArea}坪 ${formatCurrency(data.constructionArea * 40000)}` : '--坪 0'}</span></div>
+                  <div className="flex justify-between"><span>蓄電池 {data.incidentalCostB.storageBatteryType}</span><span className="whitespace-nowrap">一式 {formatCurrency(data.incidentalCostB.storageBatteryCost)}</span></div>
+                  <div className="flex justify-between"><span>屋根長さ割増 前面道路4m未満</span><span className="whitespace-nowrap">(仮) 要相談</span></div>
+                  <div className="flex justify-between"><span>軒出工事・オーバーハング工事</span><span className="whitespace-nowrap">{data.incidentalCostB.eaveOverhangArea}㎡ 一式 {formatCurrency(data.incidentalCostB.eaveOverhangCost)}</span></div>
+                  <div className="flex justify-between"><span>30坪未満/以上割増</span><span className="whitespace-nowrap">{data.constructionArea < 30 ? `${data.constructionArea}坪` : '0坪'} {formatCurrency(data.constructionArea < 30 ? (30 - data.constructionArea) * 50000 : 0)}</span></div>
+                  <div className="flex justify-between"><span>下屋工事</span><span className="whitespace-nowrap">{data.incidentalCostB.lowerRoofArea}㎡ 一式 {formatCurrency(data.incidentalCostB.lowerRoofCost)}</span></div>
+                  <div className="flex justify-between"><span>照明器具費用</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.incidentalCostB.lightingCost)}</span></div>
+                  <div className="flex justify-between"><span>バルコニー工事・吹抜工事</span><span className="whitespace-nowrap">{data.incidentalCostB.balconyVoidArea}㎡ 一式 {formatCurrency(data.incidentalCostB.balconyVoidCost)}</span></div>
+                  <div className="flex justify-between"><span>オプション工事</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.incidentalCostB.optionCost)}</span></div>
                 </div>
               </div>
 
               {/* ❹付帯工事費用C */}
-              <div className="mb-1 pb-0.5 border-b">
-                <div className="flex justify-between text-[6px]">
+              <div className="mb-1 pb-1 border-b">
+                <div className="flex justify-between text-[8px]">
                   <span className="font-bold">❹付帯工事費用C（土地によってかかる費用）</span>
                   <span>小計④（税抜）<span className="font-bold ml-1">{formatCurrency(calculation.subtotalIncidentalC)}円</span></span>
                 </div>
-                <div className="grid grid-cols-2 gap-x-2 text-[5px] text-gray-600 mt-0.5">
-                  <div className="flex justify-between"><span>{data.fireProtectionZone}</span><span>(仮) {formatCurrency(data.incidentalCostC.fireProtectionCost)}</span></div>
-                  <div className="flex justify-between"><span>狭小道路割増＋㎥車指定</span><span>(仮) {formatCurrency(data.incidentalCostC.narrowRoadCubicExtra)}</span></div>
-                  <div className="flex justify-between"><span>解体工事</span><span>(仮) {formatCurrency(data.incidentalCostC.demolitionCost)}</span></div>
-                  <div className="flex justify-between"><span>深基礎割増（間取確定後精算）</span><span>(仮) {formatCurrency(data.incidentalCostC.deepFoundationExtra)}</span></div>
-                  <div className="flex justify-between"><span>各種申請管理費用</span><span>(仮) {formatCurrency(data.incidentalCostC.applicationManagementFee || 0)}</span></div>
-                  <div className="flex justify-between"><span>高台割増 高低差1000mm以上</span><span>(仮) {data.incidentalCostC.elevationExtra > 0 ? formatCurrency(data.incidentalCostC.elevationExtra) : '要相談'}</span></div>
-                  <div className="flex justify-between"><span>給排水引き込み工事</span><span>(仮) {formatCurrency(data.incidentalCostC.waterDrainageFee)}</span></div>
-                  <div className="flex justify-between"><span>旗竿地 道路幅4m以上</span><span>(仮) {formatCurrency(data.incidentalCostC.flagLotExtra || 0)}</span></div>
-                  <div className="flex justify-between"><span>地盤改良工事</span><span>(仮) {formatCurrency(data.incidentalCostC.groundImprovementFee)}</span></div>
-                  <div className="flex justify-between"><span>天空率 {data.incidentalCostC.skyFactorSides}面</span><span>(仮) {formatCurrency(data.incidentalCostC.skyFactorExtra)}</span></div>
-                  <div className="flex justify-between"><span>残土処理工事</span><span>(仮) {formatCurrency(data.incidentalCostC.soilDisposalFee)}</span></div>
-                  <div className="flex justify-between"><span>準耐火建築物</span><span>(仮) {formatCurrency(data.incidentalCostC.quasiFireproofExtra || 0)}</span></div>
-                  <div className="flex justify-between"><span>電線防護管</span><span>(仮) {formatCurrency(data.incidentalCostC.electricProtectionPipe)}</span></div>
-                  <div className="flex justify-between"><span>道路通行時間制限区域・作業短縮時間</span><span>(仮) {formatCurrency(data.incidentalCostC.roadTimeRestrictionExtra || 0)}</span></div>
+                <div className="grid grid-cols-2 gap-x-2 text-[6px] text-gray-600 mt-0.5">
+                  <div className="flex justify-between"><span>{data.fireProtectionZone}</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.incidentalCostC.fireProtectionCost)}</span></div>
+                  <div className="flex justify-between"><span>狭小道路割増＋㎥車指定</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.incidentalCostC.narrowRoadCubicExtra)}</span></div>
+                  <div className="flex justify-between"><span>解体工事</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.incidentalCostC.demolitionCost)}</span></div>
+                  <div className="flex justify-between"><span>深基礎割増（間取確定後精算）</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.incidentalCostC.deepFoundationExtra)}</span></div>
+                  <div className="flex justify-between"><span>各種申請管理費用</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.incidentalCostC.applicationManagementFee || 0)}</span></div>
+                  <div className="flex justify-between"><span>高台割増 高低差1000mm以上</span><span className="whitespace-nowrap">(仮) {data.incidentalCostC.elevationExtra > 0 ? formatCurrency(data.incidentalCostC.elevationExtra) : '要相談'}</span></div>
+                  <div className="flex justify-between"><span>給排水引き込み工事</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.incidentalCostC.waterDrainageFee)}</span></div>
+                  <div className="flex justify-between"><span>旗竿地 道路幅4m以上</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.incidentalCostC.flagLotExtra || 0)}</span></div>
+                  <div className="flex justify-between"><span>地盤改良工事</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.incidentalCostC.groundImprovementFee)}</span></div>
+                  <div className="flex justify-between"><span>天空率 {data.incidentalCostC.skyFactorSides}面</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.incidentalCostC.skyFactorExtra)}</span></div>
+                  <div className="flex justify-between"><span>残土処理工事</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.incidentalCostC.soilDisposalFee)}</span></div>
+                  <div className="flex justify-between"><span>準耐火建築物</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.incidentalCostC.quasiFireproofExtra || 0)}</span></div>
+                  <div className="flex justify-between"><span>電線防護管</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.incidentalCostC.electricProtectionPipe)}</span></div>
+                  <div className="flex justify-between"><span>道路通行時間制限区域・作業短縮時間</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.incidentalCostC.roadTimeRestrictionExtra || 0)}</span></div>
                 </div>
               </div>
 
               {/* 建築費用 合計 */}
-              <div className="bg-gray-50 p-1 rounded text-[6px]">
+              <div className="bg-gray-50 p-1.5 rounded text-[8px]">
                 <div className="flex justify-between mb-0.5">
                   <span>最終建物工事費用（税抜）❶＋❷＋❸＋❹</span>
                   <span className="font-bold">{formatCurrency(calculation.totalBuildingConstruction)}円</span>
@@ -235,55 +235,55 @@ export const FundPlanA3PrintView = forwardRef<HTMLDivElement, FundPlanA3PrintVie
 
             {/* ❺諸費用 & ❻土地費用 */}
             <div className="grid grid-cols-2 gap-1">
-              <div className="border rounded p-1">
-                <div className="flex justify-between text-[6px] mb-0.5">
+              <div className="border rounded p-1.5">
+                <div className="flex justify-between text-[8px] mb-0.5">
                   <span className="font-bold">❺諸費用</span>
                   <span className="font-bold">{formatCurrency(calculation.subtotalMiscellaneous)}円</span>
                 </div>
-                <div className="text-[4px] text-gray-500 mb-0.5">概算の金額となりますので、ご注意ください。</div>
-                <div className="text-[5px] text-gray-600 space-y-0.5">
-                  <div className="flex justify-between"><span>建物登記費用</span><span>(仮) {formatCurrency(data.miscellaneousCosts.buildingRegistrationFee)}</span></div>
-                  <div className="flex justify-between"><span>住宅ローン諸費用(保証料、手数料等)</span><span>(仮) {formatCurrency(data.miscellaneousCosts.housingLoanFee)}</span></div>
-                  <div className="flex justify-between"><span>つなぎローン諸費用(金利、手数料等)</span><span>(仮) {formatCurrency(data.miscellaneousCosts.bridgeLoanFee)}</span></div>
-                  <div className="flex justify-between"><span>金銭消費貸借契約印紙代</span><span>(仮) {formatCurrency(data.miscellaneousCosts.loanContractStampDuty)}</span></div>
-                  <div className="flex justify-between"><span>建物請負工事契約印紙代（電子契約）</span><span>{formatCurrency(data.miscellaneousCosts.constructionContractStampDuty)}</span></div>
-                  <div className="flex justify-between"><span>火災保険料</span><span>(仮) {formatCurrency(data.miscellaneousCosts.fireInsurance)}</span></div>
-                  <div className="flex justify-between"><span>先行工事（税込）</span><span>(仮) {formatCurrency(data.miscellaneousCosts.advanceConstruction)}</span></div>
-                  <div className="flex justify-between"><span>外構工事（税込）</span><span>(仮) {formatCurrency(data.miscellaneousCosts.exteriorConstruction)}</span></div>
-                  <div className="flex justify-between"><span>造作工事（税込）</span><span>(仮) {formatCurrency(data.miscellaneousCosts.customConstruction)}</span></div>
+                <div className="text-[6px] text-gray-500 mb-0.5">概算の金額となりますので、ご注意ください。</div>
+                <div className="text-[6px] text-gray-600 space-y-0.5">
+                  <div className="flex justify-between"><span>建物登記費用</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.miscellaneousCosts.buildingRegistrationFee)}</span></div>
+                  <div className="flex justify-between"><span>住宅ローン諸費用(保証料、手数料等)</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.miscellaneousCosts.housingLoanFee)}</span></div>
+                  <div className="flex justify-between"><span>つなぎローン諸費用(金利、手数料等)</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.miscellaneousCosts.bridgeLoanFee)}</span></div>
+                  <div className="flex justify-between"><span>金銭消費貸借契約印紙代</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.miscellaneousCosts.loanContractStampDuty)}</span></div>
+                  <div className="flex justify-between"><span>建物請負工事契約印紙代（電子契約）</span><span className="whitespace-nowrap">{formatCurrency(data.miscellaneousCosts.constructionContractStampDuty)}</span></div>
+                  <div className="flex justify-between"><span>火災保険料</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.miscellaneousCosts.fireInsurance)}</span></div>
+                  <div className="flex justify-between"><span>先行工事（税込）</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.miscellaneousCosts.advanceConstruction)}</span></div>
+                  <div className="flex justify-between"><span>外構工事（税込）</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.miscellaneousCosts.exteriorConstruction)}</span></div>
+                  <div className="flex justify-between"><span>造作工事（税込）</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.miscellaneousCosts.customConstruction)}</span></div>
                 </div>
               </div>
-              <div className="border rounded p-1">
-                <div className="flex justify-between text-[6px] mb-0.5">
+              <div className="border rounded p-1.5">
+                <div className="flex justify-between text-[8px] mb-0.5">
                   <span className="font-bold">❻土地費用</span>
                   <span className="font-bold">{formatCurrency(calculation.subtotalLand)}円</span>
                 </div>
-                <div className="text-[4px] text-gray-500 mb-0.5">概算の金額となりますので、ご注意ください。</div>
-                <div className="text-[5px] text-gray-600 space-y-0.5">
-                  <div className="flex justify-between"><span>土地売買代金</span><span>(仮) {formatCurrency(data.landCosts.landPrice)}</span></div>
-                  <div className="flex justify-between"><span>固定資産税清算金</span><span>(仮) {formatCurrency(data.landCosts.propertyTaxSettlement)}</span></div>
-                  <div className="flex justify-between"><span>土地売買契約印紙代</span><span>(仮) {formatCurrency(data.landCosts.landContractStampDuty)}</span></div>
-                  <div className="flex justify-between"><span>土地仲介手数料</span><span>(仮) {formatCurrency(data.landCosts.brokerageFee)}</span></div>
-                  <div className="flex justify-between"><span>土地登記費用</span><span>(仮) {formatCurrency(data.landCosts.landRegistrationFee)}</span></div>
-                  <div className="flex justify-between"><span>滅失登記費用</span><span>(仮) {formatCurrency(data.landCosts.extinctionRegistrationFee)}</span></div>
+                <div className="text-[6px] text-gray-500 mb-0.5">概算の金額となりますので、ご注意ください。</div>
+                <div className="text-[6px] text-gray-600 space-y-0.5">
+                  <div className="flex justify-between"><span>土地売買代金</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.landCosts.landPrice)}</span></div>
+                  <div className="flex justify-between"><span>固定資産税清算金</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.landCosts.propertyTaxSettlement)}</span></div>
+                  <div className="flex justify-between"><span>土地売買契約印紙代</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.landCosts.landContractStampDuty)}</span></div>
+                  <div className="flex justify-between"><span>土地仲介手数料</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.landCosts.brokerageFee)}</span></div>
+                  <div className="flex justify-between"><span>土地登記費用</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.landCosts.landRegistrationFee)}</span></div>
+                  <div className="flex justify-between"><span>滅失登記費用</span><span className="whitespace-nowrap">(仮) {formatCurrency(data.landCosts.extinctionRegistrationFee)}</span></div>
                 </div>
               </div>
             </div>
 
             {/* 最終合計 */}
-            <div className="border rounded p-1 bg-orange-50">
-              <div className="flex justify-between text-[6px] font-bold">
+            <div className="border rounded p-1.5 bg-orange-50">
+              <div className="flex justify-between text-[8px] font-bold">
                 <span>最終建物工事費用+諸費用+土地費用 合計（税込）❶＋❷＋❸＋❹＋❺＋❻</span>
                 <span className="text-orange-700">{formatCurrency(calculation.grandTotal)}円</span>
               </div>
-              <div className="flex justify-between text-[5px] text-gray-600 mt-0.5">
+              <div className="flex justify-between text-[7px] text-gray-600 mt-0.5">
                 <span>請負契約時の総額→ {formatCurrency(data.contractTotalAtSigning || 0)}円</span>
                 <span>請負契約時からの差額→ {formatCurrency(calculation.grandTotal - (data.contractTotalAtSigning || 0))}円</span>
               </div>
             </div>
 
             {/* 会社情報 */}
-            <div className="border rounded p-1 text-[5px]">
+            <div className="border rounded p-1.5 text-[7px]">
               <div className="flex justify-between">
                 <div>
                   <div className="font-bold">{companyInfo.name}</div>
@@ -304,41 +304,41 @@ export const FundPlanA3PrintView = forwardRef<HTMLDivElement, FundPlanA3PrintVie
           {/* ===== 中央カラム: 支払計画 + 工程 + 借入計画 + つなぎ融資 ===== */}
           <div className="space-y-1" style={{ width: '32%' }}>
             {/* 支払計画 */}
-            <div className="border rounded p-1">
-              <div className="text-[7px] font-bold mb-0.5 bg-blue-100 px-1 py-0.5">支払計画</div>
-              <table className="w-full text-[5px]">
+            <div className="border rounded p-1.5">
+              <div className="text-[9px] font-bold mb-1 bg-blue-100 px-1.5 py-0.5">支払計画</div>
+              <table className="w-full text-[6px]">
                 <thead>
                   <tr className="border-b bg-gray-50">
                     <th className="py-0.5 text-left"></th>
                     <th className="py-0.5 text-center">基準</th>
                     <th className="py-0.5 text-center">お客様</th>
                     <th className="py-0.5 text-center">支払予定日</th>
-                    <th className="py-0.5 text-right">支払金額(A+B)</th>
-                    <th className="py-0.5 text-right">自己資金(A)</th>
-                    <th className="py-0.5 text-right">銀行融資(B)</th>
+                    <th className="py-0.5 text-right whitespace-nowrap">支払金額(A+B)</th>
+                    <th className="py-0.5 text-right whitespace-nowrap">自己資金(A)</th>
+                    <th className="py-0.5 text-right whitespace-nowrap">銀行融資(B)</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b bg-gray-50">
-                    <td colSpan={7} className="py-0.5 font-bold">工事請負金額以外</td>
+                    <td colSpan={7} className="py-0.5 font-bold text-[7px]">工事請負金額以外</td>
                   </tr>
                   <tr className="border-b">
                     <td className="py-0.5">土地購入費用</td>
                     <td className="py-0.5 text-center">-</td>
                     <td className="py-0.5 text-center">-</td>
-                    <td className="py-0.5 text-center text-[4px]">{data.paymentPlanOutside.landPurchase.paymentDate || '-'}</td>
-                    <td className="py-0.5 text-right">{formatCurrency(data.paymentPlanOutside.landPurchase.totalAmount)}</td>
-                    <td className="py-0.5 text-right">{formatCurrency(data.paymentPlanOutside.landPurchase.selfFunding)}</td>
-                    <td className="py-0.5 text-right">{formatCurrency(data.paymentPlanOutside.landPurchase.bankLoan)}</td>
+                    <td className="py-0.5 text-center text-[5px]">{data.paymentPlanOutside.landPurchase.paymentDate || '-'}</td>
+                    <td className="py-0.5 text-right whitespace-nowrap">{formatCurrency(data.paymentPlanOutside.landPurchase.totalAmount)}</td>
+                    <td className="py-0.5 text-right whitespace-nowrap">{formatCurrency(data.paymentPlanOutside.landPurchase.selfFunding)}</td>
+                    <td className="py-0.5 text-right whitespace-nowrap">{formatCurrency(data.paymentPlanOutside.landPurchase.bankLoan)}</td>
                   </tr>
                   <tr className="border-b">
                     <td className="py-0.5">諸費用</td>
                     <td className="py-0.5 text-center">-</td>
                     <td className="py-0.5 text-center">-</td>
-                    <td className="py-0.5 text-center text-[4px]">土地・建物・銀行の契約時・決済時</td>
-                    <td className="py-0.5 text-right">{formatCurrency(data.paymentPlanOutside.miscellaneous.totalAmount)}</td>
-                    <td className="py-0.5 text-right">{formatCurrency(data.paymentPlanOutside.miscellaneous.selfFunding)}</td>
-                    <td className="py-0.5 text-right">{formatCurrency(data.paymentPlanOutside.miscellaneous.bankLoan)}</td>
+                    <td className="py-0.5 text-center text-[5px]">土地・建物・銀行の契約時・決済時</td>
+                    <td className="py-0.5 text-right whitespace-nowrap">{formatCurrency(data.paymentPlanOutside.miscellaneous.totalAmount)}</td>
+                    <td className="py-0.5 text-right whitespace-nowrap">{formatCurrency(data.paymentPlanOutside.miscellaneous.selfFunding)}</td>
+                    <td className="py-0.5 text-right whitespace-nowrap">{formatCurrency(data.paymentPlanOutside.miscellaneous.bankLoan)}</td>
                   </tr>
                   <tr className="border-b bg-gray-100">
                     <td colSpan={4} className="py-0.5 font-bold">工事請負代金以外合計</td>
