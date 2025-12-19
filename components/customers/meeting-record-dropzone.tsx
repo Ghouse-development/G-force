@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
   Upload,
   FileText,
-  X,
   File,
   FileSpreadsheet,
   FileImage,
@@ -17,21 +16,10 @@ import {
   Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
-
-interface MeetingRecord {
-  id: string
-  name: string
-  type: string
-  size: number
-  uploadedAt: Date
-  notes?: string
-}
+import { useFileStore, useAuthStore } from '@/store'
 
 interface MeetingRecordDropzoneProps {
   customerId: string
-  onUpload?: (files: File[]) => void
-  existingRecords?: MeetingRecord[]
-  onDelete?: (recordId: string) => void
 }
 
 // ファイルアイコンを取得
@@ -55,15 +43,25 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export function MeetingRecordDropzone({
-  customerId,
-  onUpload,
-  existingRecords = [],
-  onDelete,
-}: MeetingRecordDropzoneProps) {
+// ファイルをBase64に変換
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+export function MeetingRecordDropzone({ customerId }: MeetingRecordDropzoneProps) {
   const [isDragging, setIsDragging] = useState(false)
-  const [records, setRecords] = useState<MeetingRecord[]>(existingRecords)
   const [uploading, setUploading] = useState(false)
+
+  const { files, addFile, deleteFile, getFilesByCustomer } = useFileStore()
+  const { user } = useAuthStore()
+
+  // 顧客に紐づくファイルを取得
+  const customerFiles = getFilesByCustomer(customerId)
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -90,20 +88,17 @@ export function MeetingRecordDropzone({
       setUploading(true)
 
       try {
-        // 新しいレコードを作成
-        const newRecords: MeetingRecord[] = droppedFiles.map((file, index) => ({
-          id: `record-${Date.now()}-${index}`,
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          uploadedAt: new Date(),
-        }))
-
-        setRecords((prev) => [...prev, ...newRecords])
-
-        // コールバックを呼び出し
-        if (onUpload) {
-          onUpload(droppedFiles)
+        // ファイルを順次処理
+        for (const file of droppedFiles) {
+          const dataUrl = await fileToDataUrl(file)
+          addFile({
+            customerId,
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            dataUrl,
+            uploadedBy: user?.id || null,
+          })
         }
 
         toast.success(`${droppedFiles.length}件の商談記録をアップロードしました`)
@@ -113,43 +108,59 @@ export function MeetingRecordDropzone({
         setUploading(false)
       }
     },
-    [onUpload]
+    [customerId, addFile, user]
   )
 
   const handleFileInput = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
       const selectedFiles = Array.from(e.target.files || [])
       if (selectedFiles.length === 0) return
 
-      const newRecords: MeetingRecord[] = selectedFiles.map((file, index) => ({
-        id: `record-${Date.now()}-${index}`,
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        uploadedAt: new Date(),
-      }))
+      setUploading(true)
 
-      setRecords((prev) => [...prev, ...newRecords])
+      try {
+        for (const file of selectedFiles) {
+          const dataUrl = await fileToDataUrl(file)
+          addFile({
+            customerId,
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            dataUrl,
+            uploadedBy: user?.id || null,
+          })
+        }
 
-      if (onUpload) {
-        onUpload(selectedFiles)
+        toast.success(`${selectedFiles.length}件の商談記録をアップロードしました`)
+      } catch (error) {
+        toast.error('アップロードに失敗しました')
+      } finally {
+        setUploading(false)
+        // inputをリセット
+        e.target.value = ''
       }
-
-      toast.success(`${selectedFiles.length}件の商談記録をアップロードしました`)
     },
-    [onUpload]
+    [customerId, addFile, user]
   )
 
   const handleDeleteRecord = useCallback(
-    (recordId: string) => {
-      setRecords((prev) => prev.filter((r) => r.id !== recordId))
-      if (onDelete) {
-        onDelete(recordId)
-      }
+    (fileId: string) => {
+      deleteFile(fileId)
       toast.success('商談記録を削除しました')
     },
-    [onDelete]
+    [deleteFile]
   )
+
+  const handleDownload = useCallback((file: { name: string; dataUrl: string }) => {
+    // Base64データをダウンロード
+    const link = document.createElement('a')
+    link.href = file.dataUrl
+    link.download = file.name
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    toast.success('ダウンロードを開始しました')
+  }, [])
 
   return (
     <Card className="border-0 shadow-lg">
@@ -158,7 +169,7 @@ export function MeetingRecordDropzone({
           <FileText className="w-5 h-5 mr-2 text-orange-500" />
           商談記録
         </CardTitle>
-        <Badge variant="outline">{records.length}件</Badge>
+        <Badge variant="outline">{customerFiles.length}件</Badge>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* ドロップゾーン */}
@@ -199,33 +210,33 @@ export function MeetingRecordDropzone({
         </div>
 
         {/* アップロード済みファイル一覧 */}
-        {records.length > 0 && (
+        {customerFiles.length > 0 && (
           <div className="space-y-2">
             <p className="text-xs font-medium text-gray-500">
               アップロード済みファイル
             </p>
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {records.map((record) => (
+              {customerFiles.map((file) => (
                 <div
-                  key={record.id}
+                  key={file.id}
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group"
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    {getFileIcon(record.type)}
+                    {getFileIcon(file.type)}
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-gray-900 truncate">
-                        {record.name}
+                        {file.name}
                       </p>
                       <div className="flex items-center gap-2 text-[10px] text-gray-500">
-                        <span>{formatFileSize(record.size)}</span>
+                        <span>{formatFileSize(file.size)}</span>
                         <span>•</span>
                         <span className="flex items-center gap-0.5">
                           <Calendar className="w-2.5 h-2.5" />
-                          {record.uploadedAt.toLocaleDateString('ja-JP')}
+                          {new Date(file.uploadedAt).toLocaleDateString('ja-JP')}
                         </span>
                         <span className="flex items-center gap-0.5">
                           <Clock className="w-2.5 h-2.5" />
-                          {record.uploadedAt.toLocaleTimeString('ja-JP', {
+                          {new Date(file.uploadedAt).toLocaleTimeString('ja-JP', {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
@@ -238,10 +249,7 @@ export function MeetingRecordDropzone({
                       variant="ghost"
                       size="sm"
                       className="h-7 w-7 p-0"
-                      onClick={() => {
-                        // TODO: ダウンロード処理
-                        toast.info('ダウンロード機能は実装予定です')
-                      }}
+                      onClick={() => handleDownload(file)}
                     >
                       <Download className="w-3.5 h-3.5 text-gray-500" />
                     </Button>
@@ -249,7 +257,7 @@ export function MeetingRecordDropzone({
                       variant="ghost"
                       size="sm"
                       className="h-7 w-7 p-0 hover:bg-red-100"
-                      onClick={() => handleDeleteRecord(record.id)}
+                      onClick={() => handleDeleteRecord(file.id)}
                     >
                       <Trash2 className="w-3.5 h-3.5 text-red-500" />
                     </Button>
@@ -260,7 +268,7 @@ export function MeetingRecordDropzone({
           </div>
         )}
 
-        {records.length === 0 && (
+        {customerFiles.length === 0 && (
           <p className="text-sm text-gray-500 text-center py-2">
             商談記録がありません
           </p>

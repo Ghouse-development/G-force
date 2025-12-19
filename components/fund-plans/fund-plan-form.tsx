@@ -21,9 +21,11 @@ interface FundPlanFormProps {
   initialData?: FundPlanData
   onSave: (data: FundPlanData) => void
   onExportPDF: (data: FundPlanData, calculation: FundPlanCalculation) => void
+  customerId?: string
+  customerName?: string
 }
 
-export function FundPlanForm({ initialData, onSave, onExportPDF }: FundPlanFormProps) {
+export function FundPlanForm({ initialData, onSave, onExportPDF, customerId, customerName }: FundPlanFormProps) {
   const [data, setData] = useState<FundPlanData>(initialData || createDefaultFundPlanData())
   const [viewMode, setViewMode] = useState<'section' | 'full'>('section')
   const [activeTab, setActiveTab] = useState('basic')

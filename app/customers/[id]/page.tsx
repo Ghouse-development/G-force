@@ -455,17 +455,7 @@ export default function CustomerDetailPage() {
 
               <TabsContent value="activity" className="space-y-4">
                 {/* 商談記録ドロップゾーン */}
-                <MeetingRecordDropzone
-                  customerId={customer.id}
-                  onUpload={(files) => {
-                    console.log('Uploaded files:', files)
-                    // TODO: APIでファイルをアップロード
-                  }}
-                  onDelete={(recordId) => {
-                    console.log('Deleted record:', recordId)
-                    // TODO: APIで削除
-                  }}
-                />
+                <MeetingRecordDropzone customerId={customer.id} />
 
                 {/* 活動履歴 */}
                 <Card className="border-0 shadow-lg">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Layout } from '@/components/layout/layout'
 import { Card, CardContent } from '@/components/ui/card'
@@ -30,9 +30,10 @@ import {
   getCurrentFiscalYear,
 } from '@/types/database'
 import { PipelineKanban } from '@/components/customers/pipeline-kanban'
+import { useCustomerStore } from '@/store'
 
-// モックデータ（パイプライン対応版）
-const mockCustomers: Partial<Customer>[] = [
+// モックデータ（パイプライン対応版）- 初期データ用
+const initialMockCustomers: Partial<Customer>[] = [
   {
     id: '1',
     name: '山田 太郎',
@@ -161,7 +162,21 @@ export default function CustomersPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const fiscalYear = getCurrentFiscalYear()
 
-  const filteredCustomers = mockCustomers.filter((customer) => {
+  const { customers: storeCustomers, setCustomers, updateCustomerStatus } = useCustomerStore()
+
+  // 初期データの読み込み（ストアが空の場合のみ）
+  useEffect(() => {
+    if (storeCustomers.length === 0) {
+      setCustomers(initialMockCustomers as Customer[])
+    }
+  }, [storeCustomers.length, setCustomers])
+
+  // ストアのデータを使用（空の場合はモックデータ）
+  const customers = useMemo(() => {
+    return storeCustomers.length > 0 ? storeCustomers : initialMockCustomers
+  }, [storeCustomers])
+
+  const filteredCustomers = customers.filter((customer) => {
     const matchesSearch =
       customer.tei_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -173,8 +188,8 @@ export default function CustomersPage() {
     return matchesSearch && matchesStatus
   })
 
-  const pipelineCounts = getPipelineCounts(mockCustomers)
-  const conversionRates = calculateConversionRates(mockCustomers)
+  const pipelineCounts = getPipelineCounts(customers as Partial<Customer>[])
+  const conversionRates = calculateConversionRates(customers as Partial<Customer>[])
 
   // アクティブなパイプライン（ボツ・他決・引渡済を除く）
   const activeStatuses: PipelineStatus[] = ['反響', 'イベント参加', '限定会員', '面談', '建築申込', '内定', '契約', '着工', '引渡']
@@ -187,7 +202,7 @@ export default function CustomersPage() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">顧客管理</h1>
             <p className="text-gray-500 mt-1">
-              {fiscalYear}期 | 全{mockCustomers.length}件の顧客
+              {fiscalYear}期 | 全{customers.length}件の顧客
             </p>
           </div>
           <div className="flex items-center space-x-3">
@@ -267,7 +282,7 @@ export default function CustomersPage() {
               onClick={() => setSelectedStatus('all')}
               className={selectedStatus === 'all' ? 'bg-gray-800' : ''}
             >
-              全て ({mockCustomers.length})
+              全て ({customers.length})
             </Button>
             {activeStatuses.map((status) => {
               const config = PIPELINE_CONFIG[status]
@@ -328,8 +343,7 @@ export default function CustomersPage() {
             <PipelineKanban
               customers={filteredCustomers as Partial<Customer>[]}
               onStatusChange={(customerId, newStatus) => {
-                console.log(`Customer ${customerId} moved to ${newStatus}`)
-                // TODO: APIでステータス更新
+                updateCustomerStatus(customerId, newStatus)
               }}
             />
           </div>

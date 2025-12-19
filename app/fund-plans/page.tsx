@@ -1,72 +1,84 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/layout'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { FileText, Search, Plus, ChevronRight, Calendar, User } from 'lucide-react'
-import type { FundPlan, DocumentStatus } from '@/types/database'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
+  Plus,
+  Search,
+  FileText,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  Eye,
+  Download,
+  User,
+  Calendar,
+} from 'lucide-react'
+import { useFundPlanStore } from '@/store'
+import { formatCurrency, calculateFundPlan } from '@/lib/fund-plan/calculations'
+import { toast } from 'sonner'
 
-// Mock data
-const mockFundPlans: (FundPlan & { customer_name: string; tei_name: string })[] = [
-  {
-    id: 'fp-1',
-    customer_id: '1',
-    tenant_id: '00000000-0000-0000-0000-000000000001',
-    product_id: '1',
-    status: 'draft',
-    version: 1,
-    data: {},
-    created_by: 'dev-sales-001',
-    approved_by: null,
-    approved_at: null,
-    created_at: '2024-12-15T10:00:00Z',
-    updated_at: '2024-12-15T10:00:00Z',
-    customer_name: '山田 太郎',
-    tei_name: '山田様邸',
-  },
-  {
-    id: 'fp-2',
-    customer_id: '3',
-    tenant_id: '00000000-0000-0000-0000-000000000001',
-    product_id: '2',
-    status: 'approved',
-    version: 2,
-    data: {},
-    created_by: 'dev-sales-001',
-    approved_by: 'dev-manager-001',
-    approved_at: '2024-12-12T14:00:00Z',
-    created_at: '2024-12-10T09:00:00Z',
-    updated_at: '2024-12-12T14:00:00Z',
-    customer_name: '鈴木 一郎',
-    tei_name: '鈴木様邸',
-  },
-]
-
-const statusColors: Record<DocumentStatus, string> = {
-  draft: 'bg-gray-100 text-gray-600 border-gray-200',
-  submitted: 'bg-blue-100 text-blue-700 border-blue-200',
-  approved: 'bg-green-100 text-green-700 border-green-200',
-  rejected: 'bg-red-100 text-red-700 border-red-200',
-}
-
-const statusLabels: Record<DocumentStatus, string> = {
-  draft: '下書き',
-  submitted: '提出済',
-  approved: '承認済',
-  rejected: '差戻し',
+const statusConfig = {
+  draft: { label: '下書き', color: 'bg-gray-100 text-gray-700' },
+  submitted: { label: '提出済', color: 'bg-blue-100 text-blue-700' },
+  approved: { label: '承認済', color: 'bg-green-100 text-green-700' },
+  rejected: { label: '却下', color: 'bg-red-100 text-red-700' },
 }
 
 export default function FundPlansPage() {
+  const router = useRouter()
+  const { fundPlans, deleteFundPlan } = useFundPlanStore()
   const [searchQuery, setSearchQuery] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
-  const filteredPlans = mockFundPlans.filter((plan) =>
-    plan.tei_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    plan.customer_name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredPlans = useMemo(() => {
+    if (!searchQuery) return fundPlans
+    const query = searchQuery.toLowerCase()
+    return fundPlans.filter(
+      (plan) =>
+        plan.teiName.toLowerCase().includes(query) ||
+        plan.customerName?.toLowerCase().includes(query) ||
+        plan.data.constructionAddress?.toLowerCase().includes(query)
+    )
+  }, [fundPlans, searchQuery])
+
+  const handleDelete = () => {
+    if (deleteTarget) {
+      deleteFundPlan(deleteTarget)
+      toast.success('資金計画書を削除しました')
+      setDeleteTarget(null)
+    }
+  }
 
   return (
     <Layout>
@@ -74,10 +86,8 @@ export default function FundPlansPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">資金計画書</h1>
-            <p className="text-gray-500 mt-1">
-              全{mockFundPlans.length}件の資金計画書
-            </p>
+            <h1 className="text-2xl font-bold text-gray-900">資金計画書</h1>
+            <p className="text-gray-500">資金計画書の作成・管理</p>
           </div>
           <Link href="/fund-plans/new">
             <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
@@ -87,72 +97,210 @@ export default function FundPlansPage() {
           </Link>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <Input
-            placeholder="邸名、顧客名で検索..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 h-12 text-base rounded-xl border-gray-200"
-          />
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">総数</p>
+                  <p className="text-2xl font-bold">{fundPlans.length}</p>
+                </div>
+                <FileText className="w-8 h-8 text-gray-400" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">下書き</p>
+                  <p className="text-2xl font-bold">
+                    {fundPlans.filter((p) => p.status === 'draft').length}
+                  </p>
+                </div>
+                <Edit className="w-8 h-8 text-gray-400" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">提出済</p>
+                  <p className="text-2xl font-bold">
+                    {fundPlans.filter((p) => p.status === 'submitted').length}
+                  </p>
+                </div>
+                <Eye className="w-8 h-8 text-blue-400" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">承認済</p>
+                  <p className="text-2xl font-bold">
+                    {fundPlans.filter((p) => p.status === 'approved').length}
+                  </p>
+                </div>
+                <FileText className="w-8 h-8 text-green-400" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Fund Plans List */}
-        <div className="space-y-4">
-          {filteredPlans.length === 0 ? (
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-12 text-center">
-                <FileText className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500">資金計画書がありません</p>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredPlans.map((plan) => (
-              <Link key={plan.id} href={`/fund-plans/${plan.id}`}>
-                <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer group">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-5">
-                        <div className="w-14 h-14 bg-gradient-to-br from-orange-100 to-yellow-100 rounded-xl flex items-center justify-center shrink-0">
-                          <FileText className="w-7 h-7 text-orange-600" />
-                        </div>
-                        <div>
-                          <div className="flex items-center space-x-3 mb-1">
-                            <h3 className="text-lg font-bold text-gray-900">
-                              {plan.tei_name}
-                            </h3>
-                            <Badge
-                              variant="outline"
-                              className={statusColors[plan.status]}
-                            >
-                              {statusLabels[plan.status]}
-                            </Badge>
-                            <span className="text-sm text-gray-400">
-                              v{plan.version}
-                            </span>
+        {/* Search */}
+        <Card>
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">一覧</CardTitle>
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="検索..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {filteredPlans.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 mb-4">
+                  {searchQuery ? '該当する資金計画書がありません' : '資金計画書がありません'}
+                </p>
+                <Link href="/fund-plans/new">
+                  <Button variant="outline">
+                    <Plus className="w-4 h-4 mr-2" />
+                    新規作成
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>邸名</TableHead>
+                    <TableHead>顧客</TableHead>
+                    <TableHead>ステータス</TableHead>
+                    <TableHead className="text-right">合計金額</TableHead>
+                    <TableHead>作成日</TableHead>
+                    <TableHead className="w-10"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPlans.map((plan) => {
+                    const calculation = calculateFundPlan(plan.data)
+                    return (
+                      <TableRow
+                        key={plan.id}
+                        className="cursor-pointer hover:bg-gray-50"
+                        onClick={() => router.push(`/fund-plans/${plan.id}`)}
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-orange-500" />
+                            <span className="font-medium">{plan.teiName}</span>
                           </div>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <span className="flex items-center">
-                              <User className="w-4 h-4 mr-1" />
-                              {plan.customer_name}
-                            </span>
-                            <span className="flex items-center">
-                              <Calendar className="w-4 h-4 mr-1" />
-                              {new Date(plan.updated_at).toLocaleDateString('ja-JP')}
-                            </span>
+                        </TableCell>
+                        <TableCell>
+                          {plan.customerName ? (
+                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                              <User className="w-3 h-3" />
+                              {plan.customerName}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={statusConfig[plan.status].color}>
+                            {statusConfig[plan.status].label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(calculation.grandTotal)}円
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1 text-sm text-gray-500">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(plan.createdAt).toLocaleDateString('ja-JP')}
                           </div>
-                        </div>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-orange-500 transition-colors" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))
-          )}
-        </div>
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  router.push(`/fund-plans/${plan.id}`)
+                                }}
+                              >
+                                <Edit className="w-4 h-4 mr-2" />
+                                編集
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  router.push(`/fund-plans/${plan.id}?export=true`)
+                                }}
+                              >
+                                <Download className="w-4 h-4 mr-2" />
+                                PDF出力
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setDeleteTarget(plan.id)
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                削除
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>資金計画書を削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              この操作は取り消せません。資金計画書が完全に削除されます。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              削除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   )
 }

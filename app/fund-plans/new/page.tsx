@@ -1,7 +1,7 @@
 'use client'
 
-import { useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useCallback } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Layout } from '@/components/layout/layout'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
@@ -10,17 +10,32 @@ import { FundPlanForm } from '@/components/fund-plans/fund-plan-form'
 import { FundPlanA3PrintView } from '@/components/fund-plans/fund-plan-a3-print-view'
 import type { FundPlanData, FundPlanCalculation } from '@/types/fund-plan'
 import { generatePDFFromElement } from '@/lib/fund-plan/pdf-generator'
+import { useFundPlanStore, useAuthStore, useCustomerStore } from '@/store'
 
 export default function NewFundPlanPage() {
   const router = useRouter()
-  const printRef = useRef<HTMLDivElement>(null)
+  const searchParams = useSearchParams()
+  const customerId = searchParams.get('customerId')
+
+  const { addFundPlan } = useFundPlanStore()
+  const { user } = useAuthStore()
+  const { getCustomer } = useCustomerStore()
+
+  const customer = customerId ? getCustomer(customerId) : null
 
   const handleSave = async (data: FundPlanData) => {
     try {
-      // TODO: Save to database
-      console.log('Saving fund plan:', data)
+      const id = addFundPlan({
+        customerId: customerId,
+        customerName: customer?.name || null,
+        teiName: data.teiName || '未設定',
+        status: 'draft',
+        data: data,
+        createdBy: user?.id || null,
+      })
+
       toast.success('資金計画書を保存しました')
-      router.push('/fund-plans')
+      router.push(`/fund-plans/${id}`)
     } catch {
       toast.error('保存に失敗しました')
     }
@@ -91,7 +106,9 @@ export default function NewFundPlanPage() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">資金計画書 新規作成</h1>
-            <p className="text-gray-500">Excelと同等の詳細な資金計画を作成できます</p>
+            <p className="text-gray-500">
+              {customer ? `${customer.name}様` : 'Excelと同等の詳細な資金計画を作成できます'}
+            </p>
           </div>
         </div>
 
@@ -99,6 +116,8 @@ export default function NewFundPlanPage() {
         <FundPlanForm
           onSave={handleSave}
           onExportPDF={handleExportPDF}
+          customerId={customerId || undefined}
+          customerName={customer?.name}
         />
       </div>
     </Layout>
