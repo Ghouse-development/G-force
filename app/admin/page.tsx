@@ -8,11 +8,14 @@ import {
   Package,
   Users,
   Settings,
-  BarChart3,
   ChevronRight,
   Building2,
   Target,
   Bell,
+  Database,
+  Shield,
+  Download,
+  Building,
 } from 'lucide-react'
 
 const adminMenus = [
@@ -24,11 +27,39 @@ const adminMenus = [
     color: 'from-orange-500 to-yellow-500',
   },
   {
+    title: 'マスターデータ管理',
+    description: '選択肢やマスターデータを管理',
+    icon: Database,
+    href: '/admin/master-data',
+    color: 'from-teal-500 to-cyan-500',
+  },
+  {
     title: 'ユーザー管理',
     description: 'ユーザーと権限を管理',
     icon: Users,
     href: '/admin/users',
     color: 'from-blue-500 to-blue-600',
+  },
+  {
+    title: 'セキュリティ設定',
+    description: 'アクセス権限とセキュリティ',
+    icon: Shield,
+    href: '/admin/security',
+    color: 'from-red-500 to-rose-500',
+  },
+  {
+    title: 'バックアップ・エクスポート',
+    description: 'データのバックアップと出力',
+    icon: Download,
+    href: '/admin/backup',
+    color: 'from-violet-500 to-purple-500',
+  },
+  {
+    title: 'FC（フランチャイズ）管理',
+    description: '加盟店・テナント管理',
+    icon: Building,
+    href: '/admin/franchise',
+    color: 'from-amber-500 to-orange-500',
   },
   {
     title: '営業目標設定',
@@ -43,7 +74,7 @@ const adminMenus = [
     description: '通知タイミングを設定',
     icon: Bell,
     href: '/admin/notifications',
-    color: 'from-purple-500 to-indigo-500',
+    color: 'from-indigo-500 to-blue-500',
     disabled: true,
   },
 ]

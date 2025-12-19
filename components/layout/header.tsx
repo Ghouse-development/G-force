@@ -19,6 +19,7 @@ import {
   Command,
   Menu,
   X,
+  Landmark,
 } from 'lucide-react'
 import { GlobalSearch, useGlobalSearch } from '@/components/search/global-search'
 import { Button } from '@/components/ui/button'
@@ -42,6 +43,7 @@ const documentNavigation = [
   { name: '契約書', href: '/contracts', icon: FileSignature, description: '請負契約書管理' },
   { name: '引継書', href: '/handovers', icon: ClipboardList, description: '工事部への引継' },
   { name: '資金計画書', href: '/fund-plans', icon: FileText, description: '資金計画作成' },
+  { name: 'ローン管理', href: '/loans', icon: Landmark, description: '住宅ローン進捗管理' },
 ]
 
 const adminNavigation = [

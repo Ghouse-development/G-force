@@ -89,6 +89,7 @@ export function ContractAttachments({ contractId, editable = true }: ContractAtt
           type: file.type,
           size: file.size,
           dataUrl,
+          category: file.type.startsWith('image/') ? 'image' : 'document',
           uploadedBy: user?.id || null,
         })
         toast.success(`${file.name} をアップロードしました`)
