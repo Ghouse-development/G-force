@@ -11,7 +11,6 @@ import {
   File,
   FileSpreadsheet,
   FileImage,
-  FilePdf,
   Calendar,
   Clock,
   Download,
@@ -41,7 +40,7 @@ function getFileIcon(type: string) {
     return <FileSpreadsheet className="w-5 h-5 text-green-600" />
   }
   if (type.includes('pdf')) {
-    return <FilePdf className="w-5 h-5 text-red-600" />
+    return <FileText className="w-5 h-5 text-red-600" />
   }
   if (type.includes('image')) {
     return <FileImage className="w-5 h-5 text-blue-600" />

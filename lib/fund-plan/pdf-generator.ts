@@ -25,11 +25,12 @@ export async function generatePDFFromElement(
   try {
     // html2canvasでキャプチャ
     const canvas = await html2canvas(element, {
-      scale: 2,
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
-    })
+      windowWidth: element.scrollWidth * 2,
+      windowHeight: element.scrollHeight * 2,
+    } as Parameters<typeof html2canvas>[1])
 
     // PDF設定
     const pdf = new jsPDF({
