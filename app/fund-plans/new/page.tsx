@@ -70,12 +70,12 @@ function NewFundPlanContent() {
       // PDF生成
       const element = printContainer.firstElementChild as HTMLElement
       if (element) {
-        const success = await generatePDFFromElement(element, data.teiName || '資金計画書')
-        if (success) {
-          toast.success('PDFを出力しました')
-        } else {
-          toast.error('PDF出力に失敗しました')
-        }
+        await generatePDFFromElement(element, {
+          filename: `${data.teiName || '資金計画書'}.pdf`,
+          orientation: 'landscape',
+          format: 'a3',
+        })
+        toast.success('PDFを出力しました')
       }
 
       // クリーンアップ
