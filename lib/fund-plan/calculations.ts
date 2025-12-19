@@ -194,7 +194,6 @@ export function calculateSolarEffect(
 
   // 買わずに済んだ電気代（自家消費分）
   const selfConsumption = dailyConsumption + batteryCharge
-  const monthlySelfConsumption = selfConsumption * 365 / 12
   // 平均電気代から自家消費で節約した金額を計算
   const savedElectricityCost = Math.round(averageElectricityCost * (selfConsumption / (selfConsumption + dailySale)))
 

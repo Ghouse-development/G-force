@@ -56,30 +56,31 @@ function NewFundPlanContent() {
       const { createRoot } = await import('react-dom/client')
       const root = createRoot(printContainer)
 
-      await new Promise<void>((resolve) => {
-        root.render(
-          <FundPlanA3PrintView
-            data={data}
-            calculation={calculation}
-            onReady={async (element) => {
-              if (element) {
-                const success = await generatePDFFromElement(element, data.teiName || '資金計画書')
-                if (success) {
-                  toast.success('PDFを出力しました')
-                } else {
-                  toast.error('PDF出力に失敗しました')
-                }
-                // クリーンアップ
-                setTimeout(() => {
-                  root.unmount()
-                  document.body.removeChild(printContainer)
-                  resolve()
-                }, 500)
-              }
-            }}
-          />
-        )
-      })
+      // レンダリング
+      root.render(
+        <FundPlanA3PrintView
+          data={data}
+          calculation={calculation}
+        />
+      )
+
+      // レンダリング完了を待つ
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // PDF生成
+      const element = printContainer.firstElementChild as HTMLElement
+      if (element) {
+        const success = await generatePDFFromElement(element, data.teiName || '資金計画書')
+        if (success) {
+          toast.success('PDFを出力しました')
+        } else {
+          toast.error('PDF出力に失敗しました')
+        }
+      }
+
+      // クリーンアップ
+      root.unmount()
+      document.body.removeChild(printContainer)
     } catch (error) {
       console.error('PDF export error:', error)
       toast.error('PDF出力に失敗しました')

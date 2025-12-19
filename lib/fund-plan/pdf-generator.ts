@@ -2,7 +2,7 @@ import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import type { FundPlanData, FundPlanCalculation } from '@/types/fund-plan'
 import { formatCurrency } from './calculations'
-import { companyInfo, standardSpecifications, defaultRemarks } from './master-data'
+import { companyInfo } from './master-data'
 
 // PDF生成オプション
 interface PDFOptions {
