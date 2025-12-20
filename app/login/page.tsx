@@ -47,6 +47,9 @@ const mockUsers: Record<string, DBUser> = {
   },
 }
 
+// Development mode check - only show quick login in development
+const isDevelopment = process.env.NODE_ENV === 'development'
+
 export default function LoginPage() {
   const router = useRouter()
   const { setUser } = useAuthStore()
@@ -97,50 +100,58 @@ export default function LoginPage() {
 
         {/* Login Card */}
         <Card className="p-10 bg-white/90 backdrop-blur-2xl border-0 shadow-2xl rounded-3xl animate-slide-in">
-          {/* Quick Login - Always visible */}
-          <div className="mb-8">
-            <p className="text-sm font-medium text-center text-gray-500 mb-5">
-              ログインするアカウントを選択
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleDevLogin('sales')}
-                disabled={isLoading}
-                className="h-14 border-gray-200 hover:border-blue-500 hover:bg-blue-50 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 p-2"
-              >
-                <User className="w-5 h-5 text-blue-500" />
-                <span className="text-xs font-medium">営業</span>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleDevLogin('manager')}
-                disabled={isLoading}
-                className="h-14 border-gray-200 hover:border-orange-500 hover:bg-orange-50 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 p-2"
-              >
-                <User className="w-5 h-5 text-orange-500" />
-                <span className="text-xs font-medium">部門長</span>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleDevLogin('admin')}
-                disabled={isLoading}
-                className="h-14 border-gray-200 hover:border-green-500 hover:bg-green-50 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 p-2"
-              >
-                <Shield className="w-5 h-5 text-green-500" />
-                <span className="text-xs font-medium">管理者</span>
-              </Button>
+          {/* Quick Login - Development only */}
+          {isDevelopment && (
+            <div className="mb-8">
+              <p className="text-sm font-medium text-center text-gray-500 mb-5">
+                開発モード：テストアカウント
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleDevLogin('sales')}
+                  disabled={isLoading}
+                  className="h-14 border-gray-200 hover:border-blue-500 hover:bg-blue-50 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 p-2"
+                >
+                  <User className="w-5 h-5 text-blue-500" />
+                  <span className="text-xs font-medium">営業</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleDevLogin('manager')}
+                  disabled={isLoading}
+                  className="h-14 border-gray-200 hover:border-orange-500 hover:bg-orange-50 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 p-2"
+                >
+                  <User className="w-5 h-5 text-orange-500" />
+                  <span className="text-xs font-medium">部門長</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleDevLogin('admin')}
+                  disabled={isLoading}
+                  className="h-14 border-gray-200 hover:border-green-500 hover:bg-green-50 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 p-2"
+                >
+                  <Shield className="w-5 h-5 text-green-500" />
+                  <span className="text-xs font-medium">管理者</span>
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Google Login - Optional */}
-          <div className="pt-6 border-t border-gray-100">
-            <p className="text-xs text-center text-gray-400 mb-4">
-              または
-            </p>
+          {/* Google Login */}
+          <div className={isDevelopment ? "pt-6 border-t border-gray-100" : ""}>
+            {isDevelopment ? (
+              <p className="text-xs text-center text-gray-400 mb-4">
+                または
+              </p>
+            ) : (
+              <p className="text-sm font-medium text-center text-gray-500 mb-5">
+                アカウントでログイン
+              </p>
+            )}
             <Button
               onClick={handleGoogleLogin}
               disabled={isLoading}

@@ -66,12 +66,45 @@ export function ContractAttachments({ contractId, editable = true }: ContractAtt
     ? files.filter(f => f.customerId === contractId)
     : []
 
+  // 許可されるファイルタイプ
+  const ALLOWED_FILE_TYPES: Record<string, string[]> = {
+    'image/jpeg': ['.jpg', '.jpeg'],
+    'image/png': ['.png'],
+    'image/gif': ['.gif'],
+    'image/webp': ['.webp'],
+    'application/pdf': ['.pdf'],
+    'application/msword': ['.doc'],
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+    'application/vnd.ms-excel': ['.xls'],
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+    'text/plain': ['.txt'],
+    'text/csv': ['.csv'],
+  }
+
+  // ファイルタイプを検証
+  const isValidFileType = (file: File): boolean => {
+    // MIMEタイプをチェック
+    if (ALLOWED_FILE_TYPES[file.type]) {
+      return true
+    }
+
+    // 拡張子でもチェック（MIMEタイプが不正確な場合の対策）
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase()
+    return Object.values(ALLOWED_FILE_TYPES).flat().includes(ext)
+  }
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files
     if (!selectedFiles || selectedFiles.length === 0) return
 
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i]
+
+      // ファイルタイプ検証
+      if (!isValidFileType(file)) {
+        toast.error(`${file.name} は許可されていないファイル形式です`)
+        continue
+      }
 
       // ファイルサイズ制限（5MB）
       if (file.size > 5 * 1024 * 1024) {

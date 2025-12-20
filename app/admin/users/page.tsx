@@ -1,12 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Users, Mail, Phone } from 'lucide-react'
+import { ArrowLeft, Mail, Phone } from 'lucide-react'
 
 // Mock data
 const mockUsers = [

@@ -1,5 +1,3 @@
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
 import type { FundPlanData, FundPlanCalculation } from '@/types/fund-plan'
 import { formatCurrency } from './calculations'
 import { companyInfo } from './master-data'
@@ -23,13 +21,17 @@ export async function generatePDFFromElement(
   } = options
 
   try {
-    // html2canvasでキャプチャ
+    // 動的インポートでバンドルサイズを削減
+    const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf'),
+    ])
+
+    // html2canvasでキャプチャ（型定義が古いため any でラップ）
     const canvas = await html2canvas(element, {
       useCORS: true,
       logging: false,
-      backgroundColor: '#ffffff',
-      windowWidth: element.scrollWidth * 2,
-      windowHeight: element.scrollHeight * 2,
+      scale: 2,
     } as Parameters<typeof html2canvas>[1])
 
     // PDF設定
@@ -74,16 +76,19 @@ export async function generatePDFFromElement(
 }
 
 // 資金計画書データからPDFを直接生成（簡易版）
-export function generateSimplePDF(
+export async function generateSimplePDF(
   data: FundPlanData,
   calculation: FundPlanCalculation,
   options: PDFOptions = {}
-): void {
+): Promise<void> {
   const {
     filename = `資金計画書_${data.teiName || '未設定'}.pdf`,
     orientation = 'portrait',
     format = 'a4',
   } = options
+
+  // 動的インポートでバンドルサイズを削減
+  const { default: jsPDF } = await import('jspdf')
 
   const pdf = new jsPDF({
     orientation,
