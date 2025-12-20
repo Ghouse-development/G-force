@@ -47,8 +47,8 @@ const mockUsers: Record<string, DBUser> = {
   },
 }
 
-// Development mode check - only show quick login in development
-const isDevelopment = process.env.NODE_ENV === 'development'
+// Show dev login buttons (enabled during development phase)
+const showDevLogin = true
 
 export default function LoginPage() {
   const router = useRouter()
@@ -101,7 +101,7 @@ export default function LoginPage() {
         {/* Login Card */}
         <Card className="p-10 bg-white/90 backdrop-blur-2xl border-0 shadow-2xl rounded-3xl animate-slide-in">
           {/* Quick Login - Development only */}
-          {isDevelopment && (
+          {showDevLogin && (
             <div className="mb-8">
               <p className="text-sm font-medium text-center text-gray-500 mb-5">
                 開発モード：テストアカウント
@@ -142,8 +142,8 @@ export default function LoginPage() {
           )}
 
           {/* Google Login */}
-          <div className={isDevelopment ? "pt-6 border-t border-gray-100" : ""}>
-            {isDevelopment ? (
+          <div className={showDevLogin ? "pt-6 border-t border-gray-100" : ""}>
+            {showDevLogin ? (
               <p className="text-xs text-center text-gray-400 mb-4">
                 または
               </p>
