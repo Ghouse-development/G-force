@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Noto_Sans_JP } from 'next/font/google'
 import { Toaster } from 'sonner'
+import { SyncProvider } from '@/components/providers/sync-provider'
 import './globals.css'
 
 const notoSansJP = Noto_Sans_JP({
@@ -25,7 +26,9 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className={`${notoSansJP.variable} font-sans antialiased bg-gray-50`}>
-        {children}
+        <SyncProvider>
+          {children}
+        </SyncProvider>
         <Toaster
           position="top-right"
           richColors

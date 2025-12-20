@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Layout } from '@/components/layout/layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { useAuthStore } from '@/store'
+import { useAuthStore, useCustomerStore, usePlanRequestStore, useContractStore } from '@/store'
 import {
   Users,
   FileText,
@@ -20,9 +20,8 @@ import {
   Calendar,
   FileSignature,
   FileEdit,
-  Home,
-  Building,
   Download,
+  RefreshCw,
 } from 'lucide-react'
 import {
   type Customer,
@@ -35,129 +34,175 @@ import { PipelineFunnel } from '@/components/dashboard/pipeline-funnel'
 import { DeadlineAlerts } from '@/components/dashboard/deadline-alerts'
 import { PendingApprovals } from '@/components/dashboard/pending-approvals'
 import { OnboardingGuide, HelpButton } from '@/components/help/onboarding-guide'
-
-// 今期の期間を取得
-const fiscalYear = getCurrentFiscalYear()
-const fiscalYearRange = getFiscalYearRange(fiscalYear)
-
-// パイプラインステージごとの件数（モックデータ）
-const pipelineCounts: Record<PipelineStatus, number> = {
-  '反響': 5,
-  'イベント参加': 3,
-  '限定会員': 2,
-  '面談': 8,
-  '建築申込': 4,
-  '内定': 3,
-  'ボツ': 2,
-  '他決': 1,
-  '契約': 6,
-  '着工': 4,
-  '引渡': 2,
-  '引渡済': 8,
-}
-
-// 遷移率データ（モックデータ）
-const conversionRates = {
-  leadToEvent: 60.0,           // 反響→イベント参加
-  eventToMember: 66.7,         // イベント参加→限定会員
-  memberToMeeting: 100.0,      // 限定会員→面談
-  meetingToApp: 50.0,          // 面談→建築申込
-  appToContract: 75.0,         // 建築申込→契約
-  totalConversion: 12.5,       // 反響→契約（全体）
-  // 新しい遷移率
-  memberToApp: 41.7,           // 限定会員～建築申込
-  memberToContract: 25.0,      // 限定会員～契約
-  lecturerToMember: 33.3,      // 講師～限定会員
-  lecturerToContract: 8.3,     // 講師～契約
-}
-
-// 今期の詳細データ（モックデータ）
-const fiscalYearDetailStats = {
-  limitedMembers: 24,          // 限定会員数
-  thisMonthMeetings: 8,        // 今月面談数
-  buildingApplications: 10,    // 建築申込数
-  newContracts: 6,             // 今期請負契約数（棟）
-  newContractsAmount: 240000000, // 今期請負契約金額（税別）
-  changeContracts: 4,          // 今期変更契約数（棟）
-  changeContractsAmount: 48000000, // 今期変更契約金額（税別）
-  completedHandovers: 8,       // 今期引渡済数
-}
-
-// 今期の実績（引渡ベース）
-const fiscalYearStats = {
-  targetHandovers: 24,     // 目標引渡数
-  actualHandovers: 8,      // 実績引渡数
-  targetAmount: 960000000, // 目標金額（9.6億）
-  actualAmount: 320000000, // 実績金額（3.2億）
-}
-
-// 最近の顧客（モックデータ）
-const mockRecentCustomers: (Partial<Customer> & { pipeline_status: PipelineStatus })[] = [
-  { id: '1', name: '山田 太郎', pipeline_status: '面談', tei_name: '山田様邸', lead_date: '2024-12-15' },
-  { id: '2', name: '佐藤 花子', pipeline_status: '建築申込', tei_name: '佐藤様邸', lead_date: '2024-12-14' },
-  { id: '3', name: '鈴木 一郎', pipeline_status: '契約', tei_name: '鈴木様邸', lead_date: '2024-12-13' },
-  { id: '4', name: '田中 美咲', pipeline_status: '内定', tei_name: '田中様邸', lead_date: '2024-12-12' },
-  { id: '5', name: '高橋 健太', pipeline_status: '反響', tei_name: '高橋様邸', lead_date: '2024-12-11' },
-]
-
-// 待機中のタスク（モックデータ）
-const pendingTasks = {
-  planRequests: 3,  // プラン依頼（確認待ち）
-  contracts: 2,     // 契約書（承認待ち）
-  handovers: 1,     // 引継書（未提出）
-}
-
-// ファネルデータ（遷移率グラフ用）
-const funnelData = [
-  { status: '反響' as PipelineStatus, count: 48, amount: 0 },
-  { status: 'イベント参加' as PipelineStatus, count: 32, amount: 0 },
-  { status: '限定会員' as PipelineStatus, count: 24, amount: 0 },
-  { status: '面談' as PipelineStatus, count: 18, amount: 540000000 },
-  { status: '建築申込' as PipelineStatus, count: 10, amount: 400000000 },
-  { status: '契約' as PipelineStatus, count: 6, amount: 240000000 },
-]
-
-// 期限アラート（モックデータ）
-const deadlineItems = [
-  {
-    id: '1',
-    type: 'plan_request' as const,
-    title: '山田様邸プラン',
-    deadline: new Date(Date.now() - 86400000).toISOString(), // 昨日（期限超過）
-    customerName: '山田 太郎',
-    href: '/plan-requests/1',
-  },
-  {
-    id: '2',
-    type: 'contract' as const,
-    title: '佐藤様邸契約書',
-    deadline: new Date().toISOString(), // 今日
-    customerName: '佐藤 花子',
-    href: '/contracts/2',
-  },
-  {
-    id: '3',
-    type: 'plan_request' as const,
-    title: '鈴木様邸プラン',
-    deadline: new Date(Date.now() + 86400000 * 2).toISOString(), // 2日後
-    customerName: '鈴木 一郎',
-    href: '/plan-requests/3',
-  },
-  {
-    id: '4',
-    type: 'handover' as const,
-    title: '田中様邸引継書',
-    deadline: new Date(Date.now() + 86400000 * 5).toISOString(), // 5日後
-    customerName: '田中 美咲',
-    href: '/handovers/4',
-  },
-]
+import { getSyncState } from '@/lib/db/sync-service'
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
+  const { customers } = useCustomerStore()
+  const { planRequests } = usePlanRequestStore()
+  const { contracts } = useContractStore()
+  const [mounted, setMounted] = useState(false)
+  const [syncState, setSyncState] = useState({ lastSyncAt: null as string | null })
+
+  useEffect(() => {
+    setMounted(true)
+    setSyncState(getSyncState())
+  }, [])
+
+  // 今期の期間を取得
+  const fiscalYear = getCurrentFiscalYear()
+  const fiscalYearRange = getFiscalYearRange(fiscalYear)
+
+  // パイプラインステージごとの件数（実データから計算）
+  const pipelineCounts = useMemo(() => {
+    if (!mounted) return {} as Record<PipelineStatus, number>
+
+    const counts: Record<string, number> = {
+      '反響': 0,
+      'イベント参加': 0,
+      '限定会員': 0,
+      '面談': 0,
+      '建築申込': 0,
+      '内定': 0,
+      'ボツ': 0,
+      '他決': 0,
+      '契約': 0,
+      '着工': 0,
+      '引渡': 0,
+      '引渡済': 0,
+    }
+
+    customers.forEach(customer => {
+      if (customer.pipeline_status) {
+        counts[customer.pipeline_status] = (counts[customer.pipeline_status] || 0) + 1
+      }
+    })
+
+    return counts as Record<PipelineStatus, number>
+  }, [customers, mounted])
+
+  // 今期の詳細統計（実データから計算）
+  const fiscalYearDetailStats = useMemo(() => {
+    if (!mounted) {
+      return {
+        limitedMembers: 0,
+        thisMonthMeetings: 0,
+        buildingApplications: 0,
+        newContracts: 0,
+        newContractsAmount: 0,
+        changeContracts: 0,
+        changeContractsAmount: 0,
+        completedHandovers: 0,
+      }
+    }
+
+    const now = new Date()
+    const thisMonth = now.getMonth()
+    const thisYear = now.getFullYear()
+
+    return {
+      limitedMembers: customers.filter(c => c.pipeline_status === '限定会員').length,
+      thisMonthMeetings: customers.filter(c => {
+        if (!c.meeting_date) return false
+        const meetingDate = new Date(c.meeting_date)
+        return meetingDate.getMonth() === thisMonth && meetingDate.getFullYear() === thisYear
+      }).length,
+      buildingApplications: customers.filter(c =>
+        ['建築申込', '内定', '契約', '着工', '引渡', '引渡済'].includes(c.pipeline_status)
+      ).length,
+      newContracts: contracts.filter(c => c.status === '契約完了').length,
+      newContractsAmount: contracts.reduce((sum, c) =>
+        c.status === '契約完了' ? sum + (c.total_amount || 0) : sum, 0
+      ),
+      changeContracts: 0, // TODO: 変更契約の追跡が必要
+      changeContractsAmount: 0,
+      completedHandovers: customers.filter(c => c.pipeline_status === '引渡済').length,
+    }
+  }, [customers, contracts, mounted])
+
+  // 今期の実績（引渡ベース）
+  const fiscalYearStats = useMemo(() => {
+    const actualHandovers = pipelineCounts['引渡済'] || 0
+    const actualAmount = fiscalYearDetailStats.newContractsAmount
+
+    return {
+      targetHandovers: 24,     // 目標引渡数（設定可能にする予定）
+      actualHandovers,
+      targetAmount: 960000000, // 目標金額（9.6億）
+      actualAmount,
+    }
+  }, [pipelineCounts, fiscalYearDetailStats])
+
+  // 遷移率の計算（実データから）
+  const conversionRates = useMemo(() => {
+    const total = customers.length || 1
+    const contracted = pipelineCounts['契約'] || 0
+    const limitedMembers = pipelineCounts['限定会員'] || 1
+    const applications = pipelineCounts['建築申込'] || 1
+
+    return {
+      memberToApp: Math.round((applications / limitedMembers) * 100) || 0,
+      appToContract: Math.round((contracted / applications) * 100) || 0,
+      memberToContract: Math.round((contracted / limitedMembers) * 100) || 0,
+      lecturerToMember: 33.3, // TODO: 講師データの追跡
+      lecturerToContract: 8.3,
+      totalConversion: Math.round((contracted / total) * 100) || 0,
+    }
+  }, [customers, pipelineCounts])
+
+  // 最近の顧客（実データから）
+  const recentCustomers = useMemo(() => {
+    if (!mounted) return []
+    return [...customers]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5)
+  }, [customers, mounted])
+
+  // 待機中のタスク（実データから）
+  const pendingTasks = useMemo(() => ({
+    planRequests: planRequests.filter(p => p.status === '確認待ち').length,
+    contracts: contracts.filter(c => c.status === '上長承認待ち' || c.status === '書類確認').length,
+    handovers: 0, // TODO: 引継書ストアから取得
+  }), [planRequests, contracts])
+
+  // ファネルデータ
+  const funnelData = useMemo(() => [
+    { status: '反響' as PipelineStatus, count: pipelineCounts['反響'] || 0, amount: 0 },
+    { status: 'イベント参加' as PipelineStatus, count: pipelineCounts['イベント参加'] || 0, amount: 0 },
+    { status: '限定会員' as PipelineStatus, count: pipelineCounts['限定会員'] || 0, amount: 0 },
+    { status: '面談' as PipelineStatus, count: pipelineCounts['面談'] || 0, amount: 0 },
+    { status: '建築申込' as PipelineStatus, count: pipelineCounts['建築申込'] || 0, amount: 0 },
+    { status: '契約' as PipelineStatus, count: pipelineCounts['契約'] || 0, amount: fiscalYearDetailStats.newContractsAmount },
+  ], [pipelineCounts, fiscalYearDetailStats])
+
+  // 期限アラート（実データから）
+  const deadlineItems = useMemo(() => {
+    const items: Array<{
+      id: string
+      type: 'plan_request' | 'contract' | 'handover'
+      title: string
+      deadline: string
+      customerName: string
+      href: string
+    }> = []
+
+    planRequests
+      .filter(p => p.deadline && p.status !== '完了')
+      .forEach(p => {
+        items.push({
+          id: p.id,
+          type: 'plan_request',
+          title: `${p.tei_name || '未設定'}プラン`,
+          deadline: p.deadline!,
+          customerName: p.customer_name || '',
+          href: `/plan-requests/${p.id}`,
+        })
+      })
+
+    return items.slice(0, 4)
+  }, [planRequests])
 
   const handoverProgress = (fiscalYearStats.actualHandovers / fiscalYearStats.targetHandovers) * 100
-  const amountProgress = (fiscalYearStats.actualAmount / fiscalYearStats.targetAmount) * 100
 
   // 今日の挨拶
   const getGreeting = () => {
@@ -169,12 +214,22 @@ export default function DashboardPage() {
 
   // アクティブパイプラインの合計
   const activePipelineTotal =
-    pipelineCounts['反響'] +
-    pipelineCounts['イベント参加'] +
-    pipelineCounts['限定会員'] +
-    pipelineCounts['面談'] +
-    pipelineCounts['建築申込'] +
-    pipelineCounts['内定']
+    (pipelineCounts['反響'] || 0) +
+    (pipelineCounts['イベント参加'] || 0) +
+    (pipelineCounts['限定会員'] || 0) +
+    (pipelineCounts['面談'] || 0) +
+    (pipelineCounts['建築申込'] || 0) +
+    (pipelineCounts['内定'] || 0)
+
+  if (!mounted) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <RefreshCw className="w-8 h-8 animate-spin text-orange-500" />
+        </div>
+      </Layout>
+    )
+  }
 
   return (
     <Layout>
@@ -195,6 +250,14 @@ export default function DashboardPage() {
               })}
               <span className="mx-2">|</span>
               <span className="text-orange-600 font-medium">{fiscalYear}期</span>
+              {syncState.lastSyncAt && (
+                <>
+                  <span className="mx-2">|</span>
+                  <span className="text-xs text-gray-400">
+                    最終同期: {new Date(syncState.lastSyncAt).toLocaleTimeString('ja-JP')}
+                  </span>
+                </>
+              )}
             </p>
           </div>
           <div className="flex items-center space-x-3">
@@ -259,7 +322,6 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-4">
-                {/* パイプライン遷移 */}
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-gray-500 mb-2">パイプライン遷移</p>
                   <div className="flex justify-between items-center">
@@ -275,7 +337,6 @@ export default function DashboardPage() {
                     <span className="font-bold text-emerald-600">{conversionRates.memberToContract}%</span>
                   </div>
                 </div>
-                {/* 講師起点 */}
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-gray-500 mb-2">講師起点の遷移率</p>
                   <div className="flex justify-between items-center">
@@ -287,7 +348,6 @@ export default function DashboardPage() {
                     <span className="font-bold text-purple-600">{conversionRates.lecturerToContract}%</span>
                   </div>
                 </div>
-                {/* 全体 */}
                 <div className="flex flex-col justify-center items-center bg-white rounded-lg p-3">
                   <span className="text-xs text-gray-500 mb-1">全体契約率</span>
                   <span className="font-bold text-3xl text-indigo-600">{conversionRates.totalConversion}%</span>
@@ -368,6 +428,9 @@ export default function DashboardPage() {
               <span className="flex items-center">
                 <TrendingUp className="w-5 h-5 mr-2 text-orange-500" />
                 パイプライン概要
+                <Badge variant="outline" className="ml-2 text-xs">
+                  合計 {customers.length}件
+                </Badge>
               </span>
               <Link href="/customers">
                 <Button variant="ghost" size="sm" className="text-orange-500">
@@ -381,7 +444,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between overflow-x-auto pb-2">
               {(['反響', 'イベント参加', '限定会員', '面談', '建築申込', '内定', '契約', '着工', '引渡'] as PipelineStatus[]).map((status, index) => {
                 const config = PIPELINE_CONFIG[status]
-                const count = pipelineCounts[status]
+                const count = pipelineCounts[status] || 0
                 return (
                   <div key={status} className="flex items-center">
                     <div className="text-center px-3">
@@ -496,15 +559,15 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <span className="text-gray-600">ボツ（見込み薄）</span>
-                  <span className="font-bold text-gray-700">{pipelineCounts['ボツ']}件</span>
+                  <span className="font-bold text-gray-700">{pipelineCounts['ボツ'] || 0}件</span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
                   <span className="text-gray-600">他決（競合負け）</span>
-                  <span className="font-bold text-red-700">{pipelineCounts['他決']}件</span>
+                  <span className="font-bold text-red-700">{pipelineCounts['他決'] || 0}件</span>
                 </div>
                 <div className="pt-2 border-t text-center">
                   <p className="text-sm text-gray-500">
-                    失注率: {((pipelineCounts['ボツ'] + pipelineCounts['他決']) / (activePipelineTotal + pipelineCounts['契約'] + pipelineCounts['ボツ'] + pipelineCounts['他決']) * 100).toFixed(1)}%
+                    失注率: {(((pipelineCounts['ボツ'] || 0) + (pipelineCounts['他決'] || 0)) / Math.max(1, activePipelineTotal + (pipelineCounts['契約'] || 0) + (pipelineCounts['ボツ'] || 0) + (pipelineCounts['他決'] || 0)) * 100).toFixed(1)}%
                   </p>
                 </div>
               </div>
@@ -527,38 +590,51 @@ export default function DashboardPage() {
             </Link>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {mockRecentCustomers.map((customer) => {
-                const statusConfig = PIPELINE_CONFIG[customer.pipeline_status]
-                return (
-                  <Link
-                    key={customer.id}
-                    href={`/customers/${customer.id}`}
-                    className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-yellow-100 rounded-xl flex items-center justify-center">
-                        <span className="text-lg font-bold text-orange-600">
-                          {customer.name?.charAt(0)}
+            {recentCustomers.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p>まだ顧客データがありません</p>
+                <Link href="/customers/new">
+                  <Button className="mt-4" variant="outline">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    最初の顧客を登録
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentCustomers.map((customer) => {
+                  const statusConfig = PIPELINE_CONFIG[customer.pipeline_status]
+                  return (
+                    <Link
+                      key={customer.id}
+                      href={`/customers/${customer.id}`}
+                      className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-yellow-100 rounded-xl flex items-center justify-center">
+                          <span className="text-lg font-bold text-orange-600">
+                            {customer.name?.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">{customer.tei_name || customer.name}</p>
+                          <p className="text-sm text-gray-500">{customer.name}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <Badge className={`${statusConfig.bgColor} ${statusConfig.color} border-0`}>
+                          {statusConfig.label}
+                        </Badge>
+                        <span className="text-sm text-gray-400">
+                          {customer.lead_date && new Date(customer.lead_date).toLocaleDateString('ja-JP')}
                         </span>
                       </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">{customer.tei_name}</p>
-                        <p className="text-sm text-gray-500">{customer.name}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <Badge className={`${statusConfig.bgColor} ${statusConfig.color} border-0`}>
-                        {statusConfig.label}
-                      </Badge>
-                      <span className="text-sm text-gray-400">
-                        {customer.lead_date && new Date(customer.lead_date).toLocaleDateString('ja-JP')}
-                      </span>
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
