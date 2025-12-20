@@ -44,6 +44,9 @@ import { useContractStore, type StoredContract } from '@/store'
 import { useAuthStore } from '@/store'
 import type { ContractStatus } from '@/types/database'
 import { CONTRACT_STATUS_CONFIG, CONTRACT_STATUS_ORDER } from '@/types/database'
+import { Breadcrumb } from '@/components/ui/breadcrumb'
+import { TableSkeleton } from '@/components/ui/skeleton-loaders'
+import { HelpTooltip } from '@/components/ui/help-tooltip'
 
 // アイコンマッピング
 const STATUS_ICONS: Record<ContractStatus, typeof FileEdit> = {
@@ -387,9 +390,7 @@ export default function ContractsPage() {
   if (!mounted) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500" />
-        </div>
+        <TableSkeleton rows={5} columns={5} />
       </Layout>
     )
   }
@@ -397,11 +398,17 @@ export default function ContractsPage() {
   return (
     <Layout>
       <div className="space-y-6">
+        {/* パンくずリスト */}
+        <Breadcrumb items={[{ label: '契約書管理' }]} />
+
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">契約書管理</h1>
-            <p className="text-gray-500 mt-1">請負契約書の作成・承認フロー管理</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">契約書管理</h1>
+              <HelpTooltip content="請負契約書の作成から承認までのフローを管理します。ステータスで進捗を確認できます。" />
+            </div>
+            <p className="text-gray-600 mt-1">請負契約書の作成・承認フロー管理</p>
           </div>
           <div className="flex items-center space-x-3">
             <DropdownMenu>
@@ -432,11 +439,11 @@ export default function ContractsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">全契約</p>
+                  <p className="text-sm text-gray-600">全契約</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
                 </div>
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <FileSignature className="w-5 h-5 text-blue-600" />
+                <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <FileSignature className="w-6 h-6 text-blue-600" />
                 </div>
               </div>
             </CardContent>
@@ -445,11 +452,11 @@ export default function ContractsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">処理中</p>
+                  <p className="text-sm text-gray-600">処理中</p>
                   <p className="text-2xl font-bold text-orange-600">{stats.pending}</p>
                 </div>
-                <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-orange-600" />
+                <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-orange-600" />
                 </div>
               </div>
             </CardContent>
@@ -458,11 +465,11 @@ export default function ContractsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">完了</p>
+                  <p className="text-sm text-gray-600">完了</p>
                   <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
                 </div>
-                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6 text-green-600" />
                 </div>
               </div>
             </CardContent>
@@ -471,13 +478,13 @@ export default function ContractsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">契約総額</p>
+                  <p className="text-sm text-gray-600">契約総額</p>
                   <p className="text-xl font-bold text-gray-900">
                     ¥{(stats.totalAmount / 10000).toLocaleString()}万
                   </p>
                 </div>
-                <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-purple-600" />
                 </div>
               </div>
             </CardContent>
@@ -558,8 +565,9 @@ export default function ContractsPage() {
             {filteredContracts.length === 0 ? (
               <Card className="border-0 shadow-lg">
                 <CardContent className="p-12 text-center">
-                  <FileSignature className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                  <p className="text-gray-500">契約書がありません</p>
+                  <FileSignature className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-700 text-base">契約書がありません</p>
+                  <p className="text-gray-600 text-sm mt-2">新規作成ボタンから契約書を作成してください</p>
                 </CardContent>
               </Card>
             ) : (
@@ -599,18 +607,18 @@ export default function ContractsPage() {
                                   </Badge>
                                 )}
                               </div>
-                              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-700">
                                 <span className="flex items-center">
-                                  <User className="w-3 h-3 mr-1" />
+                                  <User className="w-4 h-4 mr-1" />
                                   {contract.customer_name || '未設定'}
                                 </span>
                                 {contract.contract_date && (
                                   <span className="flex items-center">
-                                    <Calendar className="w-3 h-3 mr-1" />
+                                    <Calendar className="w-4 h-4 mr-1" />
                                     契約日: {new Date(contract.contract_date).toLocaleDateString('ja-JP')}
                                   </span>
                                 )}
-                                <span className="text-gray-400">
+                                <span className="text-gray-600">
                                   作成者: {contract.created_by_name || '不明'}
                                 </span>
                               </div>
@@ -618,7 +626,7 @@ export default function ContractsPage() {
                           </div>
                           <div className="flex items-center space-x-4">
                             <div className="text-right hidden md:block">
-                              <p className="text-xs text-gray-500">契約金額</p>
+                              <p className="text-sm text-gray-600">契約金額</p>
                               <p className="font-bold text-gray-900">
                                 ¥{(contract.total_amount || 0).toLocaleString()}
                               </p>
@@ -658,14 +666,14 @@ export default function ContractsPage() {
                             <h4 className="font-semibold text-gray-900 mb-1">
                               {contract.tei_name || '未設定'}
                             </h4>
-                            <p className="text-sm text-gray-500 mb-2">
+                            <p className="text-sm text-gray-700 mb-2">
                               {contract.customer_name || '未設定'}
                             </p>
                             <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-400">
+                              <span className="text-sm text-gray-600">
                                 {contract.contract_number || '-'}
                               </span>
-                              <span className="text-sm font-semibold text-gray-700">
+                              <span className="text-sm font-semibold text-gray-800">
                                 ¥{((contract.total_amount || 0) / 10000).toFixed(0)}万
                               </span>
                             </div>
@@ -680,7 +688,7 @@ export default function ContractsPage() {
                       </Link>
                     ))}
                     {statusContracts.length === 0 && (
-                      <div className="text-center py-8 text-gray-400 text-sm">
+                      <div className="text-center py-8 text-gray-600 text-sm">
                         データなし
                       </div>
                     )}

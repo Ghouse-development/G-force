@@ -51,6 +51,9 @@ import {
 import { toast } from 'sonner'
 import { useLoanStore, type Loan, type LoanStatus } from '@/store/loan-store'
 import { useCustomerStore } from '@/store'
+import { Breadcrumb } from '@/components/ui/breadcrumb'
+import { TableSkeleton } from '@/components/ui/skeleton-loaders'
+import { HelpTooltip } from '@/components/ui/help-tooltip'
 
 const LOAN_STATUS_CONFIG: Record<LoanStatus, { label: string; color: string; bgColor: string; icon: typeof Clock }> = {
   '事前審査中': { label: '事前審査中', color: 'text-blue-700', bgColor: 'bg-blue-100', icon: Clock },
@@ -220,9 +223,7 @@ export default function LoansPage() {
   if (!mounted) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
-        </div>
+        <TableSkeleton rows={5} columns={6} />
       </Layout>
     )
   }
@@ -230,11 +231,17 @@ export default function LoansPage() {
   return (
     <Layout>
       <div className="space-y-6">
+        {/* パンくずリスト */}
+        <Breadcrumb items={[{ label: 'ローン管理' }]} />
+
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">ローン管理</h1>
-            <p className="text-gray-500 mt-1">住宅ローンの審査状況を一元管理</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">ローン管理</h1>
+              <HelpTooltip content="住宅ローンの審査状況を管理します。事前審査から融資実行までの進捗を追跡できます。" />
+            </div>
+            <p className="text-gray-600 mt-1">住宅ローンの審査状況を一元管理</p>
           </div>
           <Button
             className="bg-gradient-to-r from-orange-500 to-yellow-500"
@@ -246,70 +253,70 @@ export default function LoansPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <Card className="border-0 shadow-lg">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <Card className="border-0 shadow-md">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-500">総件数</p>
+                  <p className="text-sm text-gray-600">総件数</p>
                   <p className="text-2xl font-bold">{stats.total}</p>
                 </div>
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Landmark className="w-5 h-5 text-blue-600" />
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Landmark className="w-6 h-6 text-blue-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-0 shadow-lg">
+          <Card className="border-0 shadow-md">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-500">審査中</p>
+                  <p className="text-sm text-gray-600">審査中</p>
                   <p className="text-2xl font-bold text-amber-600">{stats.inProgress}</p>
                 </div>
-                <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-amber-600" />
+                <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-amber-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-0 shadow-lg">
+          <Card className="border-0 shadow-md">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-500">承認済み</p>
+                  <p className="text-sm text-gray-600">承認済み</p>
                   <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
                 </div>
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6 text-green-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-0 shadow-lg">
+          <Card className="border-0 shadow-md">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-500">否決/取消</p>
+                  <p className="text-sm text-gray-600">否決/取消</p>
                   <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
                 </div>
-                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                  <XCircle className="w-5 h-5 text-red-600" />
+                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                  <XCircle className="w-6 h-6 text-red-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-0 shadow-lg">
+          <Card className="border-0 shadow-md col-span-2 md:col-span-1">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-500">総借入額</p>
+                  <p className="text-sm text-gray-600">総借入額</p>
                   <p className="text-lg font-bold text-gray-900">
                     {(stats.totalAmount / 10000).toLocaleString()}万
                   </p>
                 </div>
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-purple-600" />
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-purple-600" />
                 </div>
               </div>
             </CardContent>
@@ -362,8 +369,10 @@ export default function LoansPage() {
               <TableBody>
                 {filteredLoans.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                      ローン情報がありません
+                    <TableCell colSpan={8} className="text-center py-12">
+                      <Landmark className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                      <p className="text-gray-700 text-base">ローン情報がありません</p>
+                      <p className="text-gray-600 text-sm mt-2">「ローン登録」ボタンから新規登録してください</p>
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -375,13 +384,13 @@ export default function LoansPage() {
                         <TableCell>
                           <div>
                             <p className="font-medium">{loan.teiName || loan.customerName}</p>
-                            <p className="text-xs text-gray-500">{loan.customerName}</p>
+                            <p className="text-sm text-gray-600">{loan.customerName}</p>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div>
                             <p className="font-medium">{loan.bank}</p>
-                            <p className="text-xs text-gray-500">{loan.loanType}</p>
+                            <p className="text-sm text-gray-600">{loan.loanType}</p>
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">
@@ -395,7 +404,7 @@ export default function LoansPage() {
                             {statusConfig.label}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm text-gray-500">
+                        <TableCell className="text-sm text-gray-700">
                           {new Date(loan.updatedAt).toLocaleDateString('ja-JP')}
                         </TableCell>
                         <TableCell>

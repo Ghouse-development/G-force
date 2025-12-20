@@ -37,6 +37,9 @@ import {
 } from '@/types/database'
 import { usePlanRequestStore } from '@/store'
 import { exportToCSV } from '@/lib/export'
+import { Breadcrumb } from '@/components/ui/breadcrumb'
+import { PlanRequestListSkeleton } from '@/components/ui/skeleton-loaders'
+import { HelpTooltip, PLAN_STATUS_HELP } from '@/components/ui/help-tooltip'
 
 // アイコンマッピング
 const ICON_MAP = {
@@ -173,8 +176,14 @@ export default function PlanRequestsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<PlanRequestStatus | 'all'>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('list')
+  const [mounted, setMounted] = useState(false)
 
   const { planRequests: storeRequests, setPlanRequests } = usePlanRequestStore()
+
+  // クライアントマウント確認
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // 初期データの読み込み
   useEffect(() => {
@@ -227,14 +236,29 @@ export default function PlanRequestsPage() {
   // 進行中のステータス（完了以外）
   const activeStatuses = PLAN_REQUEST_STATUS_ORDER.filter(s => s !== '完了')
 
+  // スケルトンローディング
+  if (!mounted) {
+    return (
+      <Layout>
+        <PlanRequestListSkeleton count={5} />
+      </Layout>
+    )
+  }
+
   return (
     <Layout>
       <div className="space-y-6">
+        {/* パンくずリスト */}
+        <Breadcrumb items={[{ label: 'プラン依頼' }]} />
+
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">プラン依頼</h1>
-            <p className="text-gray-500 mt-1">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">プラン依頼</h1>
+              <HelpTooltip content="営業から設計部門へのプラン作成依頼を管理します。ステータスで進捗を確認できます。" />
+            </div>
+            <p className="text-gray-600 mt-1">
               全{planRequests.length}件 | 進行中{planRequests.filter(r => r.status !== '完了').length}件
             </p>
           </div>
@@ -366,8 +390,9 @@ export default function PlanRequestsPage() {
             {filteredRequests.length === 0 ? (
               <Card className="border-0 shadow-lg">
                 <CardContent className="p-12 text-center">
-                  <FileText className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                  <p className="text-gray-500">プラン依頼がありません</p>
+                  <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-700 text-base">プラン依頼がありません</p>
+                  <p className="text-gray-600 text-sm mt-2">新規依頼を作成してください</p>
                 </CardContent>
               </Card>
             ) : (
@@ -411,14 +436,14 @@ export default function PlanRequestsPage() {
                                   </Badge>
                                 )}
                               </div>
-                              <div className="flex items-center space-x-4 text-sm text-gray-500 flex-wrap gap-y-1">
+                              <div className="flex items-center space-x-4 text-sm text-gray-700 flex-wrap gap-y-1">
                                 <span className="flex items-center">
-                                  <User className="w-3 h-3 mr-1" />
+                                  <User className="w-4 h-4 mr-1" />
                                   {request.customer_name}
                                 </span>
                                 {request.land_address && (
                                   <span className="flex items-center">
-                                    <MapPin className="w-3 h-3 mr-1" />
+                                    <MapPin className="w-4 h-4 mr-1" />
                                     {request.land_address.substring(0, 20)}...
                                   </span>
                                 )}
@@ -427,7 +452,7 @@ export default function PlanRequestsPage() {
                                 )}
                                 {request.deadline && (
                                   <span className={`flex items-center ${isOverdue ? 'text-red-600 font-medium' : isUpcoming ? 'text-yellow-600' : ''}`}>
-                                    <Calendar className="w-3 h-3 mr-1" />
+                                    <Calendar className="w-4 h-4 mr-1" />
                                     期限: {new Date(request.deadline).toLocaleDateString('ja-JP')}
                                   </span>
                                 )}
@@ -437,13 +462,13 @@ export default function PlanRequestsPage() {
                           <div className="flex items-center space-x-4">
                             {request.design_office && (
                               <div className="text-right hidden md:block">
-                                <p className="text-xs text-gray-500">設計事務所</p>
+                                <p className="text-sm text-gray-600">設計事務所</p>
                                 <p className="font-medium text-gray-900">{request.design_office}</p>
                               </div>
                             )}
                             {request.designer_name && (
                               <div className="text-right hidden lg:block">
-                                <p className="text-xs text-gray-500">担当設計</p>
+                                <p className="text-sm text-gray-600">担当設計</p>
                                 <p className="font-medium text-gray-900">{request.designer_name}</p>
                               </div>
                             )}

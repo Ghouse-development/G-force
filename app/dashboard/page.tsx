@@ -21,8 +21,9 @@ import {
   FileSignature,
   FileEdit,
   Download,
-  RefreshCw,
 } from 'lucide-react'
+import { DashboardSkeleton } from '@/components/ui/skeleton-loaders'
+import { HelpTooltip, PIPELINE_STATUS_HELP } from '@/components/ui/help-tooltip'
 import {
   type Customer,
   type PipelineStatus,
@@ -224,9 +225,7 @@ export default function DashboardPage() {
   if (!mounted) {
     return (
       <Layout>
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <RefreshCw className="w-8 h-8 animate-spin text-orange-500" />
-        </div>
+        <DashboardSkeleton />
       </Layout>
     )
   }
@@ -240,7 +239,7 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold text-gray-900">
               {getGreeting()}、{user?.name || 'ゲスト'}さん
             </h1>
-            <p className="text-gray-500 mt-1 flex items-center">
+            <p className="text-gray-600 mt-1 flex items-center">
               <Calendar className="w-4 h-4 mr-2" />
               {new Date().toLocaleDateString('ja-JP', {
                 year: 'numeric',

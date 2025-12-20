@@ -241,6 +241,48 @@
 }
 
 @layer utilities {
+  /* ===========================================
+     アクセシビリティ改善 - 高齢者・初心者対応
+     =========================================== */
+
+  /* 最小フォントサイズ: 14px (text-sm) を基本に */
+  .text-readable {
+    @apply text-sm leading-relaxed;
+    min-height: 1.25rem;
+  }
+
+  /* 高コントラストテキスト（gray-500→gray-700） */
+  .text-muted-readable {
+    @apply text-gray-700;
+  }
+
+  /* タッチフレンドリーなボタンサイズ (44x44px minimum) */
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+    @apply flex items-center justify-center;
+  }
+
+  /* フォーカス表示の強化 */
+  .focus-visible-enhanced:focus-visible {
+    @apply ring-2 ring-orange-500 ring-offset-2 outline-none;
+  }
+
+  /* 読みやすいラベル */
+  .label-readable {
+    @apply text-sm font-medium text-gray-700;
+  }
+
+  /* エラー表示 */
+  .error-inline {
+    @apply text-sm text-red-600 mt-1 flex items-center gap-1;
+  }
+
+  /* 成功表示 */
+  .success-inline {
+    @apply text-sm text-green-600 mt-1 flex items-center gap-1;
+  }
+
   /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 8px;

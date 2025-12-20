@@ -24,6 +24,9 @@ import {
 import { toast } from 'sonner'
 import { useNotificationStore, type NotificationCategory, type NotificationType } from '@/store'
 import { cn } from '@/lib/utils'
+import { Breadcrumb } from '@/components/ui/breadcrumb'
+import { PlanRequestListSkeleton } from '@/components/ui/skeleton-loaders'
+import { HelpTooltip } from '@/components/ui/help-tooltip'
 
 // 通知タイプに応じたアイコン
 const getNotificationIcon = (type: NotificationType) => {
@@ -101,9 +104,7 @@ export default function NotificationsPage() {
   if (!mounted) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500" />
-        </div>
+        <PlanRequestListSkeleton count={4} />
       </Layout>
     )
   }
@@ -132,17 +133,21 @@ export default function NotificationsPage() {
   return (
     <Layout>
       <div className="max-w-3xl mx-auto space-y-6">
+        {/* パンくずリスト */}
+        <Breadcrumb items={[{ label: '通知' }]} />
+
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Bell className="w-6 h-6 mr-2 text-orange-500" />
-              通知
+            <div className="flex items-center gap-2">
+              <Bell className="w-6 h-6 text-orange-500" />
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">通知</h1>
               {unreadCount > 0 && (
-                <Badge className="ml-2 bg-red-500">{unreadCount}件未読</Badge>
+                <Badge className="bg-red-500">{unreadCount}件未読</Badge>
               )}
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">
+              <HelpTooltip content="承認フローやシステムからの通知を確認できます。クリックで詳細ページへ移動します。" />
+            </div>
+            <p className="text-gray-600 text-sm mt-1">
               承認フローやシステムからの通知
             </p>
           </div>
@@ -194,9 +199,12 @@ export default function NotificationsPage() {
           <CardContent className="p-0">
             {filteredNotifications.length === 0 ? (
               <div className="p-12 text-center">
-                <Bell className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500">
+                <Bell className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-700 text-base">
                   {filter === 'unread' ? '未読の通知はありません' : '通知はありません'}
+                </p>
+                <p className="text-gray-600 text-sm mt-2">
+                  新しい通知が届くとここに表示されます
                 </p>
               </div>
             ) : (
@@ -237,13 +245,13 @@ export default function NotificationsPage() {
                           {notification.message}
                         </p>
                         <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-gray-400">
+                          <span className="text-sm text-gray-600">
                             {formatRelativeTime(notification.createdAt)}
                           </span>
                           {notification.linkUrl && (
-                            <span className="text-xs text-orange-500 flex items-center">
+                            <span className="text-sm text-orange-500 flex items-center">
                               {notification.linkLabel || '詳細'}
-                              <ArrowRight className="w-3 h-3 ml-1" />
+                              <ArrowRight className="w-4 h-4 ml-1" />
                             </span>
                           )}
                         </div>
@@ -286,7 +294,7 @@ export default function NotificationsPage() {
 
         {/* Info */}
         {notifications.length > 0 && (
-          <p className="text-center text-xs text-gray-400">
+          <p className="text-center text-sm text-gray-600">
             通知は最大100件まで保存されます
           </p>
         )}

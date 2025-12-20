@@ -1,9 +1,12 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/layout'
+import { Breadcrumb } from '@/components/ui/breadcrumb'
+import { TableSkeleton } from '@/components/ui/skeleton-loaders'
+import { HelpTooltip } from '@/components/ui/help-tooltip'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -60,6 +63,11 @@ export default function FundPlansPage() {
   const { fundPlans, deleteFundPlan } = useFundPlanStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const filteredPlans = useMemo(() => {
     if (!searchQuery) return fundPlans
@@ -80,14 +88,28 @@ export default function FundPlansPage() {
     }
   }
 
+  if (!mounted) {
+    return (
+      <Layout>
+        <TableSkeleton rows={5} columns={5} />
+      </Layout>
+    )
+  }
+
   return (
     <Layout>
       <div className="space-y-6">
+        {/* パンくずリスト */}
+        <Breadcrumb items={[{ label: '資金計画書' }]} />
+
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">資金計画書</h1>
-            <p className="text-gray-500">資金計画書の作成・管理</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">資金計画書</h1>
+              <HelpTooltip content="お客様向けの資金計画書を作成・管理します。建物価格、諸費用、ローン計画などを計算できます。" />
+            </div>
+            <p className="text-gray-600 mt-1">資金計画書の作成・管理</p>
           </div>
           <Link href="/fund-plans/new">
             <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
@@ -99,53 +121,61 @@ export default function FundPlansPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
+          <Card className="border-0 shadow-md">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">総数</p>
+                  <p className="text-sm text-gray-600">総数</p>
                   <p className="text-2xl font-bold">{fundPlans.length}</p>
                 </div>
-                <FileText className="w-8 h-8 text-gray-400" />
+                <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-gray-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-0 shadow-md">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">下書き</p>
+                  <p className="text-sm text-gray-600">下書き</p>
                   <p className="text-2xl font-bold">
                     {fundPlans.filter((p) => p.status === 'draft').length}
                   </p>
                 </div>
-                <Edit className="w-8 h-8 text-gray-400" />
+                <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center">
+                  <Edit className="w-6 h-6 text-orange-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-0 shadow-md">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">提出済</p>
+                  <p className="text-sm text-gray-600">提出済</p>
                   <p className="text-2xl font-bold">
                     {fundPlans.filter((p) => p.status === 'submitted').length}
                   </p>
                 </div>
-                <Eye className="w-8 h-8 text-blue-400" />
+                <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <Eye className="w-6 h-6 text-blue-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-0 shadow-md">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">承認済</p>
+                  <p className="text-sm text-gray-600">承認済</p>
                   <p className="text-2xl font-bold">
                     {fundPlans.filter((p) => p.status === 'approved').length}
                   </p>
                 </div>
-                <FileText className="w-8 h-8 text-green-400" />
+                <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-green-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -170,9 +200,12 @@ export default function FundPlansPage() {
           <CardContent>
             {filteredPlans.length === 0 ? (
               <div className="text-center py-12">
-                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 mb-4">
+                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-700 text-base mb-2">
                   {searchQuery ? '該当する資金計画書がありません' : '資金計画書がありません'}
+                </p>
+                <p className="text-gray-600 text-sm mb-4">
+                  {searchQuery ? '検索条件を変更してお試しください' : '新規作成ボタンから資金計画書を作成してください'}
                 </p>
                 <Link href="/fund-plans/new">
                   <Button variant="outline">
@@ -210,12 +243,12 @@ export default function FundPlansPage() {
                         </TableCell>
                         <TableCell>
                           {plan.customerName ? (
-                            <div className="flex items-center gap-1 text-sm text-gray-600">
-                              <User className="w-3 h-3" />
+                            <div className="flex items-center gap-1 text-sm text-gray-700">
+                              <User className="w-4 h-4" />
                               {plan.customerName}
                             </div>
                           ) : (
-                            <span className="text-gray-400">-</span>
+                            <span className="text-gray-500">-</span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -227,8 +260,8 @@ export default function FundPlansPage() {
                           {formatCurrency(calculation.grandTotal)}円
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1 text-sm text-gray-500">
-                            <Calendar className="w-3 h-3" />
+                          <div className="flex items-center gap-1 text-sm text-gray-700">
+                            <Calendar className="w-4 h-4" />
                             {new Date(plan.createdAt).toLocaleDateString('ja-JP')}
                           </div>
                         </TableCell>

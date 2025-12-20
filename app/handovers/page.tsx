@@ -1,8 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Layout } from '@/components/layout/layout'
+import { Breadcrumb } from '@/components/ui/breadcrumb'
+import { PlanRequestListSkeleton } from '@/components/ui/skeleton-loaders'
+import { HelpTooltip } from '@/components/ui/help-tooltip'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -66,6 +69,11 @@ const mockHandovers = [
 export default function HandoversPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<DocumentStatus | 'all'>('all')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const filteredHandovers = mockHandovers.filter((handover) => {
     const matchesSearch =
@@ -86,14 +94,28 @@ export default function HandoversPage() {
     rejected: mockHandovers.filter(h => h.status === 'rejected').length,
   }
 
+  if (!mounted) {
+    return (
+      <Layout>
+        <PlanRequestListSkeleton count={4} />
+      </Layout>
+    )
+  }
+
   return (
     <Layout>
       <div className="space-y-6">
+        {/* パンくずリスト */}
+        <Breadcrumb items={[{ label: '引継書' }]} />
+
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">引継書</h1>
-            <p className="text-gray-500 mt-1">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">引継書</h1>
+              <HelpTooltip content="営業から工事への引継書を作成・管理します。契約後、工事開始前に必要な情報を共有します。" />
+            </div>
+            <p className="text-gray-600 mt-1">
               営業→工事への引継書を管理
             </p>
           </div>
@@ -155,8 +177,9 @@ export default function HandoversPage() {
           {filteredHandovers.length === 0 ? (
             <Card className="border-0 shadow-lg">
               <CardContent className="p-12 text-center">
-                <FileText className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500">引継書がありません</p>
+                <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-700 text-base">引継書がありません</p>
+                <p className="text-gray-600 text-sm mt-2">新規作成ボタンから引継書を作成してください</p>
               </CardContent>
             </Card>
           ) : (
@@ -185,14 +208,14 @@ export default function HandoversPage() {
                                 {statusConfig.label}
                               </Badge>
                             </div>
-                            <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-700">
                               <span className="flex items-center">
-                                <User className="w-3 h-3 mr-1" />
+                                <User className="w-4 h-4 mr-1" />
                                 {handover.customer_name}
                               </span>
                               {handover.handover_date && (
                                 <span className="flex items-center">
-                                  <Calendar className="w-3 h-3 mr-1" />
+                                  <Calendar className="w-4 h-4 mr-1" />
                                   引渡: {new Date(handover.handover_date).toLocaleDateString('ja-JP')}
                                 </span>
                               )}
@@ -201,11 +224,11 @@ export default function HandoversPage() {
                         </div>
                         <div className="flex items-center space-x-4">
                           <div className="text-right hidden md:block">
-                            <p className="text-xs text-gray-500">営業</p>
+                            <p className="text-sm text-gray-600">営業</p>
                             <p className="font-medium text-gray-900">{handover.sales_staff_name}</p>
                           </div>
                           <div className="text-right hidden md:block">
-                            <p className="text-xs text-gray-500">工事</p>
+                            <p className="text-sm text-gray-600">工事</p>
                             <p className="font-medium text-gray-900">{handover.construction_manager_name}</p>
                           </div>
                           <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-orange-500 transition-colors" />

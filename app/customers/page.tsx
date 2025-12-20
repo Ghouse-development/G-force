@@ -20,6 +20,9 @@ import {
   LayoutList,
   LayoutGrid,
 } from 'lucide-react'
+import { Breadcrumb } from '@/components/ui/breadcrumb'
+import { CustomerListSkeleton } from '@/components/ui/skeleton-loaders'
+import { HelpTooltip, PIPELINE_STATUS_HELP } from '@/components/ui/help-tooltip'
 import { exportToCSV, customerExportColumns } from '@/lib/export'
 import {
   type Customer,
@@ -163,7 +166,13 @@ export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStatus, setSelectedStatus] = useState<PipelineStatus | 'all'>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('list')
+  const [mounted, setMounted] = useState(false)
   const fiscalYear = getCurrentFiscalYear()
+
+  // クライアントマウント確認
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const { customers: storeCustomers, setCustomers, addCustomer, updateCustomerStatus } = useCustomerStore()
 
@@ -215,14 +224,26 @@ export default function CustomersPage() {
   // アクティブなパイプライン（ボツ・他決・引渡済を除く）
   const activeStatuses: PipelineStatus[] = ['反響', 'イベント参加', '限定会員', '面談', '建築申込', '内定', '契約', '着工', '引渡']
 
+  // スケルトンローディング
+  if (!mounted) {
+    return (
+      <Layout>
+        <CustomerListSkeleton count={6} />
+      </Layout>
+    )
+  }
+
   return (
     <Layout>
       <div className="space-y-6">
+        {/* パンくずリスト */}
+        <Breadcrumb items={[{ label: '顧客管理' }]} />
+
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">顧客管理</h1>
-            <p className="text-gray-500 mt-1">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">顧客管理</h1>
+            <p className="text-gray-600 mt-1">
               {fiscalYear}期 | 全{customers.length}件の顧客
             </p>
           </div>
@@ -279,21 +300,22 @@ export default function CustomersPage() {
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center space-x-2">
                 <TrendingUp className="w-5 h-5 text-blue-600" />
-                <span className="font-medium text-gray-700">遷移率</span>
+                <span className="font-medium text-gray-800">遷移率</span>
+                <HelpTooltip content="各ステージへの遷移率です。反響から契約までの転換率を表示しています。" />
               </div>
               <div className="flex items-center space-x-4 md:space-x-8 text-sm flex-wrap">
                 <div className="flex items-center space-x-2">
-                  <span className="text-gray-500">反響→面談</span>
+                  <span className="text-gray-700">反響→面談</span>
                   <span className="font-bold text-blue-600">{conversionRates.leadToMeeting}%</span>
                 </div>
-                <ArrowRight className="w-4 h-4 text-gray-300 hidden md:block" />
+                <ArrowRight className="w-4 h-4 text-gray-400 hidden md:block" />
                 <div className="flex items-center space-x-2">
-                  <span className="text-gray-500">面談→申込</span>
+                  <span className="text-gray-700">面談→申込</span>
                   <span className="font-bold text-blue-600">{conversionRates.meetingToApplication}%</span>
                 </div>
-                <ArrowRight className="w-4 h-4 text-gray-300 hidden md:block" />
+                <ArrowRight className="w-4 h-4 text-gray-400 hidden md:block" />
                 <div className="flex items-center space-x-2">
-                  <span className="text-gray-500">申込→契約</span>
+                  <span className="text-gray-700">申込→契約</span>
                   <span className="font-bold text-blue-600">{conversionRates.applicationToContract}%</span>
                 </div>
               </div>
@@ -381,8 +403,9 @@ export default function CustomersPage() {
             {filteredCustomers.length === 0 ? (
               <Card className="border-0 shadow-lg">
                 <CardContent className="p-12 text-center">
-                  <Users className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                  <p className="text-gray-500">顧客が見つかりません</p>
+                  <Users className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-700 text-base">顧客が見つかりません</p>
+                  <p className="text-gray-600 text-sm mt-2">検索条件を変更してお試しください</p>
                 </CardContent>
               </Card>
             ) : (
@@ -409,17 +432,17 @@ export default function CustomersPage() {
                                   {statusConfig?.label}
                                 </Badge>
                               </div>
-                              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-700">
                                 <span>{customer.name}</span>
                                 {customer.phone && (
                                   <span className="flex items-center">
-                                    <Phone className="w-3 h-3 mr-1" />
+                                    <Phone className="w-4 h-4 mr-1" />
                                     {customer.phone}
                                   </span>
                                 )}
                                 {customer.lead_date && (
                                   <span className="flex items-center">
-                                    <Calendar className="w-3 h-3 mr-1" />
+                                    <Calendar className="w-4 h-4 mr-1" />
                                     反響: {new Date(customer.lead_date).toLocaleDateString('ja-JP')}
                                   </span>
                                 )}
@@ -429,7 +452,7 @@ export default function CustomersPage() {
                           <div className="flex items-center space-x-4">
                             {(customer.estimated_amount || customer.contract_amount) && (
                               <div className="text-right hidden md:block">
-                                <p className="text-xs text-gray-500">
+                                <p className="text-sm text-gray-600">
                                   {customer.contract_amount ? '契約金額' : '見込金額'}
                                 </p>
                                 <p className="font-bold text-gray-900">
