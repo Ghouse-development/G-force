@@ -53,6 +53,7 @@ import {
   Mail,
   MapPin,
   Ruler,
+  FileSpreadsheet,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useContractStore, type StoredContract, useNotificationStore } from '@/store'
@@ -68,6 +69,7 @@ import {
   checkContractPermission,
 } from '@/types/database'
 import { generateContractPDF } from '@/lib/contract/pdf-generator'
+import { exportContractToExcel, type ContractData } from '@/lib/excel-export'
 
 // アイコンマッピング
 const STATUS_ICONS: Record<ContractStatus, typeof FileEdit> = {
@@ -307,6 +309,44 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
     }
   }
 
+  const handleDownloadExcel = () => {
+    if (!contract) return
+    try {
+      const totalAmount = contract.total_amount || 0
+      const contractData: ContractData = {
+        contractNumber: contract.contract_number || '',
+        contractDate: contract.contract_date || new Date().toISOString(),
+        customerName: contract.customer_name || '',
+        customerAddress: contract.land_address || '',
+        customerPhone: undefined,
+        teiName: contract.tei_name || '',
+        constructionAddress: contract.land_address || '',
+        constructionArea: contract.building_area || 0,
+        contractAmount: Math.floor(totalAmount / 1.1),
+        taxAmount: contract.tax_amount || Math.floor(totalAmount * 0.1 / 1.1),
+        totalAmount: totalAmount,
+        startDate: '',
+        completionDate: '',
+        deliveryDate: '',
+        paymentTerms: {
+          atContract: { amount: contract.payment_at_contract || 0, date: contract.contract_date || '' },
+          atStart: { amount: contract.payment_at_start || 0, date: '' },
+          atFraming: { amount: contract.payment_at_frame || 0, date: '' },
+          atCompletion: { amount: contract.payment_at_completion || 0, date: '' },
+        },
+        specifications: contract.product_name || undefined,
+        notes: undefined,
+        salesRep: contract.sales_person || '',
+        managerName: '',
+      }
+      exportContractToExcel(contractData)
+      toast.success('Excelをダウンロードしました')
+    } catch (error) {
+      console.error('Excel生成エラー:', error)
+      toast.error('Excel生成に失敗しました')
+    }
+  }
+
   // 金額フォーマット
   const formatCurrency = (amount: number | null | undefined) => {
     if (amount == null) return '-'
@@ -365,6 +405,10 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
             <Button variant="outline" size="sm" onClick={handlePrint}>
               <Printer className="w-4 h-4 mr-2" />
               印刷
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownloadExcel}>
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
+              Excel
             </Button>
             <Button variant="outline" size="sm" onClick={handleDownloadPDF}>
               <Download className="w-4 h-4 mr-2" />
