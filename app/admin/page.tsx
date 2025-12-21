@@ -16,6 +16,7 @@ import {
   Shield,
   Download,
   Building,
+  Link2,
 } from 'lucide-react'
 
 const adminMenus = [
@@ -60,6 +61,13 @@ const adminMenus = [
     icon: Building,
     href: '/admin/franchise',
     color: 'from-amber-500 to-orange-500',
+  },
+  {
+    title: '外部連携',
+    description: 'kintone・Formbridge・スプレッドシート',
+    icon: Link2,
+    href: '/admin/integrations',
+    color: 'from-cyan-500 to-blue-500',
   },
   {
     title: '営業目標設定',

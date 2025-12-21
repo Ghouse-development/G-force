@@ -1,5 +1,95 @@
 # G-force 開発記録
 
+## 2024年12月22日 - 外部連携機能・マッチング通知機能追加
+
+### 実装した機能
+
+#### 1. 外部連携管理画面
+
+**画面:** `/admin/integrations`
+
+- kintone連携の設定・同期
+- Formbridge Webhook設定
+- Googleスプレッドシート連携設定
+- 接続ステータスの表示
+
+#### 2. kintone連携強化
+
+**APIエンドポイント:**
+- `POST /api/kintone/sync` - 顧客データの双方向同期
+
+**機能:**
+- G-force → kintone へのデータ同期
+- kintone → G-force へのデータ同期
+- 同期ログの表示
+
+#### 3. Formbridge Webhook連携
+
+**APIエンドポイント:** `/api/webhooks/formbridge`
+
+**機能:**
+- Formbridgeからのアンケート・ヒアリングデータを受信
+- 電話番号・メールで既存顧客を照合
+- 新規顧客の自動作成
+- アンケート回答をsurvey_dataフィールドに保存
+
+**フィールドマッピング:**
+- 顧客名、電話番号、メール、住所
+- 来場きっかけ、希望エリア、建築予定時期など
+
+#### 4. Googleスプレッドシート連携
+
+**APIエンドポイント:** `/api/spreadsheet/import`
+
+**機能:**
+- 来場予約シートからインポート
+- 問い合わせシートからインポート
+- 資料請求シートからインポート
+- 重複チェック（電話番号・メール）
+
+**環境変数:**
+```
+GOOGLE_SERVICE_ACCOUNT_EMAIL=xxx@xxx.iam.gserviceaccount.com
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n..."
+GOOGLE_SPREADSHEET_ID=your-spreadsheet-id
+```
+
+#### 5. 土地マッチング通知（ダッシュボード）
+
+**コンポーネント:** `PropertyMatchAlerts`
+
+**機能:**
+- 顧客ごとのマッチング通知を表示
+- マッチスコア（70%以上）を表示
+- 物件詳細へのリンク
+- SUUMOへの外部リンク
+
+**APIエンドポイント:** `/api/property-notifications`
+
+#### 6. 管理画面メニュー更新
+
+- 「外部連携」メニューを追加（アイコン: Link2）
+- kintone・Formbridge・スプレッドシートの説明
+
+### 環境変数一覧
+
+```
+# kintone連携
+KINTONE_DOMAIN=your-subdomain.cybozu.com
+KINTONE_API_TOKEN=your-api-token
+KINTONE_APP_ID=123
+
+# Formbridge Webhook（オプション）
+FORMBRIDGE_WEBHOOK_SECRET=your-secret
+
+# Googleスプレッドシート
+GOOGLE_SERVICE_ACCOUNT_EMAIL=xxx@xxx.iam.gserviceaccount.com
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n..."
+GOOGLE_SPREADSHEET_ID=your-spreadsheet-id
+```
+
+---
+
 ## 2024年12月22日 - クロール設定・管理画面追加
 
 ### 実装した機能

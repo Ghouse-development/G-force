@@ -34,6 +34,7 @@ import {
 import { PipelineFunnel } from '@/components/dashboard/pipeline-funnel'
 import { DeadlineAlerts } from '@/components/dashboard/deadline-alerts'
 import { PendingApprovals } from '@/components/dashboard/pending-approvals'
+import { PropertyMatchAlerts } from '@/components/dashboard/property-match-alerts'
 import { OnboardingGuide, HelpButton } from '@/components/help/onboarding-guide'
 import { getSyncState } from '@/lib/db/sync-service'
 
@@ -468,6 +469,9 @@ export default function DashboardPage() {
           <DeadlineAlerts items={deadlineItems} maxItems={4} />
           <PendingApprovals maxItems={5} />
         </div>
+
+        {/* 土地マッチング通知 */}
+        <PropertyMatchAlerts maxItems={5} />
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
