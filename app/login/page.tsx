@@ -47,8 +47,8 @@ const mockUsers: Record<string, DBUser> = {
   },
 }
 
-// Show dev login buttons (enabled during development phase)
-const showDevLogin = true
+// Show dev login buttons only in development mode
+const showDevLogin = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
 
 export default function LoginPage() {
   const router = useRouter()

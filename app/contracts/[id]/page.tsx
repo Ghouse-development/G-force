@@ -67,6 +67,7 @@ import {
   getAvailableContractActions,
   checkContractPermission,
 } from '@/types/database'
+import { generateContractPDF } from '@/lib/contract/pdf-generator'
 
 // アイコンマッピング
 const STATUS_ICONS: Record<ContractStatus, typeof FileEdit> = {
@@ -292,8 +293,18 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
     window.print()
   }
 
-  const handleDownloadPDF = () => {
-    toast.success('PDFをダウンロードしています...')
+  const handleDownloadPDF = async () => {
+    if (!contract) return
+    try {
+      toast.info('PDFを生成しています...')
+      await generateContractPDF(contract, {
+        filename: `請負契約書_${contract.tei_name || '未設定'}_${contract.contract_number || ''}.pdf`
+      })
+      toast.success('PDFをダウンロードしました')
+    } catch (error) {
+      console.error('PDF生成エラー:', error)
+      toast.error('PDF生成に失敗しました')
+    }
   }
 
   // 金額フォーマット
