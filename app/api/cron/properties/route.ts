@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { processNewProperties } from '@/lib/crawl/property-matcher'
-import { crawlAllKansaiProperties, crawlSuumoProperties, logCrawl, SUUMO_AREA_CODES } from '@/lib/crawl/property-crawler'
+import { crawlAllKansaiProperties, crawlSuumoProperties, logCrawl } from '@/lib/crawl/property-crawler'
 
 // 型定義がまだ生成されていないため、anyを許可
 /* eslint-disable @typescript-eslint/no-explicit-any */

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -36,20 +36,13 @@ import {
   Settings,
   Trash2,
   ExternalLink,
-  Filter,
   Heart,
-  Eye,
-  Clock,
   CheckCircle2,
-  XCircle,
-  Building2,
   Car,
   Zap,
   Home,
   Search,
-  ChevronRight,
   Sparkles,
-  Star,
   AlertCircle,
   Info,
 } from 'lucide-react'
@@ -258,10 +251,31 @@ const DEMO_NOTIFICATIONS: PropertyNotification[] = [
   },
 ]
 
+// DB物件データの型
+interface CrawledPropertyData {
+  id: string
+  source: string
+  source_id: string
+  source_url: string
+  title: string | null
+  price: number | null
+  address: string | null
+  area: string | null
+  land_area: number | null
+  building_coverage: number | null
+  floor_area_ratio: number | null
+  road_width: number | null
+  road_direction: string | null
+  station_name: string | null
+  station_walk: number | null
+  images: string[] | null
+  created_at: string
+}
+
 export default function PropertyAlertsPage() {
   const [alerts, setAlerts] = useState<PropertyAlert[]>(DEMO_ALERTS)
   const [notifications, setNotifications] = useState<PropertyNotification[]>(DEMO_NOTIFICATIONS)
-  const [properties, setProperties] = useState<any[]>([])
+  const [properties, setProperties] = useState<CrawledPropertyData[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'notifications' | 'alerts' | 'search'>('notifications')
   const [filterUnread, setFilterUnread] = useState(false)
@@ -277,7 +291,7 @@ export default function PropertyAlertsPage() {
       if (data.success && data.data) {
         setProperties(data.data)
         // 物件データから通知リストを生成（デモ）
-        const newNotifications: PropertyNotification[] = data.data.slice(0, 5).map((prop: any, idx: number) => ({
+        const newNotifications: PropertyNotification[] = data.data.slice(0, 5).map((prop: CrawledPropertyData, idx: number) => ({
           id: prop.id,
           matchScore: 95 - idx * 5,
           isRead: idx > 1,

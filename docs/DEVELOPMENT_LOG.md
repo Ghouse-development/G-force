@@ -1,0 +1,98 @@
+# G-force 開発記録
+
+## 2024年12月21日 - 住宅ローン金利・土地情報クロール機能リリース
+
+### 実装した機能
+
+#### 1. 住宅ローン金利情報
+
+**画面:** `/loan-rates`
+
+- 関西の銀行を中心とした住宅ローン金利一覧
+- カテゴリ別タブ（ネット銀行、メガバンク、地方銀行、信用金庫、フラット35）
+- 金利変動の可視化（上昇: 赤、下降: 緑）
+- 最低金利のサマリー表示
+
+**対応銀行（25行）:**
+- ネット銀行: 住信SBI、auじぶん、PayPay、楽天、ソニー、イオン、SBI新生
+- メガバンク: 三菱UFJ、三井住友、みずほ、りそな
+- 関西地銀: 関西みらい、池田泉州、京都、滋賀、南都、紀陽
+- 信用金庫: 大阪、大阪シティ、尼崎、京都中央
+- フラット35: 住宅金融支援機構
+
+#### 2. 土地情報アラート
+
+**画面:** `/property-alerts`
+
+- 条件に合う土地物件の自動通知
+- 関西エリアの市区町村選択
+- 価格・面積・駅徒歩のスライダー設定
+- マッチ度スコア表示
+- お気に入り・既読管理
+
+#### 3. SUUMOクローラー
+
+**ファイル:** `lib/crawl/property-crawler.ts`
+
+- SUUMOの土地検索ページからHTMLをパース
+- 物件情報を抽出してデータベースに保存
+- 関西全域（大阪・兵庫・京都・奈良・滋賀）対応
+- サーバー負荷軽減のためリクエスト間隔2秒
+
+#### 4. API エンドポイント
+
+| エンドポイント | メソッド | 機能 |
+|---------------|---------|------|
+| `/api/cron/loan-rates` | GET | 金利一覧取得 |
+| `/api/cron/loan-rates` | POST | 金利クロール実行 |
+| `/api/cron/properties` | GET | 物件統計取得 |
+| `/api/cron/properties` | POST | 物件クロール・マッチング |
+| `/api/properties` | GET | 物件一覧取得 |
+
+#### 5. Vercel Cron設定
+
+**ファイル:** `vercel.json`
+
+```json
+{
+  "crons": [
+    { "path": "/api/cron/loan-rates", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/properties", "schedule": "0 10 * * *" }
+  ]
+}
+```
+
+### データベーステーブル
+
+**ファイル:** `supabase/migrations/003_loan_rates_and_property_alerts.sql`
+
+- `loan_rates` - 住宅ローン金利
+- `loan_rate_history` - 金利変更履歴
+- `loan_news` - 住宅ローンニュース
+- `property_alerts` - 物件アラート条件
+- `crawled_properties` - クロール済み物件
+- `property_notifications` - マッチング通知
+- `crawl_logs` - クロール実行ログ
+
+### セットアップ手順
+
+1. Supabase SQL EditorでマイグレーションSQLを実行
+2. `npm run dev` でアプリ起動
+3. `/loan-rates` で金利情報確認
+4. `/property-alerts` → 「物件検索」タブ → 「今すぐ取得」でクロール実行
+
+### 注意事項
+
+- SUUMOクロールは利用規約に注意して使用
+- 本番環境では `CRON_SECRET` 環境変数を設定
+- クロール頻度は1日1回程度に抑える
+
+---
+
+## 既存機能
+
+- 顧客管理 (`/customers`)
+- プラン依頼 (`/plan-requests`)
+- 契約管理 (`/contracts`)
+- 資金計画書 (`/fund-plans`)
+- ダッシュボード (`/dashboard`)

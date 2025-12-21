@@ -9,22 +9,20 @@
 
 CREATE TABLE IF NOT EXISTS loan_rates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  bank_name TEXT NOT NULL,                    -- 銀行名
-  bank_code TEXT,                             -- 銀行コード
-  rate_type TEXT NOT NULL,                    -- 金利タイプ（変動、固定10年、固定35年等）
-  rate DECIMAL(5, 3) NOT NULL,                -- 金利（%）
-  rate_date DATE NOT NULL,                    -- 金利適用日
-  previous_rate DECIMAL(5, 3),                -- 前回金利
-  rate_change DECIMAL(5, 3),                  -- 変動幅
-  source_url TEXT,                            -- 情報取得元URL
-  fetched_at TIMESTAMPTZ DEFAULT NOW(),       -- 取得日時
+  bank_name TEXT NOT NULL,
+  bank_code TEXT,
+  rate_type TEXT NOT NULL,
+  rate DECIMAL(5, 3) NOT NULL,
+  rate_date DATE NOT NULL,
+  previous_rate DECIMAL(5, 3),
+  rate_change DECIMAL(5, 3),
+  source_url TEXT,
+  fetched_at TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-
   UNIQUE(bank_name, rate_type, rate_date)
 );
 
--- 金利変更履歴テーブル
 CREATE TABLE IF NOT EXISTS loan_rate_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   bank_name TEXT NOT NULL,
@@ -42,15 +40,15 @@ CREATE TABLE IF NOT EXISTS loan_rate_history (
 
 CREATE TABLE IF NOT EXISTS loan_news (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title TEXT NOT NULL,                        -- ニュースタイトル
-  summary TEXT,                               -- 要約
-  content TEXT,                               -- 本文
-  source TEXT NOT NULL,                       -- 情報源（住宅金融支援機構、銀行名等）
-  source_url TEXT,                            -- 元記事URL
-  published_at DATE,                          -- 公開日
-  category TEXT,                              -- カテゴリ（金利変更、制度変更、キャンペーン等）
-  importance TEXT DEFAULT 'normal',           -- 重要度（high, normal, low）
-  is_notified BOOLEAN DEFAULT FALSE,          -- 通知済みフラグ
+  title TEXT NOT NULL,
+  summary TEXT,
+  content TEXT,
+  source TEXT NOT NULL,
+  source_url TEXT,
+  published_at DATE,
+  category TEXT,
+  importance TEXT DEFAULT 'normal',
+  is_notified BOOLEAN DEFAULT FALSE,
   fetched_at TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -62,27 +60,22 @@ CREATE TABLE IF NOT EXISTS loan_news (
 CREATE TABLE IF NOT EXISTS property_alerts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
-  alert_name TEXT NOT NULL,                   -- アラート名
+  alert_name TEXT NOT NULL,
   is_active BOOLEAN DEFAULT TRUE,
-
-  -- 条件
-  areas JSONB,                                -- エリア条件（市区町村リスト）
-  min_price INTEGER,                          -- 最低価格
-  max_price INTEGER,                          -- 最高価格
-  min_land_area DECIMAL(10, 2),               -- 最低土地面積（㎡）
-  max_land_area DECIMAL(10, 2),               -- 最高土地面積（㎡）
-  land_shape_preferences JSONB,               -- 土地形状の希望（整形地等）
-  road_width_min DECIMAL(5, 2),               -- 前面道路幅員（最低）
-  building_coverage_max DECIMAL(5, 2),        -- 建ぺい率（最大）
-  floor_area_ratio_min DECIMAL(5, 2),         -- 容積率（最低）
-  station_walk_max INTEGER,                   -- 駅徒歩（最大分）
-  keywords JSONB,                             -- キーワード
-  exclude_keywords JSONB,                     -- 除外キーワード
-
-  -- 通知設定
+  areas JSONB,
+  min_price INTEGER,
+  max_price INTEGER,
+  min_land_area DECIMAL(10, 2),
+  max_land_area DECIMAL(10, 2),
+  land_shape_preferences JSONB,
+  road_width_min DECIMAL(5, 2),
+  building_coverage_max DECIMAL(5, 2),
+  floor_area_ratio_min DECIMAL(5, 2),
+  station_walk_max INTEGER,
+  keywords JSONB,
+  exclude_keywords JSONB,
   notify_email BOOLEAN DEFAULT TRUE,
   notify_app BOOLEAN DEFAULT TRUE,
-
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -93,35 +86,29 @@ CREATE TABLE IF NOT EXISTS property_alerts (
 
 CREATE TABLE IF NOT EXISTS crawled_properties (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  source TEXT NOT NULL,                       -- 情報源（suumo, athome等）
-  source_id TEXT NOT NULL,                    -- 元サイトでのID
-  source_url TEXT NOT NULL,                   -- 物件URL
-
-  -- 物件情報
+  source TEXT NOT NULL,
+  source_id TEXT NOT NULL,
+  source_url TEXT NOT NULL,
   title TEXT,
-  price INTEGER,                              -- 価格（万円）
-  address TEXT,                               -- 住所
-  area TEXT,                                  -- エリア（市区町村）
-  land_area DECIMAL(10, 2),                   -- 土地面積（㎡）
-  building_area DECIMAL(10, 2),               -- 建物面積（㎡）
-  building_coverage DECIMAL(5, 2),            -- 建ぺい率（%）
-  floor_area_ratio DECIMAL(5, 2),             -- 容積率（%）
-  road_width DECIMAL(5, 2),                   -- 前面道路幅員（m）
-  road_direction TEXT,                        -- 道路方向
-  land_shape TEXT,                            -- 土地形状
-  station_name TEXT,                          -- 最寄り駅
-  station_walk INTEGER,                       -- 駅徒歩（分）
-
-  -- メタ情報
-  images JSONB,                               -- 画像URL配列
-  raw_data JSONB,                             -- 生データ
-  first_seen_at TIMESTAMPTZ DEFAULT NOW(),    -- 初回発見日時
-  last_seen_at TIMESTAMPTZ DEFAULT NOW(),     -- 最終確認日時
-  is_available BOOLEAN DEFAULT TRUE,          -- 掲載中フラグ
-
+  price INTEGER,
+  address TEXT,
+  area TEXT,
+  land_area DECIMAL(10, 2),
+  building_area DECIMAL(10, 2),
+  building_coverage DECIMAL(5, 2),
+  floor_area_ratio DECIMAL(5, 2),
+  road_width DECIMAL(5, 2),
+  road_direction TEXT,
+  land_shape TEXT,
+  station_name TEXT,
+  station_walk INTEGER,
+  images JSONB,
+  raw_data JSONB,
+  first_seen_at TIMESTAMPTZ DEFAULT NOW(),
+  last_seen_at TIMESTAMPTZ DEFAULT NOW(),
+  is_available BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-
   UNIQUE(source, source_id)
 );
 
@@ -134,17 +121,13 @@ CREATE TABLE IF NOT EXISTS property_notifications (
   alert_id UUID REFERENCES property_alerts(id) ON DELETE CASCADE,
   property_id UUID REFERENCES crawled_properties(id) ON DELETE CASCADE,
   customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
-
-  match_score DECIMAL(5, 2),                  -- マッチ度（%）
-  match_details JSONB,                        -- マッチした条件の詳細
-
+  match_score DECIMAL(5, 2),
+  match_details JSONB,
   is_read BOOLEAN DEFAULT FALSE,
   is_sent BOOLEAN DEFAULT FALSE,
   sent_at TIMESTAMPTZ,
   read_at TIMESTAMPTZ,
-
   created_at TIMESTAMPTZ DEFAULT NOW(),
-
   UNIQUE(alert_id, property_id)
 );
 
@@ -154,9 +137,9 @@ CREATE TABLE IF NOT EXISTS property_notifications (
 
 CREATE TABLE IF NOT EXISTS crawl_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  crawl_type TEXT NOT NULL,                   -- loan_rates, loan_news, properties
-  source TEXT,                                -- 取得元
-  status TEXT NOT NULL,                       -- success, error, partial
+  crawl_type TEXT NOT NULL,
+  source TEXT,
+  status TEXT NOT NULL,
   items_fetched INTEGER DEFAULT 0,
   items_new INTEGER DEFAULT 0,
   items_updated INTEGER DEFAULT 0,
@@ -193,45 +176,22 @@ ALTER TABLE property_notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE crawl_logs ENABLE ROW LEVEL SECURITY;
 
 -- =============================================
--- ポリシー
+-- ポリシー（認証ユーザーは全てアクセス可能）
 -- =============================================
 
--- 金利情報は認証ユーザーなら誰でも閲覧可能
-CREATE POLICY "Authenticated users can view loan_rates" ON loan_rates FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Service role can manage loan_rates" ON loan_rates FOR ALL TO service_role USING (true);
-
-CREATE POLICY "Authenticated users can view loan_rate_history" ON loan_rate_history FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Service role can manage loan_rate_history" ON loan_rate_history FOR ALL TO service_role USING (true);
-
-CREATE POLICY "Authenticated users can view loan_news" ON loan_news FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Service role can manage loan_news" ON loan_news FOR ALL TO service_role USING (true);
-
--- 物件アラートは自分のものだけ管理可能
-CREATE POLICY "Users can manage own property_alerts" ON property_alerts FOR ALL TO authenticated
-  USING (customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid()));
-CREATE POLICY "Service role can manage property_alerts" ON property_alerts FOR ALL TO service_role USING (true);
-
--- 物件情報は認証ユーザーなら誰でも閲覧可能
-CREATE POLICY "Authenticated users can view crawled_properties" ON crawled_properties FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Service role can manage crawled_properties" ON crawled_properties FOR ALL TO service_role USING (true);
-
--- 通知は自分のものだけ閲覧可能
-CREATE POLICY "Users can view own property_notifications" ON property_notifications FOR SELECT TO authenticated
-  USING (customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid()));
-CREATE POLICY "Users can update own property_notifications" ON property_notifications FOR UPDATE TO authenticated
-  USING (customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid()));
-CREATE POLICY "Service role can manage property_notifications" ON property_notifications FOR ALL TO service_role USING (true);
-
--- クロールログは認証ユーザーなら誰でも閲覧可能
-CREATE POLICY "Authenticated users can view crawl_logs" ON crawl_logs FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Service role can manage crawl_logs" ON crawl_logs FOR ALL TO service_role USING (true);
+CREATE POLICY "Allow authenticated" ON loan_rates FOR ALL TO authenticated USING (true);
+CREATE POLICY "Allow authenticated" ON loan_rate_history FOR ALL TO authenticated USING (true);
+CREATE POLICY "Allow authenticated" ON loan_news FOR ALL TO authenticated USING (true);
+CREATE POLICY "Allow authenticated" ON property_alerts FOR ALL TO authenticated USING (true);
+CREATE POLICY "Allow authenticated" ON crawled_properties FOR ALL TO authenticated USING (true);
+CREATE POLICY "Allow authenticated" ON property_notifications FOR ALL TO authenticated USING (true);
+CREATE POLICY "Allow authenticated" ON crawl_logs FOR ALL TO authenticated USING (true);
 
 -- =============================================
 -- サンプルデータ: 住宅ローン金利
 -- =============================================
 
 INSERT INTO loan_rates (bank_name, bank_code, rate_type, rate, rate_date, previous_rate, rate_change) VALUES
-  -- ネット銀行
   ('住信SBIネット銀行', 'sbi', '変動', 0.298, CURRENT_DATE, 0.320, -0.022),
   ('住信SBIネット銀行', 'sbi', '固定10年', 1.050, CURRENT_DATE, 1.100, -0.050),
   ('住信SBIネット銀行', 'sbi', '固定35年', 1.580, CURRENT_DATE, 1.620, -0.040),
@@ -243,8 +203,6 @@ INSERT INTO loan_rates (bank_name, bank_code, rate_type, rate, rate_date, previo
   ('ソニー銀行', 'sony', '変動', 0.397, CURRENT_DATE, 0.397, 0.000),
   ('イオン銀行', 'aeon', '変動', 0.380, CURRENT_DATE, 0.380, 0.000),
   ('SBI新生銀行', 'sbi_shinsei', '変動', 0.420, CURRENT_DATE, 0.450, -0.030),
-
-  -- メガバンク
   ('三菱UFJ銀行', 'mufg', '変動', 0.345, CURRENT_DATE, 0.345, 0.000),
   ('三菱UFJ銀行', 'mufg', '固定10年', 1.150, CURRENT_DATE, 1.150, 0.000),
   ('三菱UFJ銀行', 'mufg', '固定35年', 1.870, CURRENT_DATE, 1.870, 0.000),
@@ -254,8 +212,6 @@ INSERT INTO loan_rates (bank_name, bank_code, rate_type, rate, rate_date, previo
   ('みずほ銀行', 'mizuho', '固定10年', 1.180, CURRENT_DATE, 1.180, 0.000),
   ('りそな銀行', 'resona', '変動', 0.340, CURRENT_DATE, 0.340, 0.000),
   ('りそな銀行', 'resona', '固定10年', 1.100, CURRENT_DATE, 1.100, 0.000),
-
-  -- 関西の地方銀行
   ('関西みらい銀行', 'kansai_mirai', '変動', 0.475, CURRENT_DATE, 0.475, 0.000),
   ('関西みらい銀行', 'kansai_mirai', '固定10年', 1.350, CURRENT_DATE, 1.350, 0.000),
   ('池田泉州銀行', 'senshu_ikeda', '変動', 0.525, CURRENT_DATE, 0.525, 0.000),
@@ -263,14 +219,10 @@ INSERT INTO loan_rates (bank_name, bank_code, rate_type, rate, rate_date, previo
   ('滋賀銀行', 'shiga', '変動', 0.525, CURRENT_DATE, 0.525, 0.000),
   ('南都銀行', 'nanto', '変動', 0.550, CURRENT_DATE, 0.550, 0.000),
   ('紀陽銀行', 'kiyo', '変動', 0.525, CURRENT_DATE, 0.525, 0.000),
-
-  -- 信用金庫
   ('大阪信用金庫', 'osaka_shinkin', '変動', 0.625, CURRENT_DATE, 0.625, 0.000),
   ('大阪シティ信用金庫', 'osaka_city_shinkin', '変動', 0.650, CURRENT_DATE, 0.650, 0.000),
   ('尼崎信用金庫', 'amagasaki_shinkin', '変動', 0.600, CURRENT_DATE, 0.600, 0.000),
   ('京都中央信用金庫', 'kyoto_chuo_shinkin', '変動', 0.625, CURRENT_DATE, 0.625, 0.000),
-
-  -- フラット35
   ('住宅金融支援機構（フラット35）', 'jhf', 'フラット35（21-35年）', 1.840, CURRENT_DATE, 1.870, -0.030),
   ('住宅金融支援機構（フラット35）', 'jhf', 'フラット35（15-20年）', 1.430, CURRENT_DATE, 1.460, -0.030),
   ('住宅金融支援機構（フラット35）', 'jhf', 'フラット35S（21-35年）', 1.590, CURRENT_DATE, 1.620, -0.030)
@@ -317,30 +269,3 @@ ON CONFLICT (source, source_id) DO UPDATE SET
   price = EXCLUDED.price,
   last_seen_at = NOW(),
   updated_at = NOW();
-
--- =============================================
--- 更新日時自動更新トリガー
--- =============================================
-
-CREATE OR REPLACE FUNCTION update_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS update_loan_rates_updated_at ON loan_rates;
-CREATE TRIGGER update_loan_rates_updated_at
-  BEFORE UPDATE ON loan_rates
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
-DROP TRIGGER IF EXISTS update_property_alerts_updated_at ON property_alerts;
-CREATE TRIGGER update_property_alerts_updated_at
-  BEFORE UPDATE ON property_alerts
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
-DROP TRIGGER IF EXISTS update_crawled_properties_updated_at ON crawled_properties;
-CREATE TRIGGER update_crawled_properties_updated_at
-  BEFORE UPDATE ON crawled_properties
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();

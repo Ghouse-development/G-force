@@ -24,7 +24,6 @@ import {
   RefreshCw,
   TrendingUp,
   TrendingDown,
-  Minus,
   Building2,
   Smartphone,
   Landmark,
@@ -36,7 +35,6 @@ import {
 } from 'lucide-react'
 import {
   BANK_CRAWL_CONFIGS,
-  BANK_CATEGORY_LABELS,
   type BankCategory,
 } from '@/types/crawl'
 
@@ -149,12 +147,6 @@ export default function LoanRatesPage() {
     }
   }, [rates])
 
-  // 金利タイプでフィルタ
-  const filteredRates = useMemo(() => {
-    if (selectedRateType === 'all') return rates
-    return rates.filter(r => r.rate_type.includes(selectedRateType))
-  }, [rates, selectedRateType])
-
   // 最低金利の計算
   const lowestRates = useMemo(() => {
     const variableRates = rates.filter(r => r.rate_type === '変動金利')
@@ -186,17 +178,6 @@ export default function LoanRatesPage() {
         {(change * 100).toFixed(2)}bp
       </span>
     )
-  }
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'flat35': return <Building2 className="w-5 h-5" />
-      case 'net': return <Smartphone className="w-5 h-5" />
-      case 'mega': return <Landmark className="w-5 h-5" />
-      case 'kansai_regional': return <Building className="w-5 h-5" />
-      case 'credit_union': return <Wallet className="w-5 h-5" />
-      default: return <Landmark className="w-5 h-5" />
-    }
   }
 
   const RateTable = ({ data, showRateType = true }: { data: LoanRate[], showRateType?: boolean }) => (
@@ -275,7 +256,7 @@ export default function LoanRatesPage() {
               <SelectItem value="フラット35">フラット35</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={refreshRates} disabled={refreshing}>
+          <Button onClick={refreshRates} disabled={refreshing || loading}>
             <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
             更新
           </Button>
