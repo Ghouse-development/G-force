@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore, useNotificationStore } from '@/store'
 import { cn } from '@/lib/utils'
+import { updateAppBadge } from '@/components/providers/pwa-provider'
 
 const navigation = [
   { name: 'ダッシュボード', href: '/dashboard', icon: Home },
@@ -64,9 +65,37 @@ export function Header() {
   const pathname = usePathname()
   const router = useRouter()
   const { user, logout } = useAuthStore()
-  const { unreadCount } = useNotificationStore()
+  const { unreadCount: localUnreadCount } = useNotificationStore()
   const { isOpen: isSearchOpen, setIsOpen: setSearchOpen } = useGlobalSearch()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [propertyUnreadCount, setPropertyUnreadCount] = useState(0)
+
+  // 物件マッチング通知の未読数を取得
+  useEffect(() => {
+    const fetchPropertyNotifications = async () => {
+      try {
+        const res = await fetch('/api/property-notifications')
+        if (res.ok) {
+          const data = await res.json()
+          setPropertyUnreadCount(data.unread || 0)
+        }
+      } catch {
+        // エラーは無視
+      }
+    }
+    fetchPropertyNotifications()
+    // 1分ごとに更新
+    const interval = setInterval(fetchPropertyNotifications, 60000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // 総未読数
+  const totalUnreadCount = localUnreadCount + propertyUnreadCount
+
+  // PWAバッジ更新
+  useEffect(() => {
+    updateAppBadge(totalUnreadCount)
+  }, [totalUnreadCount])
 
   const handleLogout = () => {
     logout()
@@ -302,9 +331,9 @@ export function Header() {
           <Link href="/notifications" className="relative">
             <Button variant="ghost" size="icon" className="hover:bg-orange-50">
               <Bell className="h-5 w-5 text-gray-600" />
-              {unreadCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-red-500">
-                  {unreadCount}
+              {totalUnreadCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 min-w-5 px-1 flex items-center justify-center bg-red-500 text-[10px]">
+                  {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
                 </Badge>
               )}
             </Button>
