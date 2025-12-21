@@ -261,10 +261,85 @@ const DEMO_NOTIFICATIONS: PropertyNotification[] = [
 export default function PropertyAlertsPage() {
   const [alerts, setAlerts] = useState<PropertyAlert[]>(DEMO_ALERTS)
   const [notifications, setNotifications] = useState<PropertyNotification[]>(DEMO_NOTIFICATIONS)
+  const [properties, setProperties] = useState<any[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'notifications' | 'alerts' | 'search'>('notifications')
   const [filterUnread, setFilterUnread] = useState(false)
   const [filterFavorite, setFilterFavorite] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [crawling, setCrawling] = useState(false)
+
+  // 物件データをフェッチ
+  const fetchProperties = async () => {
+    try {
+      const response = await fetch('/api/properties')
+      const data = await response.json()
+      if (data.success && data.data) {
+        setProperties(data.data)
+        // 物件データから通知リストを生成（デモ）
+        const newNotifications: PropertyNotification[] = data.data.slice(0, 5).map((prop: any, idx: number) => ({
+          id: prop.id,
+          matchScore: 95 - idx * 5,
+          isRead: idx > 1,
+          isFavorite: idx === 0,
+          createdAt: prop.created_at || new Date().toISOString(),
+          property: {
+            id: prop.id,
+            title: prop.title || '土地物件',
+            price: prop.price || 0,
+            address: prop.address || '',
+            area: prop.area || '',
+            landArea: prop.land_area || 0,
+            buildingCoverage: prop.building_coverage || 60,
+            floorAreaRatio: prop.floor_area_ratio || 200,
+            roadWidth: prop.road_width || 4,
+            roadDirection: prop.road_direction || '南',
+            stationName: prop.station_name || '',
+            stationWalk: prop.station_walk || 10,
+            images: prop.images || [],
+            sourceUrl: prop.source_url || '#',
+            isNew: idx === 0,
+            daysOnMarket: idx + 1,
+          },
+          matchDetails: {
+            matchedConditions: ['エリア', '価格', '土地面積'].slice(0, 3 - idx > 0 ? 3 - idx : 1).map(c => `${c}: OK`),
+            unmatchedConditions: [],
+          },
+        }))
+        if (newNotifications.length > 0) {
+          setNotifications(newNotifications)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching properties:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // SUUMOからクロール実行
+  const runCrawl = async () => {
+    setCrawling(true)
+    try {
+      const response = await fetch('/api/cron/properties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'full', maxPages: 2 }),
+      })
+      const data = await response.json()
+      console.log('Crawl result:', data)
+      await fetchProperties() // 再読込
+    } catch (error) {
+      console.error('Error crawling:', error)
+    } finally {
+      setCrawling(false)
+    }
+  }
+
+  // 初回読み込み
+  useEffect(() => {
+    fetchProperties()
+  }, [])
 
   // 新規アラートのフォーム状態
   const [newAlert, setNewAlert] = useState({
@@ -829,20 +904,97 @@ export default function PropertyAlertsPage() {
         </TabsContent>
 
         {/* 物件検索タブ */}
-        <TabsContent value="search">
+        <TabsContent value="search" className="space-y-4">
           <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-            <CardContent className="py-12 text-center">
-              <Search className="w-16 h-16 text-blue-400 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-blue-900 mb-2">物件検索（準備中）</h3>
-              <p className="text-blue-700 mb-6 max-w-md mx-auto">
-                SUUMOやat homeなどの不動産サイトから物件を検索・取得する機能は、
-                各サイトの利用規約を確認の上、対応可能な場合に実装予定です。
-              </p>
-              <div className="flex flex-col items-center gap-4">
-                <p className="text-sm text-blue-600">
-                  現在は、営業担当者が手動で登録した物件に対してアラート通知が機能します。
-                </p>
+            <CardContent className="py-8">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="text-center md:text-left">
+                  <h3 className="text-xl font-bold text-blue-900 mb-2 flex items-center gap-2">
+                    <Search className="w-6 h-6" />
+                    SUUMOから土地情報を取得
+                  </h3>
+                  <p className="text-blue-700 max-w-md">
+                    関西エリア（大阪・兵庫・京都・奈良・滋賀）の土地情報をSUUMOから取得します
+                  </p>
+                </div>
+                <Button
+                  size="lg"
+                  onClick={runCrawl}
+                  disabled={crawling}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                >
+                  {crawling ? (
+                    <>
+                      <Zap className="w-5 h-5 mr-2 animate-pulse" />
+                      取得中...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-5 h-5 mr-2" />
+                      今すぐ取得
+                    </>
+                  )}
+                </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* 取得済み物件一覧 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Home className="w-5 h-5" />
+                取得済み物件一覧
+                <Badge variant="secondary">{properties.length}件</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-center py-8 text-muted-foreground">読み込み中...</div>
+              ) : properties.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <MapPin className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>物件データがありません</p>
+                  <p className="text-sm mt-2">上のボタンをクリックしてSUUMOから取得してください</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                  {properties.map(prop => (
+                    <div key={prop.id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold truncate">{prop.title || '土地物件'}</h4>
+                          <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                            <MapPin className="w-3 h-3" />
+                            {prop.address || prop.area}
+                          </p>
+                          <div className="flex flex-wrap gap-2 mt-2 text-sm">
+                            <Badge variant="outline">
+                              <Banknote className="w-3 h-3 mr-1" />
+                              {prop.price?.toLocaleString() || '-'}万円
+                            </Badge>
+                            <Badge variant="outline">
+                              <Ruler className="w-3 h-3 mr-1" />
+                              {prop.land_area || '-'}㎡
+                            </Badge>
+                            {prop.station_name && (
+                              <Badge variant="outline">
+                                <Train className="w-3 h-3 mr-1" />
+                                {prop.station_name}駅 徒歩{prop.station_walk || '-'}分
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={prop.source_url} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

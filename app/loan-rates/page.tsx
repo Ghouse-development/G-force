@@ -93,7 +93,7 @@ const MOCK_RATES: LoanRate[] = [
 
 export default function LoanRatesPage() {
   const [rates, setRates] = useState<LoanRate[]>(MOCK_RATES)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [selectedRateType, setSelectedRateType] = useState<string>('変動金利')
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
@@ -103,8 +103,9 @@ export default function LoanRatesPage() {
     try {
       const response = await fetch('/api/cron/loan-rates')
       const data = await response.json()
-      if (data.success && data.data.length > 0) {
+      if (data.success && data.data && data.data.length > 0) {
         setRates(data.data)
+        setLastUpdated(new Date())
       }
     } catch (error) {
       console.error('Error fetching rates:', error)
@@ -113,6 +114,11 @@ export default function LoanRatesPage() {
       setLoading(false)
     }
   }
+
+  // 初回読み込み時にAPIからデータ取得
+  useEffect(() => {
+    fetchRates()
+  }, [])
 
   const refreshRates = async () => {
     setRefreshing(true)
