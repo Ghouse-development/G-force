@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { processNewProperties } from '@/lib/crawl/property-matcher'
 import { crawlAllKansaiProperties, crawlSuumoProperties, logCrawl } from '@/lib/crawl/property-crawler'
+import { crawlAllSources } from '@/lib/crawl/multi-source-crawler'
 
 // 型定義がまだ生成されていないため、anyを許可
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -113,19 +114,36 @@ export async function POST(request: NextRequest) {
     // クロール処理
     // ========================================
     if (action === 'crawl' || action === 'full') {
-      console.log('Starting SUUMO crawl...')
+      const sources = body.sources || ['suumo'] // デフォルトはSUUMOのみ
+      const useMultiSource = sources.includes('athome') || sources.includes('lifull') || body.multiSource
+
+      console.log(`Starting crawl... sources: ${useMultiSource ? 'multi' : 'suumo'}`)
 
       let crawlResult
 
-      if (prefCode && cityCodes) {
-        // 特定エリアのみクロール
+      if (useMultiSource && prefCode && cityCodes) {
+        // マルチソースクロール（SUUMO + athome + LIFULL）
+        const multiResult = await crawlAllSources(prefCode, cityCodes)
+        crawlResult = {
+          success: multiResult.results.every(r => r.success),
+          propertiesFound: multiResult.totalFound,
+          propertiesSaved: multiResult.totalSaved,
+          errors: multiResult.results.flatMap(r => r.errors),
+          bySource: multiResult.results.reduce((acc, r) => {
+            acc[r.source] = { found: r.propertiesFound, saved: r.propertiesSaved }
+            return acc
+          }, {} as Record<string, { found: number; saved: number }>),
+        }
+        results.crawl = { area: 'specified', multiSource: true, ...crawlResult }
+      } else if (prefCode && cityCodes) {
+        // 特定エリアのみクロール（SUUMOのみ）
         crawlResult = await crawlSuumoProperties(prefCode, cityCodes, { maxPages: maxPages || 3 })
         results.crawl = {
           area: 'specified',
           ...crawlResult,
         }
       } else {
-        // 関西全域クロール
+        // 関西全域クロール（SUUMOのみ）
         crawlResult = await crawlAllKansaiProperties({ maxPages: maxPages || 3 })
         results.crawl = crawlResult
       }
