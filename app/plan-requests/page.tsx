@@ -356,7 +356,7 @@ export default function PlanRequestsPage() {
                 <div>
                   <p className="text-sm text-green-700">競合勝ち</p>
                   <p className="text-2xl font-bold text-green-700">
-                    {planRequests.filter(r => (r as any).competitor_result === 'won').length || 3}
+                    {planRequests.filter(r => (r as PlanRequest & { competitor_result?: string }).competitor_result === 'won').length || 3}
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-lg bg-green-200 flex items-center justify-center">
@@ -371,7 +371,7 @@ export default function PlanRequestsPage() {
                 <div>
                   <p className="text-sm text-red-700">競合負け</p>
                   <p className="text-2xl font-bold text-red-700">
-                    {planRequests.filter(r => (r as any).competitor_result === 'lost').length || 1}
+                    {planRequests.filter(r => (r as PlanRequest & { competitor_result?: string }).competitor_result === 'lost').length || 1}
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-lg bg-red-200 flex items-center justify-center">

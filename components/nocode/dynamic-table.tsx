@@ -78,7 +78,7 @@ function fieldsToColumns(fields: FieldDefinition[]): Column[] {
 
 // フィールドタイプに応じたレンダラーを生成
 function createFieldRenderer(field: FieldDefinition) {
-  return (value: unknown) => {
+  const renderer = (value: unknown) => {
     if (value === null || value === undefined) {
       return <span className="text-muted-foreground">-</span>
     }
@@ -125,6 +125,7 @@ function createFieldRenderer(field: FieldDefinition) {
         return String(value)
     }
   }
+  return renderer
 }
 
 export function DynamicTable({
