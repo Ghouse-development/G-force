@@ -3,6 +3,20 @@
 
 import type { StoredFile } from '@/store'
 
+// 土地探し条件（抽出結果）
+export interface ExtractedLandConditions {
+  areas: string[]           // エリア（市区町村）
+  minPrice?: number         // 最低価格（万円）
+  maxPrice?: number         // 最高価格（万円）
+  minLandArea?: number      // 最低面積（㎡）
+  maxLandArea?: number      // 最高面積（㎡）
+  stationWalkMax?: number   // 駅徒歩（分）
+  roadWidthMin?: number     // 道路幅員（m）
+  preferSouth?: boolean     // 南向き希望
+  otherConditions: string[] // その他条件
+  confidence: number        // 信頼度 0-100
+}
+
 export interface AnalysisResult {
   summary: string
   sentiment: 'positive' | 'neutral' | 'negative'
@@ -11,6 +25,7 @@ export interface AnalysisResult {
   customerIntent: string
   riskLevel: 'low' | 'medium' | 'high'
   nextSteps: string[]
+  landConditions?: ExtractedLandConditions  // 土地条件（抽出できた場合）
   analyzedAt: string
 }
 
@@ -30,6 +45,9 @@ export async function analyzeCustomerRecords(
   const sentiment = analyzeSentiment(memoTexts)
   const riskLevel = assessRisk(memoTexts, records)
 
+  // 土地探し条件を抽出
+  const landConditions = extractLandConditions(memoTexts)
+
   // シミュレーション遅延
   await new Promise((resolve) => setTimeout(resolve, 1500))
 
@@ -41,6 +59,7 @@ export async function analyzeCustomerRecords(
     customerIntent: detectIntent(memoTexts),
     riskLevel,
     nextSteps: generateNextSteps(sentiment, riskLevel),
+    landConditions: landConditions.confidence > 30 ? landConditions : undefined,
     analyzedAt: new Date().toISOString(),
   }
 }
@@ -203,6 +222,158 @@ function generateNextSteps(
   }
 
   return steps
+}
+
+// =============================================
+// 土地探し条件抽出
+// =============================================
+
+/**
+ * テキストから土地探し条件を抽出
+ * 本番環境ではOpenAI/Claude APIで高精度な抽出を行う
+ */
+function extractLandConditions(text: string): ExtractedLandConditions {
+  const conditions: ExtractedLandConditions = {
+    areas: [],
+    otherConditions: [],
+    confidence: 0,
+  }
+
+  let matchCount = 0
+
+  // エリア抽出（関西の市区町村）
+  const areaPatterns = [
+    // 大阪府
+    '豊中市', '吹田市', '茨木市', '高槻市', '枚方市', '寝屋川市', '守口市', '門真市',
+    '大東市', '東大阪市', '八尾市', '堺市', '松原市', '藤井寺市', '羽曳野市', '富田林市',
+    '河内長野市', '大阪狭山市', '箕面市', '池田市', '豊能町', '能勢町', '摂津市', '交野市',
+    '大阪市北区', '大阪市中央区', '大阪市西区', '大阪市天王寺区', '大阪市阿倍野区',
+    // 兵庫県
+    '西宮市', '芦屋市', '宝塚市', '伊丹市', '尼崎市', '川西市', '三田市', '神戸市',
+    '明石市', '加古川市', '姫路市',
+    // 京都府
+    '京都市', '長岡京市', '向日市', '宇治市', '城陽市', '京田辺市', '木津川市',
+    // 奈良県
+    '奈良市', '生駒市', '大和郡山市', '天理市', '橿原市', '香芝市', '王寺町',
+    // 滋賀県
+    '大津市', '草津市', '守山市', '栗東市', '野洲市',
+  ]
+
+  for (const area of areaPatterns) {
+    if (text.includes(area)) {
+      conditions.areas.push(area)
+      matchCount++
+    }
+  }
+
+  // 価格抽出
+  const pricePatterns = [
+    // 「3000万円以下」「3000万以下」「3000万円まで」
+    /(\d{1,5})万円?(?:以下|まで|以内)/g,
+    // 「3000万〜4000万」
+    /(\d{1,5})万円?(?:〜|～|から)(\d{1,5})万円?/g,
+    // 「予算3000万」「予算は3000万円」
+    /予算[はが]?(\d{1,5})万円?/g,
+    // 「3000万円くらい」「3000万程度」
+    /(\d{1,5})万円?(?:くらい|程度|前後)/g,
+  ]
+
+  // 「〜万円以下」パターン
+  const maxPriceMatch = text.match(/(\d{1,5})万円?(?:以下|まで|以内)/)
+  if (maxPriceMatch) {
+    conditions.maxPrice = parseInt(maxPriceMatch[1])
+    matchCount++
+  }
+
+  // 「〜万円から」パターン
+  const minPriceMatch = text.match(/(\d{1,5})万円?(?:以上|から)/)
+  if (minPriceMatch) {
+    conditions.minPrice = parseInt(minPriceMatch[1])
+    matchCount++
+  }
+
+  // 「予算〜万円」パターン
+  const budgetMatch = text.match(/予算[はが]?(\d{1,5})万円?/)
+  if (budgetMatch && !conditions.maxPrice) {
+    // 予算の±20%を範囲とする
+    const budget = parseInt(budgetMatch[1])
+    conditions.minPrice = Math.floor(budget * 0.8)
+    conditions.maxPrice = Math.floor(budget * 1.2)
+    matchCount++
+  }
+
+  // 「〜万円くらい」パターン
+  const approxMatch = text.match(/(\d{1,5})万円?(?:くらい|程度|前後)/)
+  if (approxMatch && !conditions.maxPrice) {
+    const approx = parseInt(approxMatch[1])
+    conditions.minPrice = Math.floor(approx * 0.85)
+    conditions.maxPrice = Math.floor(approx * 1.15)
+    matchCount++
+  }
+
+  // 面積抽出
+  const areaMatch = text.match(/(\d{2,3})(?:坪|㎡|平米)/)
+  if (areaMatch) {
+    const areaValue = parseInt(areaMatch[1])
+    // 坪なら㎡に変換
+    const sqm = text.includes('坪') ? areaValue * 3.3 : areaValue
+    conditions.minLandArea = Math.floor(sqm * 0.9)
+    conditions.maxLandArea = Math.floor(sqm * 1.2)
+    matchCount++
+  }
+
+  // 駅徒歩
+  const walkMatch = text.match(/駅(?:から)?(?:徒歩)?(\d{1,2})分(?:以内)?/)
+  if (walkMatch) {
+    conditions.stationWalkMax = parseInt(walkMatch[1])
+    matchCount++
+  }
+  // 「駅近」「駅チカ」
+  if (text.includes('駅近') || text.includes('駅チカ')) {
+    conditions.stationWalkMax = 10
+    matchCount++
+  }
+
+  // 道路幅員
+  const roadMatch = text.match(/道路(?:幅)?(\d+(?:\.\d+)?)(?:m|メートル)/)
+  if (roadMatch) {
+    conditions.roadWidthMin = parseFloat(roadMatch[1])
+    matchCount++
+  }
+
+  // 南向き希望
+  if (text.includes('南向き') || text.includes('南側') || text.includes('日当たり')) {
+    conditions.preferSouth = true
+    matchCount++
+  }
+
+  // その他条件
+  const otherPatterns = [
+    { pattern: '整形地', condition: '整形地希望' },
+    { pattern: '角地', condition: '角地希望' },
+    { pattern: '旗竿地', condition: '旗竿地NG' },
+    { pattern: '駐車場2台', condition: '駐車場2台分' },
+    { pattern: '駐車2台', condition: '駐車場2台分' },
+    { pattern: '駐車場3台', condition: '駐車場3台分' },
+    { pattern: '小学校', condition: '小学校近く' },
+    { pattern: '学区', condition: '学区重視' },
+    { pattern: '閑静', condition: '閑静な住宅街' },
+    { pattern: '建築条件なし', condition: '建築条件なし' },
+    { pattern: '建築条件付', condition: '建築条件付でもOK' },
+  ]
+
+  for (const { pattern, condition } of otherPatterns) {
+    if (text.includes(pattern)) {
+      conditions.otherConditions.push(condition)
+      matchCount++
+    }
+  }
+
+  // 信頼度計算
+  // 条件が多いほど、具体的な数値があるほど信頼度UP
+  conditions.confidence = Math.min(100, matchCount * 15 + (conditions.areas.length > 0 ? 20 : 0))
+
+  return conditions
 }
 
 // 音声ファイルの文字起こし（将来の拡張用）

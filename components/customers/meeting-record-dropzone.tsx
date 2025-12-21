@@ -28,10 +28,17 @@ import {
   Music,
   Edit,
   Sparkles,
+  MapPin,
+  Coins,
+  Ruler,
+  Train,
+  Sun,
+  Bell,
+  CheckCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useFileStore, useAuthStore, type FileCategory, type StoredFile } from '@/store'
-import { analyzeCustomerRecords, type AnalysisResult } from '@/lib/ai-analysis'
+import { analyzeCustomerRecords, type AnalysisResult, type ExtractedLandConditions } from '@/lib/ai-analysis'
 
 interface MeetingRecordDropzoneProps {
   customerId: string
@@ -263,6 +270,8 @@ export function MeetingRecordDropzone({ customerId, customerName = '顧客' }: M
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
   const [showAnalysis, setShowAnalysis] = useState(false)
+  const [isRegisteringAlert, setIsRegisteringAlert] = useState(false)
+  const [alertRegistered, setAlertRegistered] = useState(false)
 
   const { files, addFile, addMemo, updateMemo, deleteFile, getFilesByCustomer } = useFileStore()
   const { user } = useAuthStore()
@@ -413,6 +422,7 @@ export function MeetingRecordDropzone({ customerId, customerName = '顧客' }: M
     }
 
     setIsAnalyzing(true)
+    setAlertRegistered(false)
     try {
       const result = await analyzeCustomerRecords(customerFiles, customerName)
       setAnalysisResult(result)
@@ -424,6 +434,40 @@ export function MeetingRecordDropzone({ customerId, customerName = '顧客' }: M
       setIsAnalyzing(false)
     }
   }, [customerFiles, customerName])
+
+  // 土地アラート登録
+  const handleRegisterAlert = useCallback(async (conditions: ExtractedLandConditions) => {
+    setIsRegisteringAlert(true)
+    try {
+      const response = await fetch('/api/property-alerts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId,
+          alertName: `${customerName}様 土地アラート`,
+          areas: conditions.areas,
+          minPrice: conditions.minPrice,
+          maxPrice: conditions.maxPrice,
+          minLandArea: conditions.minLandArea,
+          maxLandArea: conditions.maxLandArea,
+          stationWalkMax: conditions.stationWalkMax,
+          roadWidthMin: conditions.roadWidthMin,
+          keywords: conditions.otherConditions,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('登録に失敗しました')
+      }
+
+      setAlertRegistered(true)
+      toast.success('土地アラートを登録しました！条件に合う物件が見つかると通知されます。')
+    } catch (error) {
+      toast.error('アラート登録に失敗しました')
+    } finally {
+      setIsRegisteringAlert(false)
+    }
+  }, [customerId, customerName])
 
   return (
     <Card className="border-0 shadow-lg">
@@ -711,6 +755,137 @@ export function MeetingRecordDropzone({ customerId, customerName = '顧客' }: M
             <p className="text-[10px] text-gray-400 text-right">
               分析日時: {new Date(analysisResult.analyzedAt).toLocaleString('ja-JP')}
             </p>
+          </div>
+        )}
+
+        {/* 土地探し条件（AIが抽出した場合） */}
+        {showAnalysis && analysisResult?.landConditions && (
+          <div className="space-y-3 p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-200">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-green-800 flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                土地探し条件を発見
+              </h4>
+              <Badge className="bg-green-100 text-green-700">
+                信頼度: {analysisResult.landConditions.confidence}%
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              {/* エリア */}
+              {analysisResult.landConditions.areas.length > 0 && (
+                <div className="col-span-2">
+                  <p className="text-xs font-medium text-green-700 mb-1 flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    希望エリア
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {analysisResult.landConditions.areas.map((area, i) => (
+                      <Badge key={i} variant="outline" className="bg-white">
+                        {area}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 価格 */}
+              {(analysisResult.landConditions.minPrice || analysisResult.landConditions.maxPrice) && (
+                <div>
+                  <p className="text-xs font-medium text-green-700 mb-1 flex items-center gap-1">
+                    <Coins className="w-3 h-3" />
+                    価格帯
+                  </p>
+                  <p className="text-gray-700">
+                    {analysisResult.landConditions.minPrice && `${analysisResult.landConditions.minPrice}万円`}
+                    {analysisResult.landConditions.minPrice && analysisResult.landConditions.maxPrice && ' 〜 '}
+                    {analysisResult.landConditions.maxPrice && `${analysisResult.landConditions.maxPrice}万円`}
+                  </p>
+                </div>
+              )}
+
+              {/* 面積 */}
+              {(analysisResult.landConditions.minLandArea || analysisResult.landConditions.maxLandArea) && (
+                <div>
+                  <p className="text-xs font-medium text-green-700 mb-1 flex items-center gap-1">
+                    <Ruler className="w-3 h-3" />
+                    土地面積
+                  </p>
+                  <p className="text-gray-700">
+                    {analysisResult.landConditions.minLandArea && `${analysisResult.landConditions.minLandArea}㎡`}
+                    {analysisResult.landConditions.minLandArea && analysisResult.landConditions.maxLandArea && ' 〜 '}
+                    {analysisResult.landConditions.maxLandArea && `${analysisResult.landConditions.maxLandArea}㎡`}
+                  </p>
+                </div>
+              )}
+
+              {/* 駅徒歩 */}
+              {analysisResult.landConditions.stationWalkMax && (
+                <div>
+                  <p className="text-xs font-medium text-green-700 mb-1 flex items-center gap-1">
+                    <Train className="w-3 h-3" />
+                    駅徒歩
+                  </p>
+                  <p className="text-gray-700">{analysisResult.landConditions.stationWalkMax}分以内</p>
+                </div>
+              )}
+
+              {/* 南向き */}
+              {analysisResult.landConditions.preferSouth && (
+                <div>
+                  <p className="text-xs font-medium text-green-700 mb-1 flex items-center gap-1">
+                    <Sun className="w-3 h-3" />
+                    方角
+                  </p>
+                  <p className="text-gray-700">南向き希望</p>
+                </div>
+              )}
+
+              {/* その他条件 */}
+              {analysisResult.landConditions.otherConditions.length > 0 && (
+                <div className="col-span-2">
+                  <p className="text-xs font-medium text-green-700 mb-1">その他の条件</p>
+                  <div className="flex flex-wrap gap-1">
+                    {analysisResult.landConditions.otherConditions.map((cond, i) => (
+                      <Badge key={i} variant="outline" className="bg-white text-xs">
+                        {cond}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* アラート登録ボタン */}
+            <div className="pt-2 border-t border-green-200">
+              {alertRegistered ? (
+                <div className="flex items-center justify-center gap-2 text-green-700 py-2">
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="font-medium">アラート登録完了</span>
+                </div>
+              ) : (
+                <Button
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                  onClick={() => handleRegisterAlert(analysisResult.landConditions!)}
+                  disabled={isRegisteringAlert}
+                >
+                  {isRegisteringAlert ? (
+                    <>
+                      <div className="w-4 h-4 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      登録中...
+                    </>
+                  ) : (
+                    <>
+                      <Bell className="w-4 h-4 mr-2" />
+                      この条件でアラートを登録
+                    </>
+                  )}
+                </Button>
+              )}
+              <p className="text-xs text-green-600 text-center mt-2">
+                条件に合う物件が見つかるとダッシュボードに通知されます
+              </p>
+            </div>
           </div>
         )}
 
