@@ -20,6 +20,9 @@ import {
   Menu,
   X,
   Landmark,
+  MapPin,
+  TrendingUp,
+  RefreshCw,
 } from 'lucide-react'
 import { GlobalSearch, useGlobalSearch } from '@/components/search/global-search'
 import { Button } from '@/components/ui/button'
@@ -47,6 +50,12 @@ const documentNavigation = [
   { name: 'ローン管理', href: '/loans', icon: Landmark, description: '住宅ローン進捗管理' },
 ]
 
+const infoNavigation = [
+  { name: '土地情報アラート', href: '/property-alerts', icon: MapPin, description: '物件通知・アラート設定' },
+  { name: '住宅ローン金利', href: '/loan-rates', icon: TrendingUp, description: '銀行別金利一覧' },
+  { name: 'クロール設定', href: '/crawl-settings', icon: RefreshCw, description: '自動取得の管理' },
+]
+
 const adminNavigation = [
   { name: '管理', href: '/admin', icon: Settings },
 ]
@@ -69,6 +78,11 @@ export function Header() {
 
   // Check if any document page is active
   const isDocumentActive = documentNavigation.some(
+    item => pathname === item.href || pathname.startsWith(item.href + '/')
+  )
+
+  // Check if any info page is active
+  const isInfoActive = infoNavigation.some(
     item => pathname === item.href || pathname.startsWith(item.href + '/')
   )
 
@@ -159,6 +173,54 @@ export function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
               {documentNavigation.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                return (
+                  <DropdownMenuItem
+                    key={item.href}
+                    onClick={() => router.push(item.href)}
+                    className={cn(
+                      'flex items-start space-x-3 py-3 cursor-pointer',
+                      isActive && 'bg-orange-50'
+                    )}
+                  >
+                    <Icon className={cn(
+                      'h-5 w-5 mt-0.5',
+                      isActive ? 'text-orange-500' : 'text-gray-400'
+                    )} />
+                    <div>
+                      <p className={cn(
+                        'font-medium',
+                        isActive ? 'text-orange-600' : 'text-gray-900'
+                      )}>
+                        {item.name}
+                      </p>
+                      <p className="text-xs text-gray-500">{item.description}</p>
+                    </div>
+                  </DropdownMenuItem>
+                )
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Info Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={cn(
+                  'flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200',
+                  isInfoActive
+                    ? 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white shadow-md'
+                    : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600'
+                )}
+              >
+                <MapPin className="h-4 w-4" />
+                <span>情報収集</span>
+                <ChevronDown className="h-3 w-3" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              {infoNavigation.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
                 return (
@@ -340,6 +402,32 @@ export function Header() {
                 書類作成
               </p>
               {documentNavigation.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-all',
+                      isActive
+                        ? 'bg-orange-100 text-orange-700'
+                        : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600'
+                    )}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span>{item.name}</span>
+                  </Link>
+                )
+              })}
+            </div>
+
+            <div className="pt-3 mt-3 border-t">
+              <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
+                情報収集
+              </p>
+              {infoNavigation.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
                 return (
