@@ -7,8 +7,75 @@ export type Json =
   | Json[]
 
 // Enums
-export type UserRole = 'admin' | 'manager' | 'staff'
-export type Department = '営業部' | '設計部' | 'IC' | '工事部'
+export type UserRole =
+  | 'sales'               // 営業
+  | 'sales_leader'        // 営業リーダー
+  | 'sales_office'        // 営業事務
+  | 'design_manager'      // 設計部門長
+  | 'construction_manager' // 工事部門長
+  | 'design'              // 設計
+  | 'cad'                 // CAD担当
+  | 'ic'                  // IC
+  | 'supervisor'          // 現場監督
+  | 'exterior'            // 外構担当
+  | 'admin'               // 本部/管理者
+
+export type Department = '営業部' | '営業事務部' | '設計部' | 'IC' | '工事部' | '本部'
+
+// ノーコード基盤のフィールドタイプ
+export type FieldType =
+  | 'text'           // テキスト
+  | 'number'         // 数値
+  | 'currency'       // 金額
+  | 'date'           // 日付
+  | 'datetime'       // 日時
+  | 'select'         // 単一選択
+  | 'multiselect'    // 複数選択
+  | 'checkbox'       // チェックボックス
+  | 'textarea'       // テキストエリア
+  | 'file'           // ファイル
+  | 'calculated'     // 計算フィールド
+  | 'reference'      // 他テーブル参照
+  | 'user'           // ユーザー参照
+  | 'section'        // セクション（グループ化用）
+
+// ワークフローステップタイプ
+export type WorkflowStepType =
+  | 'approval'           // 単一承認
+  | 'parallel_approval'  // 並列承認
+  | 'revision'           // 修正
+  | 'notify'             // 通知
+  | 'auto'               // 自動処理
+
+// ワークフロー担当者タイプ
+export type WorkflowAssigneeType =
+  | 'role'     // ロール（sales_leader等）
+  | 'user'     // 特定ユーザー
+  | 'creator'  // 作成者
+  | 'field'    // フィールド値から参照
+
+// ワークフローインスタンスステータス
+export type WorkflowInstanceStatus =
+  | 'pending'     // 待機中
+  | 'in_progress' // 進行中
+  | 'completed'   // 完了
+  | 'rejected'    // 却下
+  | 'cancelled'   // キャンセル
+
+// 契約依頼ステータス
+export type ContractRequestStatus =
+  | 'draft'              // 下書き
+  | 'pending_leader'     // 営業リーダー確認待ち
+  | 'pending_managers'   // 設計・工事部門長確認待ち
+  | 'revision'           // 修正中
+  | 'approved'           // 承認完了
+  | 'rejected'           // 却下
+
+// プラン依頼競合結果
+export type CompetitorResult =
+  | 'pending'   // 未確定
+  | 'won'       // 勝ち
+  | 'lost'      // 負け
 export type OwnershipType = '単独' | '共有'
 export type DocumentStatus = 'draft' | 'submitted' | 'approved' | 'rejected'
 
@@ -1198,9 +1265,17 @@ export type ContractApprovalRole =
 
 // ユーザーロールと承認権限のマッピング
 export const USER_ROLE_TO_APPROVAL_ROLES: Record<UserRole, ContractApprovalRole[]> = {
-  'admin': ['作成者', '書類確認者', '承認者'], // 管理者は全て可能
-  'manager': ['作成者', '書類確認者', '承認者'], // マネージャーも全て可能
-  'staff': ['作成者'], // スタッフは作成のみ
+  'admin': ['作成者', '書類確認者', '承認者'],
+  'sales': ['作成者'],
+  'sales_leader': ['作成者', '書類確認者', '承認者'],
+  'sales_office': ['書類確認者'],
+  'design_manager': ['承認者'],
+  'construction_manager': ['承認者'],
+  'design': [],
+  'cad': [],
+  'ic': [],
+  'supervisor': [],
+  'exterior': [],
 }
 
 // 各ステータスでアクションを実行できる権限
@@ -1353,4 +1428,266 @@ export function getAvailableContractActions(
       reason: result.reason,
     }
   })
+}
+
+// ========================================
+// ノーコード基盤の型定義
+// ========================================
+
+// フィールド定義
+export interface FieldDefinition {
+  id: string
+  form_id: string
+  code: string
+  name: string
+  field_type: FieldType
+  is_required: boolean
+  default_value?: Json
+  options?: Json // select/multiselectの選択肢
+  validation?: Json // バリデーションルール
+  calculated_formula?: string // calculated用の計算式
+  reference_table?: string // reference用の参照テーブル
+  reference_display_field?: string // 参照時の表示フィールド
+  layout?: {
+    column?: number
+    row?: number
+    width?: 'full' | 'half' | 'third' | 'quarter'
+    section?: string
+  }
+  sort_order: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+// フォーム定義
+export interface FormDefinition {
+  id: string
+  tenant_id: string
+  code: string
+  name: string
+  description?: string
+  table_name: string // 対応するデータベーステーブル
+  layout?: Json
+  settings?: Json
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  fields?: FieldDefinition[]
+}
+
+// ワークフローステップ定義
+export interface WorkflowStep {
+  id: string
+  workflow_id: string
+  code: string
+  name: string
+  step_type: WorkflowStepType
+  assignee_type: WorkflowAssigneeType
+  assignee_value?: string // role名、user_id、フィールド名など
+  assignee_roles?: UserRole[] // parallel_approval用の複数ロール
+  actions: string[] // ['approve', 'reject'] など
+  next_steps: Record<string, string> // { 'approve': 'step_2', 'reject': 'revision' }
+  conditions?: Json // 条件分岐の設定
+  notification_settings?: Json // 通知設定
+  sort_order: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+// ワークフロー定義
+export interface WorkflowDefinition {
+  id: string
+  tenant_id: string
+  code: string
+  name: string
+  description?: string
+  target_table: string // 対象テーブル
+  trigger_conditions?: Json // ワークフロー開始条件
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  steps?: WorkflowStep[]
+}
+
+// ワークフローインスタンス（実行中のワークフロー）
+export interface WorkflowInstance {
+  id: string
+  workflow_id: string
+  tenant_id: string
+  record_id: string // 対象レコードのID
+  record_table: string // 対象テーブル
+  current_step_id?: string
+  status: WorkflowInstanceStatus
+  started_by?: string
+  started_at: string
+  completed_at?: string
+  data?: Json // ワークフロー実行中のデータ
+  created_at: string
+  updated_at: string
+}
+
+// 承認履歴
+export interface ApprovalHistory {
+  id: string
+  workflow_instance_id: string
+  step_id: string
+  action: string // 'approve', 'reject', 'submit'など
+  actor_id: string
+  actor_name?: string
+  comment?: string
+  created_at: string
+}
+
+// 通知
+export interface Notification {
+  id: string
+  tenant_id: string
+  user_id: string
+  type: string
+  title: string
+  message?: string
+  link?: string
+  is_read: boolean
+  created_at: string
+  read_at?: string
+}
+
+// 画面定義
+export interface PageDefinition {
+  id: string
+  tenant_id: string
+  code: string
+  name: string
+  path: string // URLパス
+  page_type: 'list' | 'detail' | 'form' | 'dashboard' | 'custom'
+  layout?: Json
+  components?: PageComponent[]
+  permissions?: {
+    view: UserRole[]
+    edit?: UserRole[]
+    delete?: UserRole[]
+  }
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+// 画面コンポーネント
+export interface PageComponent {
+  id: string
+  type: 'table' | 'form' | 'chart' | 'card' | 'stats' | 'kanban' | 'calendar' | 'custom'
+  title?: string
+  data_source?: string // テーブル名またはAPI
+  form_id?: string // フォーム定義への参照
+  settings?: Json
+  layout?: {
+    x?: number
+    y?: number
+    width?: number
+    height?: number
+  }
+}
+
+// ロール設定
+export const ROLE_CONFIG: Record<UserRole, {
+  label: string
+  description: string
+  color: string
+  permissions: string[]
+}> = {
+  sales: {
+    label: '営業',
+    description: '顧客管理、資金計画書作成、契約依頼作成',
+    color: 'bg-blue-100 text-blue-700',
+    permissions: ['customer:create', 'customer:read', 'fund_plan:create', 'contract_request:create'],
+  },
+  sales_leader: {
+    label: '営業リーダー',
+    description: '営業の権限 + 契約依頼の内容確認',
+    color: 'bg-blue-200 text-blue-800',
+    permissions: ['customer:*', 'fund_plan:*', 'contract_request:approve_leader'],
+  },
+  sales_office: {
+    label: '営業事務',
+    description: '請負契約書作成、契約依頼閲覧',
+    color: 'bg-purple-100 text-purple-700',
+    permissions: ['contract:create', 'contract_request:read'],
+  },
+  design_manager: {
+    label: '設計部門長',
+    description: '契約依頼承認（図面・金額確認）、プラン依頼管理',
+    color: 'bg-orange-100 text-orange-700',
+    permissions: ['contract_request:approve_design', 'plan_request:*'],
+  },
+  construction_manager: {
+    label: '工事部門長',
+    description: '契約依頼承認（工期・運搬経路確認）',
+    color: 'bg-yellow-100 text-yellow-700',
+    permissions: ['contract_request:approve_construction'],
+  },
+  design: {
+    label: '設計',
+    description: 'プラン依頼対応、引継書閲覧',
+    color: 'bg-teal-100 text-teal-700',
+    permissions: ['plan_request:update', 'handover:read'],
+  },
+  cad: {
+    label: 'CAD担当',
+    description: 'プラン依頼対応',
+    color: 'bg-cyan-100 text-cyan-700',
+    permissions: ['plan_request:update'],
+  },
+  ic: {
+    label: 'IC',
+    description: '引継書閲覧',
+    color: 'bg-pink-100 text-pink-700',
+    permissions: ['handover:read'],
+  },
+  supervisor: {
+    label: '現場監督',
+    description: '引継書閲覧',
+    color: 'bg-amber-100 text-amber-700',
+    permissions: ['handover:read'],
+  },
+  exterior: {
+    label: '外構担当',
+    description: '引継書閲覧',
+    color: 'bg-lime-100 text-lime-700',
+    permissions: ['handover:read'],
+  },
+  admin: {
+    label: '本部',
+    description: '全体閲覧、マスタ管理、ノーコード設定',
+    color: 'bg-green-100 text-green-700',
+    permissions: ['*'],
+  },
+}
+
+// 権限チェック関数
+export function hasPermission(userRole: UserRole, requiredPermission: string): boolean {
+  const roleConfig = ROLE_CONFIG[userRole]
+  if (!roleConfig) return false
+
+  // adminは全権限
+  if (roleConfig.permissions.includes('*')) return true
+
+  // 完全一致
+  if (roleConfig.permissions.includes(requiredPermission)) return true
+
+  // ワイルドカードチェック（例: customer:* は customer:read にマッチ）
+  const [resource, action] = requiredPermission.split(':')
+  if (roleConfig.permissions.includes(`${resource}:*`)) return true
+
+  return false
+}
+
+// ロールが特定のアクションを実行できるかチェック
+export function canPerformAction(
+  userRole: UserRole,
+  action: 'create' | 'read' | 'update' | 'delete' | 'approve',
+  resource: string
+): boolean {
+  return hasPermission(userRole, `${resource}:${action}`)
 }

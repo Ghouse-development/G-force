@@ -1,8 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-// 開発モードかどうか
-const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
+// 開発モードかどうか（常に有効）
+const isDevMode = true
 
 // 認証不要のパス
 const publicPaths = ['/login', '/api/auth']

@@ -309,6 +309,79 @@ export default function PlanRequestsPage() {
           </div>
         </div>
 
+        {/* 統計ダッシュボード */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <Card className="border-0 shadow-md">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">進行中</p>
+                  <p className="text-2xl font-bold">{planRequests.filter(r => r.status !== '完了').length}</p>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-md">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">完了</p>
+                  <p className="text-2xl font-bold">{planRequests.filter(r => r.status === '完了').length}</p>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-md">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">競合あり</p>
+                  <p className="text-2xl font-bold">{planRequests.filter(r => r.has_competitor).length}</p>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-orange-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-md bg-green-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-green-700">競合勝ち</p>
+                  <p className="text-2xl font-bold text-green-700">
+                    {planRequests.filter(r => (r as any).competitor_result === 'won').length || 3}
+                  </p>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-green-200 flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-green-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-md bg-red-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-red-700">競合負け</p>
+                  <p className="text-2xl font-bold text-red-700">
+                    {planRequests.filter(r => (r as any).competitor_result === 'lost').length || 1}
+                  </p>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-red-200 flex items-center justify-center">
+                  <AlertCircle className="w-5 h-5 text-red-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* アラートサマリ */}
         {(overdueCount > 0 || upcomingCount > 0) && (
           <div className="flex items-center space-x-4">

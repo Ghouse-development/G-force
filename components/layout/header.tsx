@@ -39,10 +39,11 @@ const navigation = [
 ]
 
 const documentNavigation = [
-  { name: 'プラン依頼', href: '/plan-requests', icon: FileEdit, description: '設計部への依頼' },
-  { name: '契約書', href: '/contracts', icon: FileSignature, description: '請負契約書管理' },
-  { name: '引継書', href: '/handovers', icon: ClipboardList, description: '工事部への引継' },
   { name: '資金計画書', href: '/fund-plans', icon: FileText, description: '資金計画作成' },
+  { name: '契約依頼', href: '/contract-requests', icon: FileEdit, description: '契約依頼・承認フロー' },
+  { name: '請負契約書', href: '/contracts', icon: FileSignature, description: '請負契約書作成' },
+  { name: 'プラン依頼', href: '/plan-requests', icon: ClipboardList, description: '設計部への依頼' },
+  { name: '引継書', href: '/handovers', icon: ClipboardList, description: '工事部への引継' },
   { name: 'ローン管理', href: '/loans', icon: Landmark, description: '住宅ローン進捗管理' },
 ]
 
@@ -63,8 +64,8 @@ export function Header() {
     router.push('/login')
   }
 
-  // Show admin navigation for admin and manager roles
-  const showAdminNav = user?.role === 'admin' || user?.role === 'manager'
+  // Show admin navigation for admin role only
+  const showAdminNav = user?.role === 'admin'
 
   // Check if any document page is active
   const isDocumentActive = documentNavigation.some(
@@ -74,9 +75,17 @@ export function Header() {
   // Get role display name
   const getRoleDisplay = (role: string | undefined) => {
     switch (role) {
-      case 'admin': return '管理者'
-      case 'manager': return '部門長'
-      case 'staff': return '営業'
+      case 'admin': return '本部'
+      case 'sales': return '営業'
+      case 'sales_leader': return '営業リーダー'
+      case 'sales_office': return '営業事務'
+      case 'design_manager': return '設計部門長'
+      case 'construction_manager': return '工事部門長'
+      case 'design': return '設計'
+      case 'cad': return 'CAD'
+      case 'ic': return 'IC'
+      case 'supervisor': return '現場監督'
+      case 'exterior': return '外構'
       default: return ''
     }
   }

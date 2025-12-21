@@ -10,45 +10,78 @@ import { User, Shield, Chrome } from 'lucide-react'
 import { toast } from 'sonner'
 import type { User as DBUser } from '@/types/database'
 
-// Development mock users
+// Development mock users - matches schema.sql
 const mockUsers: Record<string, DBUser> = {
   sales: {
-    id: 'dev-sales-001',
+    id: '00000000-0000-0000-0000-000000000101',
     tenant_id: '00000000-0000-0000-0000-000000000001',
     email: 'sales@g-house.com',
     name: '田畑 美香',
     phone: null,
     department: '営業部',
-    role: 'staff',
+    role: 'sales',
     is_active: true,
     created_at: new Date().toISOString(),
   },
-  manager: {
-    id: 'dev-manager-001',
+  sales_leader: {
+    id: '00000000-0000-0000-0000-000000000102',
     tenant_id: '00000000-0000-0000-0000-000000000001',
-    email: 'manager@g-house.com',
-    name: '佐藤 部長',
+    email: 'leader@g-house.com',
+    name: '山田 リーダー',
     phone: null,
     department: '営業部',
-    role: 'manager',
+    role: 'sales_leader',
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  sales_office: {
+    id: '00000000-0000-0000-0000-000000000103',
+    tenant_id: '00000000-0000-0000-0000-000000000001',
+    email: 'office@g-house.com',
+    name: '鈴木 事務',
+    phone: null,
+    department: '営業事務部',
+    role: 'sales_office',
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  design_manager: {
+    id: '00000000-0000-0000-0000-000000000104',
+    tenant_id: '00000000-0000-0000-0000-000000000001',
+    email: 'design-mgr@g-house.com',
+    name: '高橋 設計部門長',
+    phone: null,
+    department: '設計部',
+    role: 'design_manager',
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  construction_manager: {
+    id: '00000000-0000-0000-0000-000000000105',
+    tenant_id: '00000000-0000-0000-0000-000000000001',
+    email: 'construction-mgr@g-house.com',
+    name: '伊藤 工事部門長',
+    phone: null,
+    department: '工事部',
+    role: 'construction_manager',
     is_active: true,
     created_at: new Date().toISOString(),
   },
   admin: {
-    id: 'dev-admin-001',
+    id: '00000000-0000-0000-0000-000000000106',
     tenant_id: '00000000-0000-0000-0000-000000000001',
     email: 'admin@g-house.com',
-    name: '管理者',
+    name: '本部 管理者',
     phone: null,
-    department: null,
+    department: '本部',
     role: 'admin',
     is_active: true,
     created_at: new Date().toISOString(),
   },
 }
 
-// Show dev login buttons only in development mode
-const showDevLogin = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
+// Show dev login buttons always during development
+const showDevLogin = true
 
 export default function LoginPage() {
   const router = useRouter()
@@ -73,7 +106,7 @@ export default function LoginPage() {
     }
   }
 
-  const handleDevLogin = (role: 'sales' | 'manager' | 'admin') => {
+  const handleDevLogin = (role: 'sales' | 'sales_leader' | 'sales_office' | 'design_manager' | 'construction_manager' | 'admin') => {
     setIsLoading(true)
     const user = mockUsers[role]
 
@@ -120,12 +153,42 @@ export default function LoginPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => handleDevLogin('manager')}
+                  onClick={() => handleDevLogin('sales_leader')}
+                  disabled={isLoading}
+                  className="h-14 border-gray-200 hover:border-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 p-2"
+                >
+                  <User className="w-5 h-5 text-blue-600" />
+                  <span className="text-xs font-medium">営業L</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleDevLogin('sales_office')}
+                  disabled={isLoading}
+                  className="h-14 border-gray-200 hover:border-purple-500 hover:bg-purple-50 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 p-2"
+                >
+                  <User className="w-5 h-5 text-purple-500" />
+                  <span className="text-xs font-medium">事務</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleDevLogin('design_manager')}
                   disabled={isLoading}
                   className="h-14 border-gray-200 hover:border-orange-500 hover:bg-orange-50 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 p-2"
                 >
                   <User className="w-5 h-5 text-orange-500" />
-                  <span className="text-xs font-medium">部門長</span>
+                  <span className="text-xs font-medium">設計長</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleDevLogin('construction_manager')}
+                  disabled={isLoading}
+                  className="h-14 border-gray-200 hover:border-yellow-600 hover:bg-yellow-50 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 p-2"
+                >
+                  <User className="w-5 h-5 text-yellow-600" />
+                  <span className="text-xs font-medium">工事長</span>
                 </Button>
                 <Button
                   type="button"
@@ -135,7 +198,7 @@ export default function LoginPage() {
                   className="h-14 border-gray-200 hover:border-green-500 hover:bg-green-50 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 p-2"
                 >
                   <Shield className="w-5 h-5 text-green-500" />
-                  <span className="text-xs font-medium">管理者</span>
+                  <span className="text-xs font-medium">本部</span>
                 </Button>
               </div>
             </div>

@@ -82,8 +82,8 @@ const adminMenus = [
 export default function AdminPage() {
   const { user } = useAuthStore()
 
-  // Check if user has admin or manager role
-  if (user?.role !== 'admin' && user?.role !== 'manager') {
+  // Check if user has admin role
+  if (user?.role !== 'admin') {
     return (
       <Layout>
         <div className="flex items-center justify-center h-[60vh]">

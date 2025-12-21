@@ -1,488 +1,770 @@
--- Gハウス業務システム データベーススキーマ v2
--- Supabase SQL Editor で実行してください
--- 期首: 8月1日、期末: 7月31日（引渡ベース）
+-- ============================================
+-- G-force Database Schema
+-- Gハウス業務システム - 統合スキーマ
+-- ============================================
 
--- ========================================
--- 既存テーブル削除（開発環境のみ）
--- ========================================
--- DROP TABLE IF EXISTS activities CASCADE;
--- DROP TABLE IF EXISTS handovers CASCADE;
--- DROP TABLE IF EXISTS contracts CASCADE;
--- DROP TABLE IF EXISTS plan_requests CASCADE;
--- DROP TABLE IF EXISTS fund_plans CASCADE;
--- DROP TABLE IF EXISTS sales_targets CASCADE;
--- DROP TABLE IF EXISTS customers CASCADE;
--- DROP TABLE IF EXISTS products CASCADE;
--- DROP TABLE IF EXISTS users CASCADE;
--- DROP TABLE IF EXISTS tenants CASCADE;
+-- 既存テーブルの削除（再作成用）
+DROP TABLE IF EXISTS activity_logs CASCADE;
+DROP TABLE IF EXISTS notifications CASCADE;
+DROP TABLE IF EXISTS approval_history CASCADE;
+DROP TABLE IF EXISTS workflow_instances CASCADE;
+DROP TABLE IF EXISTS workflow_steps CASCADE;
+DROP TABLE IF EXISTS workflow_definitions CASCADE;
+DROP TABLE IF EXISTS field_definitions CASCADE;
+DROP TABLE IF EXISTS form_definitions CASCADE;
+DROP TABLE IF EXISTS page_definitions CASCADE;
+DROP TABLE IF EXISTS handover_viewers CASCADE;
+DROP TABLE IF EXISTS handovers CASCADE;
+DROP TABLE IF EXISTS plan_request_competitors CASCADE;
+DROP TABLE IF EXISTS plan_requests CASCADE;
+DROP TABLE IF EXISTS contracts CASCADE;
+DROP TABLE IF EXISTS contract_request_attachments CASCADE;
+DROP TABLE IF EXISTS contract_requests CASCADE;
+DROP TABLE IF EXISTS fund_plans CASCADE;
+DROP TABLE IF EXISTS customer_activities CASCADE;
+DROP TABLE IF EXISTS customers CASCADE;
+DROP TABLE IF EXISTS campaign_products CASCADE;
+DROP TABLE IF EXISTS campaigns CASCADE;
+DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS banks CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS tenants CASCADE;
 
--- ========================================
--- テナント（マルチテナント対応）
--- ========================================
-CREATE TABLE IF NOT EXISTS tenants (
+-- ============================================
+-- 1. 基本テーブル
+-- ============================================
+
+-- テナント（会社）
+CREATE TABLE tenants (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  subdomain TEXT UNIQUE,
-  logo_url TEXT,
-  primary_color TEXT DEFAULT '#F97316',
-  fiscal_year_start_month INTEGER DEFAULT 8, -- 期首月（Gハウスは8月）
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  name VARCHAR(255) NOT NULL,
+  code VARCHAR(50) UNIQUE,
+  settings JSONB DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ========================================
 -- ユーザー
--- ========================================
-CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  tenant_id UUID REFERENCES tenants(id) ON DELETE SET NULL,
-  email TEXT NOT NULL,
-  name TEXT NOT NULL,
-  phone TEXT,
-  department TEXT CHECK (department IN ('営業部', '設計部', 'IC', '工事部')),
-  role TEXT CHECK (role IN ('admin', 'manager', 'staff')) DEFAULT 'staff',
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  email VARCHAR(255) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  phone VARCHAR(50),
+  department VARCHAR(100),
+  role VARCHAR(50) NOT NULL DEFAULT 'staff',
+  -- roles: staff, sales_leader, sales_admin, design_manager, construction_manager, design, cad, ic, site_supervisor, exterior, headquarters
+  permissions JSONB DEFAULT '[]',
+  is_active BOOLEAN DEFAULT TRUE,
+  avatar_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(tenant_id, email)
 );
 
--- ========================================
+-- ============================================
+-- 2. マスタテーブル
+-- ============================================
+
 -- 商品マスタ
--- ========================================
-CREATE TABLE IF NOT EXISTS products (
+CREATE TABLE products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID REFERENCES tenants(id) ON DELETE SET NULL,
-  name TEXT NOT NULL,
-  price_per_tsubo INTEGER, -- 坪単価（税込）
-  base_price_per_tsubo INTEGER, -- 基本坪単価
-  is_active BOOLEAN DEFAULT true,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  code VARCHAR(50),
+  name VARCHAR(255) NOT NULL,
+  category VARCHAR(100),
+  base_price DECIMAL(15, 2),
+  price_per_tsubo DECIMAL(15, 2),
+  description TEXT,
+  specifications JSONB DEFAULT '{}',
+  is_active BOOLEAN DEFAULT TRUE,
   sort_order INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ========================================
--- 顧客（パイプライン管理）
--- ========================================
-CREATE TABLE IF NOT EXISTS customers (
+-- キャンペーンマスタ
+CREATE TABLE campaigns (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID REFERENCES tenants(id) ON DELETE SET NULL,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  code VARCHAR(50),
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  discount_type VARCHAR(50), -- 'fixed', 'percentage', 'gift'
+  discount_value DECIMAL(15, 2),
+  conditions JSONB DEFAULT '{}',
+  start_date DATE,
+  end_date DATE,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- キャンペーン対象商品
+CREATE TABLE campaign_products (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(campaign_id, product_id)
+);
+
+-- 銀行マスタ
+CREATE TABLE banks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  code VARCHAR(50),
+  name VARCHAR(255) NOT NULL,
+  branch_name VARCHAR(255),
+  loan_types JSONB DEFAULT '[]',
+  interest_rates JSONB DEFAULT '{}',
+  is_active BOOLEAN DEFAULT TRUE,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- 3. 顧客管理
+-- ============================================
+
+-- 顧客
+CREATE TABLE customers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
 
   -- 基本情報
-  tei_name TEXT, -- 〇〇様邸
-  name TEXT NOT NULL,
-  name_kana TEXT,
-  partner_name TEXT,
-  partner_name_kana TEXT,
-  ownership_type TEXT CHECK (ownership_type IN ('単独', '共有')) DEFAULT '単独',
+  customer_number VARCHAR(50),
+  name VARCHAR(255) NOT NULL,
+  name_kana VARCHAR(255),
+  partner_name VARCHAR(255),
+  partner_name_kana VARCHAR(255),
 
   -- 連絡先
-  phone TEXT,
-  phone2 TEXT,
-  email TEXT,
-  postal_code TEXT,
-  address TEXT,
+  email VARCHAR(255),
+  phone VARCHAR(50),
+  mobile_phone VARCHAR(50),
 
-  -- パイプライン管理（反響→契約→引渡）
-  pipeline_status TEXT CHECK (pipeline_status IN (
-    '反響', 'イベント参加', '限定会員', '面談', '建築申込',
-    '内定', 'ボツ', '他決', '契約', '着工', '引渡', '引渡済'
-  )) DEFAULT '反響',
+  -- 住所
+  postal_code VARCHAR(10),
+  prefecture VARCHAR(50),
+  city VARCHAR(100),
+  address VARCHAR(255),
+  building VARCHAR(255),
 
-  -- 反響経路
-  lead_source TEXT CHECK (lead_source IN (
-    '資料請求', 'モデルハウス見学会予約', 'オーナー紹介', '社員紹介',
-    '業者紹介', 'TEL問合せ', 'HP問合せ', 'Instagram', 'その他'
-  )),
-
-  -- 各ステージの日付（遷移率計算に使用）
-  lead_date DATE, -- 反響日
-  event_date DATE, -- イベント参加日
-  member_date DATE, -- 会員登録日
-  meeting_date DATE, -- 面談日
-  application_date DATE, -- 建築申込日
-  decision_date DATE, -- 内定日
-  contract_date DATE, -- 契約日
-  groundbreaking_date DATE, -- 着工日
-  handover_date DATE, -- 引渡日（★期の判定に使用）
-  lost_date DATE, -- ボツ・他決日
-  lost_reason TEXT, -- 失注理由
-
-  -- 担当
-  assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
-  sub_assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
+  -- 建築予定地
+  land_postal_code VARCHAR(10),
+  land_prefecture VARCHAR(50),
+  land_city VARCHAR(100),
+  land_address VARCHAR(255),
 
   -- 物件情報
-  land_area DECIMAL(10,2), -- 土地面積（坪）
-  building_area DECIMAL(10,2), -- 建物面積（坪）
-  product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+  tei_name VARCHAR(255),
+  land_area DECIMAL(10, 2),
+  building_area DECIMAL(10, 2),
 
-  -- 金額
-  estimated_amount BIGINT, -- 見込み金額
-  contract_amount BIGINT, -- 契約金額
+  -- 希望・予算
+  budget_min DECIMAL(15, 2),
+  budget_max DECIMAL(15, 2),
+  desired_move_date DATE,
+  family_size INTEGER,
 
-  -- その他
+  -- 営業情報
+  pipeline_status VARCHAR(50) DEFAULT '新規問合せ',
+  -- statuses: 新規問合せ, アポ取得, ヒアリング, プラン提案, 見積提出, 契約交渉, 契約, 失注
+  rank VARCHAR(10),
+  source VARCHAR(100),
+  assigned_to UUID REFERENCES users(id),
+
+  -- Formbridge/外部連携
+  formbridge_id VARCHAR(100),
+  external_data JSONB DEFAULT '{}',
+
+  -- メモ・タグ
   notes TEXT,
-  kintone_record_id TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  tags JSONB DEFAULT '[]',
+
+  -- メタ情報
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ========================================
--- プラン依頼（営業→設計）
--- ========================================
-CREATE TABLE IF NOT EXISTS plan_requests (
+-- 顧客活動履歴
+CREATE TABLE customer_activities (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID REFERENCES tenants(id) ON DELETE SET NULL,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-
-  -- 依頼者・担当
-  requested_by UUID REFERENCES users(id) ON DELETE SET NULL, -- 依頼者（営業）
-  assigned_to UUID REFERENCES users(id) ON DELETE SET NULL, -- 担当設計士
-
-  -- ステータス
-  status TEXT CHECK (status IN ('依頼中', '作成中', '確認待ち', '修正依頼', '完了')) DEFAULT '依頼中',
-
-  -- 依頼内容
-  land_address TEXT, -- 土地住所
-  land_area DECIMAL(10,2), -- 土地面積
-  request_details TEXT, -- 依頼詳細
-  budget_min BIGINT, -- 予算下限
-  budget_max BIGINT, -- 予算上限
-  preferred_rooms TEXT, -- 希望間取り
-  preferred_style TEXT, -- 希望スタイル
-  deadline DATE, -- 希望納期
-
-  -- 添付ファイル（JSONで管理）
-  attachments JSONB,
-
-  -- 完了情報
-  completed_at TIMESTAMPTZ,
-  plan_url TEXT, -- 完成プランのURL
-
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  activity_type VARCHAR(50) NOT NULL, -- 'call', 'visit', 'email', 'meeting', 'other'
+  activity_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  title VARCHAR(255),
+  description TEXT,
+  result VARCHAR(100),
+  next_action VARCHAR(255),
+  next_action_date DATE,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ========================================
--- 資金計画書
--- ========================================
-CREATE TABLE IF NOT EXISTS fund_plans (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
-  tenant_id UUID REFERENCES tenants(id) ON DELETE SET NULL,
-  product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+-- ============================================
+-- 4. 資金計画書
+-- ============================================
 
-  status TEXT CHECK (status IN ('draft', 'submitted', 'approved', 'rejected')) DEFAULT 'draft',
+CREATE TABLE fund_plans (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
+
+  -- 基本情報
+  plan_number VARCHAR(50),
+  tei_name VARCHAR(255),
+  status VARCHAR(50) DEFAULT 'draft', -- 'draft', 'submitted', 'approved'
   version INTEGER DEFAULT 1,
 
-  -- 計算データ（JSONB）
+  -- フォームデータ（JSON - Excel形式のデータをそのまま保存）
   data JSONB NOT NULL DEFAULT '{}',
 
-  -- 承認フロー
-  created_by UUID REFERENCES users(id) ON DELETE SET NULL,
-  approved_by UUID REFERENCES users(id) ON DELETE SET NULL,
-  approved_at TIMESTAMPTZ,
+  -- 計算結果（キャッシュ）
+  calculation JSONB DEFAULT '{}',
 
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  -- メタ情報
+  created_by UUID REFERENCES users(id),
+  updated_by UUID REFERENCES users(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ========================================
--- 契約書
--- ========================================
-CREATE TABLE IF NOT EXISTS contracts (
+-- ============================================
+-- 5. 契約依頼・承認フロー
+-- ============================================
+
+-- 契約依頼
+CREATE TABLE contract_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-  tenant_id UUID REFERENCES tenants(id) ON DELETE SET NULL,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
   fund_plan_id UUID REFERENCES fund_plans(id) ON DELETE SET NULL,
 
-  status TEXT CHECK (status IN ('作成中', '確認中', '承認待ち', '締結済')) DEFAULT '作成中',
+  -- 依頼番号
+  request_number VARCHAR(50),
 
-  -- 契約情報
-  contract_number TEXT, -- 契約番号
-  contract_date DATE, -- 契約日
-  contract_amount BIGINT, -- 契約金額
+  -- 基本情報
+  tei_name VARCHAR(255),
+  customer_name VARCHAR(255),
+  partner_name VARCHAR(255),
+  ownership_type VARCHAR(50),
 
-  -- 契約詳細（JSONB）
-  data JSONB NOT NULL DEFAULT '{}',
+  -- 担当者
+  sales_person VARCHAR(100),
+  sales_person_id UUID REFERENCES users(id),
+  design_person VARCHAR(100),
+  construction_person VARCHAR(100),
+  ic_person VARCHAR(100),
 
-  -- 承認フロー
-  created_by UUID REFERENCES users(id) ON DELETE SET NULL,
-  checked_by UUID REFERENCES users(id) ON DELETE SET NULL, -- 確認者
-  approved_by UUID REFERENCES users(id) ON DELETE SET NULL, -- 承認者
-  approved_at TIMESTAMPTZ,
+  -- 物件情報
+  land_address TEXT,
+  land_area DECIMAL(10, 2),
+  building_area DECIMAL(10, 2),
+  product_id UUID REFERENCES products(id),
+  product_name VARCHAR(255),
 
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  -- 金額情報
+  building_price DECIMAL(15, 2),
+  option_price DECIMAL(15, 2),
+  exterior_price DECIMAL(15, 2),
+  other_price DECIMAL(15, 2),
+  discount_amount DECIMAL(15, 2),
+  tax_amount DECIMAL(15, 2),
+  total_amount DECIMAL(15, 2),
+
+  -- 支払条件
+  payment_at_contract DECIMAL(15, 2),
+  payment_at_start DECIMAL(15, 2),
+  payment_at_frame DECIMAL(15, 2),
+  payment_at_completion DECIMAL(15, 2),
+
+  -- ローン情報
+  loan_type VARCHAR(100),
+  loan_bank VARCHAR(255),
+  loan_amount DECIMAL(15, 2),
+  loan_approved BOOLEAN DEFAULT FALSE,
+  loan_approved_date DATE,
+
+  -- キャンペーン
+  campaign_id UUID REFERENCES campaigns(id),
+  campaign_name VARCHAR(255),
+
+  -- スケジュール
+  contract_date DATE,
+  construction_start_date DATE,
+  construction_end_date DATE,
+  handover_date DATE,
+
+  -- 引継書（契約依頼の必須書類）
+  handover_id UUID, -- 後でFKを追加
+
+  -- 承認フロー状態
+  workflow_status VARCHAR(50) DEFAULT 'draft',
+  -- statuses: draft, pending_leader, pending_managers, revision, approved, rejected
+  current_step VARCHAR(100),
+
+  -- 差戻し情報
+  return_count INTEGER DEFAULT 0,
+  return_comment TEXT,
+  returned_by UUID REFERENCES users(id),
+  returned_at TIMESTAMP WITH TIME ZONE,
+
+  -- 備考
+  notes TEXT,
+
+  -- メタ情報
+  created_by UUID REFERENCES users(id),
+  created_by_name VARCHAR(255),
+  submitted_at TIMESTAMP WITH TIME ZONE,
+  approved_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ========================================
--- 引継書（営業→工事）
--- ========================================
-CREATE TABLE IF NOT EXISTS handovers (
+-- 契約依頼添付ファイル
+CREATE TABLE contract_request_attachments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-  tenant_id UUID REFERENCES tenants(id) ON DELETE SET NULL,
-  contract_id UUID REFERENCES contracts(id) ON DELETE SET NULL,
-
-  -- 引継ぎ者
-  from_user_id UUID REFERENCES users(id) ON DELETE SET NULL, -- 営業担当
-  to_user_id UUID REFERENCES users(id) ON DELETE SET NULL, -- 工事担当
-
-  status TEXT CHECK (status IN ('draft', 'submitted', 'approved', 'rejected')) DEFAULT 'draft',
-
-  -- 引継ぎ内容
-  customer_notes TEXT, -- お客様情報
-  site_notes TEXT, -- 現場情報
-  schedule_notes TEXT, -- スケジュール
-  special_notes TEXT, -- 特記事項
-  checklist JSONB, -- チェックリスト
-
-  -- 確認
-  confirmed_by UUID REFERENCES users(id) ON DELETE SET NULL,
-  confirmed_at TIMESTAMPTZ,
-
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  contract_request_id UUID NOT NULL REFERENCES contract_requests(id) ON DELETE CASCADE,
+  file_name VARCHAR(255) NOT NULL,
+  file_type VARCHAR(100),
+  file_size INTEGER,
+  storage_path TEXT,
+  category VARCHAR(100), -- 'identity', 'drawing', 'other'
+  uploaded_by UUID REFERENCES users(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ========================================
--- 活動履歴（顧客とのやりとり）
--- ========================================
-CREATE TABLE IF NOT EXISTS activities (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-  tenant_id UUID REFERENCES tenants(id) ON DELETE SET NULL,
-  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+-- ============================================
+-- 6. 請負契約書
+-- ============================================
 
-  -- 活動内容
-  activity_type TEXT NOT NULL, -- 電話, メール, 来店, 訪問, MH見学, 打合せ
-  title TEXT NOT NULL,
+CREATE TABLE contracts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  contract_request_id UUID REFERENCES contract_requests(id) ON DELETE SET NULL,
+  customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
+
+  -- 契約番号
+  contract_number VARCHAR(50),
+
+  -- 契約依頼からコピーされるデータ
+  tei_name VARCHAR(255),
+  customer_name VARCHAR(255),
+  partner_name VARCHAR(255),
+
+  -- 契約書固有のデータ
+  contract_data JSONB NOT NULL DEFAULT '{}',
+
+  -- ステータス
+  status VARCHAR(50) DEFAULT 'draft', -- 'draft', 'completed'
+
+  -- 本人確認
+  identity_verified BOOLEAN DEFAULT FALSE,
+  identity_doc_type VARCHAR(100),
+  identity_verified_date DATE,
+  identity_verified_by VARCHAR(255),
+
+  -- 重要事項説明
+  important_notes_completed BOOLEAN DEFAULT FALSE,
+  important_notes_date DATE,
+
+  -- メタ情報
+  created_by UUID REFERENCES users(id),
+  created_by_name VARCHAR(255),
+  completed_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- 7. プラン依頼
+-- ============================================
+
+CREATE TABLE plan_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
+
+  -- 依頼番号
+  request_number VARCHAR(50),
+
+  -- 基本情報
+  tei_name VARCHAR(255),
+  customer_name VARCHAR(255),
+
+  -- 依頼内容
+  request_type VARCHAR(50), -- 'new', 'revision'
+  priority VARCHAR(20) DEFAULT 'normal', -- 'high', 'normal', 'low'
+
+  -- 物件情報
+  land_address TEXT,
+  land_area DECIMAL(10, 2),
+  building_area DECIMAL(10, 2),
+  floor_count INTEGER,
+
+  -- 要望
+  requirements TEXT,
+  attached_files JSONB DEFAULT '[]',
+
+  -- ステータス
+  status VARCHAR(50) DEFAULT 'draft',
+  -- statuses: draft, submitted, in_progress, completed, cancelled
+
+  -- 担当
+  requested_by UUID REFERENCES users(id),
+  requested_by_name VARCHAR(255),
+  assigned_to UUID REFERENCES users(id),
+  assigned_to_name VARCHAR(255),
+
+  -- 期限
+  due_date DATE,
+  completed_at TIMESTAMP WITH TIME ZONE,
+
+  -- 結果（競合情報）
+  result VARCHAR(50), -- 'win', 'lose', 'pending'
+  result_reason TEXT,
+  competitor_info TEXT,
+
+  -- メタ情報
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- プラン依頼の競合情報
+CREATE TABLE plan_request_competitors (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  plan_request_id UUID NOT NULL REFERENCES plan_requests(id) ON DELETE CASCADE,
+  competitor_name VARCHAR(255),
+  competitor_price DECIMAL(15, 2),
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- 8. 引継書
+-- ============================================
+
+CREATE TABLE handovers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
+  contract_request_id UUID REFERENCES contract_requests(id) ON DELETE SET NULL,
+
+  -- 引継番号
+  handover_number VARCHAR(50),
+
+  -- 基本情報
+  tei_name VARCHAR(255),
+  customer_name VARCHAR(255),
+
+  -- 引継内容（JSON - 柔軟なフォーム）
+  handover_data JSONB NOT NULL DEFAULT '{}',
+
+  -- ステータス
+  status VARCHAR(50) DEFAULT 'draft', -- 'draft', 'submitted'
+
+  -- 担当
+  sales_person VARCHAR(100),
+  sales_person_id UUID REFERENCES users(id),
+
+  -- メタ情報
+  created_by UUID REFERENCES users(id),
+  submitted_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 引継書閲覧者（契約後に閲覧可能になる）
+CREATE TABLE handover_viewers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  handover_id UUID NOT NULL REFERENCES handovers(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role VARCHAR(50), -- 'design', 'ic', 'site_supervisor', 'exterior'
+  viewed_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(handover_id, user_id)
+);
+
+-- 契約依頼に引継書のFKを追加
+ALTER TABLE contract_requests
+  ADD CONSTRAINT fk_contract_requests_handover
+  FOREIGN KEY (handover_id) REFERENCES handovers(id) ON DELETE SET NULL;
+
+-- ============================================
+-- 9. ノーコード基盤
+-- ============================================
+
+-- フォーム定義
+CREATE TABLE form_definitions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  code VARCHAR(100) NOT NULL,
+  name VARCHAR(255) NOT NULL,
   description TEXT,
-  activity_date DATE NOT NULL,
-
-  -- 次回アクション
-  next_action TEXT,
-  next_action_date DATE,
-
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  entity_type VARCHAR(100), -- 'customer', 'contract_request', 'fund_plan', etc.
+  layout JSONB DEFAULT '{}',
+  settings JSONB DEFAULT '{}',
+  is_active BOOLEAN DEFAULT TRUE,
+  version INTEGER DEFAULT 1,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(tenant_id, code)
 );
 
--- ========================================
--- 営業目標（期・月別）
--- ========================================
-CREATE TABLE IF NOT EXISTS sales_targets (
+-- フィールド定義
+CREATE TABLE field_definitions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID REFERENCES tenants(id) ON DELETE SET NULL,
-  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-
-  -- 期と月
-  fiscal_year INTEGER NOT NULL, -- 期（2024 = 2024年8月〜2025年7月）
-  month INTEGER NOT NULL CHECK (month >= 1 AND month <= 12), -- 月
-
-  -- 目標
-  target_leads INTEGER DEFAULT 0, -- 反響目標
-  target_meetings INTEGER DEFAULT 0, -- 面談目標
-  target_applications INTEGER DEFAULT 0, -- 申込目標
-  target_contracts INTEGER DEFAULT 0, -- 契約目標
-  target_amount BIGINT DEFAULT 0, -- 金額目標
-
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-
-  -- ユニーク制約
-  UNIQUE(tenant_id, user_id, fiscal_year, month)
+  form_id UUID NOT NULL REFERENCES form_definitions(id) ON DELETE CASCADE,
+  code VARCHAR(100) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  field_type VARCHAR(50) NOT NULL,
+  -- types: text, number, currency, date, datetime, select, multiselect, checkbox, textarea, file, calculated, reference
+  options JSONB DEFAULT '{}', -- 選択肢、参照先、計算式など
+  validation JSONB DEFAULT '{}', -- required, min, max, pattern, etc.
+  layout JSONB DEFAULT '{}', -- column, row, width, etc.
+  default_value TEXT,
+  is_required BOOLEAN DEFAULT FALSE,
+  is_readonly BOOLEAN DEFAULT FALSE,
+  is_hidden BOOLEAN DEFAULT FALSE,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(form_id, code)
 );
 
--- ========================================
--- インデックス
--- ========================================
-CREATE INDEX IF NOT EXISTS idx_customers_tenant ON customers(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_customers_status ON customers(pipeline_status);
-CREATE INDEX IF NOT EXISTS idx_customers_assigned ON customers(assigned_to);
-CREATE INDEX IF NOT EXISTS idx_customers_lead_date ON customers(lead_date);
-CREATE INDEX IF NOT EXISTS idx_customers_handover_date ON customers(handover_date);
+-- ワークフロー定義
+CREATE TABLE workflow_definitions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  code VARCHAR(100) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  entity_type VARCHAR(100), -- 'contract_request', etc.
+  trigger_conditions JSONB DEFAULT '{}',
+  settings JSONB DEFAULT '{}',
+  is_active BOOLEAN DEFAULT TRUE,
+  version INTEGER DEFAULT 1,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(tenant_id, code)
+);
 
-CREATE INDEX IF NOT EXISTS idx_plan_requests_customer ON plan_requests(customer_id);
-CREATE INDEX IF NOT EXISTS idx_plan_requests_status ON plan_requests(status);
+-- ワークフローステップ定義
+CREATE TABLE workflow_steps (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workflow_id UUID NOT NULL REFERENCES workflow_definitions(id) ON DELETE CASCADE,
+  code VARCHAR(100) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  step_type VARCHAR(50) NOT NULL, -- 'approval', 'parallel_approval', 'revision', 'notify', 'auto'
+  assignee_type VARCHAR(50), -- 'role', 'user', 'creator', 'field'
+  assignee_value TEXT, -- ロール名、ユーザーID、フィールド名など
+  assignees JSONB DEFAULT '[]', -- 並行承認時の複数承認者
+  require_all BOOLEAN DEFAULT TRUE, -- 並行承認時、全員必要か
+  actions JSONB DEFAULT '["approve", "reject"]',
+  next_steps JSONB DEFAULT '{}', -- { "approve": "step_2", "reject": "step_revision" }
+  notification_settings JSONB DEFAULT '{}',
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(workflow_id, code)
+);
 
-CREATE INDEX IF NOT EXISTS idx_fund_plans_customer ON fund_plans(customer_id);
-CREATE INDEX IF NOT EXISTS idx_fund_plans_status ON fund_plans(status);
+-- ワークフロー実行インスタンス
+CREATE TABLE workflow_instances (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workflow_id UUID NOT NULL REFERENCES workflow_definitions(id) ON DELETE CASCADE,
+  entity_type VARCHAR(100) NOT NULL,
+  entity_id UUID NOT NULL,
+  current_step_id UUID REFERENCES workflow_steps(id),
+  status VARCHAR(50) DEFAULT 'active', -- 'active', 'completed', 'cancelled'
+  started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  completed_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-CREATE INDEX IF NOT EXISTS idx_contracts_customer ON contracts(customer_id);
-CREATE INDEX IF NOT EXISTS idx_contracts_status ON contracts(status);
+-- 画面定義
+CREATE TABLE page_definitions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  code VARCHAR(100) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  path VARCHAR(255), -- URL path
+  page_type VARCHAR(50), -- 'list', 'detail', 'form', 'dashboard'
+  entity_type VARCHAR(100),
+  layout JSONB DEFAULT '{}',
+  components JSONB DEFAULT '[]',
+  permissions JSONB DEFAULT '[]', -- 閲覧可能なロール
+  settings JSONB DEFAULT '{}',
+  is_active BOOLEAN DEFAULT TRUE,
+  sort_order INTEGER DEFAULT 0,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(tenant_id, code)
+);
 
-CREATE INDEX IF NOT EXISTS idx_activities_customer ON activities(customer_id);
-CREATE INDEX IF NOT EXISTS idx_activities_date ON activities(activity_date);
+-- ============================================
+-- 10. 承認履歴・通知・ログ
+-- ============================================
 
-CREATE INDEX IF NOT EXISTS idx_sales_targets_fiscal ON sales_targets(fiscal_year, month);
+-- 承認履歴
+CREATE TABLE approval_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workflow_instance_id UUID REFERENCES workflow_instances(id) ON DELETE CASCADE,
+  step_id UUID REFERENCES workflow_steps(id),
+  entity_type VARCHAR(100) NOT NULL,
+  entity_id UUID NOT NULL,
+  action VARCHAR(50) NOT NULL, -- 'submit', 'approve', 'reject', 'revision'
+  from_status VARCHAR(100),
+  to_status VARCHAR(100),
+  comment TEXT,
+  acted_by UUID REFERENCES users(id),
+  acted_by_name VARCHAR(255),
+  acted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
--- ========================================
--- RLS（Row Level Security）ポリシー
--- ========================================
+-- 通知
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  message TEXT,
+  notification_type VARCHAR(50) DEFAULT 'info', -- 'info', 'success', 'warning', 'error'
+  category VARCHAR(50), -- 'contract_request', 'plan_request', 'system'
+  entity_type VARCHAR(100),
+  entity_id UUID,
+  link_url TEXT,
+  link_label VARCHAR(100),
+  is_read BOOLEAN DEFAULT FALSE,
+  read_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 操作ログ
+CREATE TABLE activity_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id),
+  action VARCHAR(100) NOT NULL,
+  entity_type VARCHAR(100),
+  entity_id UUID,
+  old_values JSONB,
+  new_values JSONB,
+  ip_address VARCHAR(50),
+  user_agent TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- 11. インデックス
+-- ============================================
+
+-- 顧客
+CREATE INDEX idx_customers_tenant ON customers(tenant_id);
+CREATE INDEX idx_customers_pipeline_status ON customers(tenant_id, pipeline_status);
+CREATE INDEX idx_customers_assigned_to ON customers(assigned_to);
+CREATE INDEX idx_customers_name ON customers(tenant_id, name);
+
+-- 資金計画書
+CREATE INDEX idx_fund_plans_tenant ON fund_plans(tenant_id);
+CREATE INDEX idx_fund_plans_customer ON fund_plans(customer_id);
+
+-- 契約依頼
+CREATE INDEX idx_contract_requests_tenant ON contract_requests(tenant_id);
+CREATE INDEX idx_contract_requests_customer ON contract_requests(customer_id);
+CREATE INDEX idx_contract_requests_status ON contract_requests(tenant_id, workflow_status);
+
+-- 契約書
+CREATE INDEX idx_contracts_tenant ON contracts(tenant_id);
+CREATE INDEX idx_contracts_customer ON contracts(customer_id);
+
+-- プラン依頼
+CREATE INDEX idx_plan_requests_tenant ON plan_requests(tenant_id);
+CREATE INDEX idx_plan_requests_customer ON plan_requests(customer_id);
+CREATE INDEX idx_plan_requests_status ON plan_requests(tenant_id, status);
+CREATE INDEX idx_plan_requests_assigned ON plan_requests(assigned_to);
+
+-- 引継書
+CREATE INDEX idx_handovers_tenant ON handovers(tenant_id);
+CREATE INDEX idx_handovers_customer ON handovers(customer_id);
+
+-- 通知
+CREATE INDEX idx_notifications_user ON notifications(user_id, is_read);
+CREATE INDEX idx_notifications_created ON notifications(user_id, created_at DESC);
+
+-- ワークフロー
+CREATE INDEX idx_workflow_instances_entity ON workflow_instances(entity_type, entity_id);
+
+-- ============================================
+-- 12. 初期データ
+-- ============================================
+
+-- デフォルトテナント
+INSERT INTO tenants (id, name, code) VALUES
+  ('00000000-0000-0000-0000-000000000001', 'Gハウス', 'ghouse');
+
+-- デフォルトユーザー（開発用）
+INSERT INTO users (id, tenant_id, email, name, department, role) VALUES
+  ('00000000-0000-0000-0000-000000000101', '00000000-0000-0000-0000-000000000001', 'sales@g-house.com', '田畑 美香', '営業部', 'staff'),
+  ('00000000-0000-0000-0000-000000000102', '00000000-0000-0000-0000-000000000001', 'leader@g-house.com', '佐藤 部長', '営業部', 'sales_leader'),
+  ('00000000-0000-0000-0000-000000000103', '00000000-0000-0000-0000-000000000001', 'admin@g-house.com', '営業事務', '営業部', 'sales_admin'),
+  ('00000000-0000-0000-0000-000000000104', '00000000-0000-0000-0000-000000000001', 'design_mgr@g-house.com', '設計部門長', '設計部', 'design_manager'),
+  ('00000000-0000-0000-0000-000000000105', '00000000-0000-0000-0000-000000000001', 'const_mgr@g-house.com', '工事部門長', '工事部', 'construction_manager'),
+  ('00000000-0000-0000-0000-000000000106', '00000000-0000-0000-0000-000000000001', 'design@g-house.com', '設計担当', '設計部', 'design'),
+  ('00000000-0000-0000-0000-000000000107', '00000000-0000-0000-0000-000000000001', 'cad@g-house.com', 'CAD担当', '設計部', 'cad'),
+  ('00000000-0000-0000-0000-000000000108', '00000000-0000-0000-0000-000000000001', 'ic@g-house.com', 'IC担当', '設計部', 'ic'),
+  ('00000000-0000-0000-0000-000000000109', '00000000-0000-0000-0000-000000000001', 'site@g-house.com', '現場監督', '工事部', 'site_supervisor'),
+  ('00000000-0000-0000-0000-000000000110', '00000000-0000-0000-0000-000000000001', 'exterior@g-house.com', '外構担当', '工事部', 'exterior'),
+  ('00000000-0000-0000-0000-000000000111', '00000000-0000-0000-0000-000000000001', 'hq@g-house.com', '本部管理者', '本部', 'headquarters');
+
+-- デフォルトワークフロー（契約依頼）
+INSERT INTO workflow_definitions (id, tenant_id, code, name, entity_type) VALUES
+  ('00000000-0000-0000-0000-000000000201', '00000000-0000-0000-0000-000000000001', 'contract_request_approval', '契約依頼承認フロー', 'contract_request');
+
+INSERT INTO workflow_steps (id, workflow_id, code, name, step_type, assignee_type, assignee_value, actions, next_steps, sort_order) VALUES
+  ('00000000-0000-0000-0000-000000000301', '00000000-0000-0000-0000-000000000201', 'leader_review', '営業リーダー確認', 'approval', 'role', 'sales_leader', '["approve", "reject"]', '{"approve": "manager_review", "reject": "revision"}', 1),
+  ('00000000-0000-0000-0000-000000000302', '00000000-0000-0000-0000-000000000201', 'manager_review', '設計・工事部門長確認', 'parallel_approval', 'role', null, '["approve", "reject"]', '{"approve": "complete", "reject": "revision"}', 2),
+  ('00000000-0000-0000-0000-000000000303', '00000000-0000-0000-0000-000000000201', 'revision', '修正', 'revision', 'creator', null, '["submit"]', '{"submit": "leader_review"}', 3),
+  ('00000000-0000-0000-0000-000000000304', '00000000-0000-0000-0000-000000000201', 'complete', '完了', 'notify', 'role', 'sales_admin', '[]', '{}', 4);
+
+-- manager_review の並行承認者を設定
+UPDATE workflow_steps
+SET assignees = '[{"role": "design_manager"}, {"role": "construction_manager"}]'::jsonb,
+    require_all = TRUE
+WHERE id = '00000000-0000-0000-0000-000000000302';
+
+-- ============================================
+-- 13. RLSポリシー（Row Level Security）
+-- ============================================
+
+-- RLSを有効化
 ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE plan_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fund_plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contract_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contracts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE plan_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE handovers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sales_targets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
--- テナント分離ポリシー（全テーブル共通）
-CREATE POLICY "tenant_isolation" ON customers
-  FOR ALL USING (
-    tenant_id IN (
-      SELECT tenant_id FROM users WHERE id = auth.uid()
-    )
-  );
+-- 開発中はRLSポリシーを緩めに設定（全アクセス許可）
+-- 本番環境では適切なポリシーに変更すること
 
-CREATE POLICY "tenant_isolation" ON products
-  FOR ALL USING (
-    tenant_id IN (
-      SELECT tenant_id FROM users WHERE id = auth.uid()
-    )
-  );
-
-CREATE POLICY "tenant_isolation" ON plan_requests
-  FOR ALL USING (
-    tenant_id IN (
-      SELECT tenant_id FROM users WHERE id = auth.uid()
-    )
-  );
-
-CREATE POLICY "tenant_isolation" ON fund_plans
-  FOR ALL USING (
-    tenant_id IN (
-      SELECT tenant_id FROM users WHERE id = auth.uid()
-    )
-  );
-
-CREATE POLICY "tenant_isolation" ON contracts
-  FOR ALL USING (
-    tenant_id IN (
-      SELECT tenant_id FROM users WHERE id = auth.uid()
-    )
-  );
-
-CREATE POLICY "tenant_isolation" ON handovers
-  FOR ALL USING (
-    tenant_id IN (
-      SELECT tenant_id FROM users WHERE id = auth.uid()
-    )
-  );
-
-CREATE POLICY "tenant_isolation" ON activities
-  FOR ALL USING (
-    tenant_id IN (
-      SELECT tenant_id FROM users WHERE id = auth.uid()
-    )
-  );
-
-CREATE POLICY "tenant_isolation" ON sales_targets
-  FOR ALL USING (
-    tenant_id IN (
-      SELECT tenant_id FROM users WHERE id = auth.uid()
-    )
-  );
-
--- ========================================
--- 自動更新トリガー
--- ========================================
-CREATE OR REPLACE FUNCTION update_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER customers_updated_at
-  BEFORE UPDATE ON customers
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
-CREATE TRIGGER plan_requests_updated_at
-  BEFORE UPDATE ON plan_requests
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
-CREATE TRIGGER fund_plans_updated_at
-  BEFORE UPDATE ON fund_plans
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
-CREATE TRIGGER contracts_updated_at
-  BEFORE UPDATE ON contracts
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
-CREATE TRIGGER handovers_updated_at
-  BEFORE UPDATE ON handovers
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
--- ========================================
--- 初期データ（Gハウス）
--- ========================================
-INSERT INTO tenants (id, name, subdomain, primary_color, fiscal_year_start_month)
-VALUES ('00000000-0000-0000-0000-000000000001', 'Gハウス', 'ghouse', '#F97316', 8)
-ON CONFLICT DO NOTHING;
-
--- 商品マスタ（Excelより）
-INSERT INTO products (tenant_id, name, price_per_tsubo, base_price_per_tsubo, sort_order) VALUES
-('00000000-0000-0000-0000-000000000001', 'LIFE', 760000, 550000, 1),
-('00000000-0000-0000-0000-000000000001', 'LIFE+', 710000, 630000, 2),
-('00000000-0000-0000-0000-000000000001', 'HOURS', 680000, NULL, 3),
-('00000000-0000-0000-0000-000000000001', 'LACIE', 630000, NULL, 4),
-('00000000-0000-0000-0000-000000000001', 'LIFE Limited', 500000, 500000, 5),
-('00000000-0000-0000-0000-000000000001', 'LIFE+ Limited', 550000, 550000, 6),
-('00000000-0000-0000-0000-000000000001', 'G-SMART平屋', NULL, 680000, 7),
-('00000000-0000-0000-0000-000000000001', 'G-SMART平屋 Limited', NULL, 630000, 8),
-('00000000-0000-0000-0000-000000000001', 'G-SMART平屋+', NULL, 760000, 9),
-('00000000-0000-0000-0000-000000000001', 'G-SMART平屋+ Limited', NULL, 710000, 10),
-('00000000-0000-0000-0000-000000000001', 'LIFE X(28～30坪)', NULL, NULL, 11),
-('00000000-0000-0000-0000-000000000001', 'LIFE X(30～33坪)', NULL, NULL, 12),
-('00000000-0000-0000-0000-000000000001', 'LIFE X(33～35坪)', NULL, NULL, 13),
-('00000000-0000-0000-0000-000000000001', 'LIFE X(35～38坪)', NULL, NULL, 14)
-ON CONFLICT DO NOTHING;
-
--- ========================================
--- ビュー（遷移率計算用）
--- ========================================
-CREATE OR REPLACE VIEW pipeline_stats AS
-SELECT
-  tenant_id,
-  assigned_to,
-  EXTRACT(YEAR FROM lead_date) AS lead_year,
-  EXTRACT(MONTH FROM lead_date) AS lead_month,
-  pipeline_status,
-  lead_source,
-  COUNT(*) AS count,
-  SUM(CASE WHEN pipeline_status = '反響' THEN 1 ELSE 0 END) AS leads,
-  SUM(CASE WHEN pipeline_status = 'イベント参加' THEN 1 ELSE 0 END) AS events,
-  SUM(CASE WHEN pipeline_status = '限定会員' THEN 1 ELSE 0 END) AS members,
-  SUM(CASE WHEN pipeline_status = '面談' THEN 1 ELSE 0 END) AS meetings,
-  SUM(CASE WHEN pipeline_status = '建築申込' THEN 1 ELSE 0 END) AS applications,
-  SUM(CASE WHEN pipeline_status = '内定' THEN 1 ELSE 0 END) AS decisions,
-  SUM(CASE WHEN pipeline_status = '契約' THEN 1 ELSE 0 END) AS contracts,
-  SUM(CASE WHEN pipeline_status IN ('ボツ', '他決') THEN 1 ELSE 0 END) AS lost
-FROM customers
-WHERE lead_date IS NOT NULL
-GROUP BY tenant_id, assigned_to, EXTRACT(YEAR FROM lead_date), EXTRACT(MONTH FROM lead_date), pipeline_status, lead_source;
-
--- 引渡実績ビュー（期の実績計算用）
-CREATE OR REPLACE VIEW handover_stats AS
-SELECT
-  tenant_id,
-  assigned_to,
-  -- 期の計算（8月始まり）
-  CASE
-    WHEN EXTRACT(MONTH FROM handover_date) >= 8 THEN EXTRACT(YEAR FROM handover_date)
-    ELSE EXTRACT(YEAR FROM handover_date) - 1
-  END AS fiscal_year,
-  EXTRACT(MONTH FROM handover_date) AS handover_month,
-  COUNT(*) AS handover_count,
-  SUM(contract_amount) AS total_amount
-FROM customers
-WHERE handover_date IS NOT NULL
-GROUP BY tenant_id, assigned_to,
-  CASE
-    WHEN EXTRACT(MONTH FROM handover_date) >= 8 THEN EXTRACT(YEAR FROM handover_date)
-    ELSE EXTRACT(YEAR FROM handover_date) - 1
-  END,
-  EXTRACT(MONTH FROM handover_date);
+CREATE POLICY "Allow all for development" ON tenants FOR ALL USING (true);
+CREATE POLICY "Allow all for development" ON users FOR ALL USING (true);
+CREATE POLICY "Allow all for development" ON customers FOR ALL USING (true);
+CREATE POLICY "Allow all for development" ON fund_plans FOR ALL USING (true);
+CREATE POLICY "Allow all for development" ON contract_requests FOR ALL USING (true);
+CREATE POLICY "Allow all for development" ON contracts FOR ALL USING (true);
+CREATE POLICY "Allow all for development" ON plan_requests FOR ALL USING (true);
+CREATE POLICY "Allow all for development" ON handovers FOR ALL USING (true);
+CREATE POLICY "Allow all for development" ON notifications FOR ALL USING (true);

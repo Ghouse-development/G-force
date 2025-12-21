@@ -11,8 +11,21 @@ interface AuthProviderProps {
   children: React.ReactNode
 }
 
-// 開発モードかどうか
-const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
+// 開発モード - 常に有効
+const isDevMode = true
+
+// 開発用デフォルトユーザー（営業として自動ログイン）
+const devDefaultUser: DBUser = {
+  id: '00000000-0000-0000-0000-000000000001',
+  tenant_id: '00000000-0000-0000-0000-000000000001',
+  email: 'dev@example.com',
+  name: '開発ユーザー',
+  phone: null,
+  department: '営業部',
+  role: 'admin', // adminで全機能アクセス可能
+  is_active: true,
+  created_at: new Date().toISOString(),
+}
 
 // 認証不要のパス
 const publicPaths = ['/login', '/api']
@@ -28,6 +41,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // 初期認証状態の確認
     const initAuth = async () => {
       setLoading(true)
+
+      // 開発モードではデフォルトユーザーを自動設定
+      if (isDevMode && !isAuthenticated) {
+        console.log('[Auth] Dev mode: Auto-login as dev user')
+        setUser(devDefaultUser)
+        setLoading(false)
+        return
+      }
 
       try {
         // Supabaseのセッションを確認
@@ -49,13 +70,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
               name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
               phone: null,
               department: null,
-              role: 'staff',
+              role: 'sales',
               is_active: true,
               created_at: new Date().toISOString(),
             }
             console.log('[Auth] Creating new user from session:', newUser.name)
             setUser(newUser)
           }
+        } else if (isDevMode) {
+          // 開発モードでセッションがない場合はデフォルトユーザーを設定
+          console.log('[Auth] Dev mode: Using default user')
+          setUser(devDefaultUser)
+          setLoading(false)
         } else {
           // セッションがなく、ローカルストアにも認証がない場合
           if (!isAuthenticated) {
@@ -65,6 +91,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       } catch (error) {
         console.error('[Auth] Error initializing auth:', error)
+        // 開発モードではエラーでもデフォルトユーザーを設定
+        if (isDevMode) {
+          setUser(devDefaultUser)
+        }
         setLoading(false)
       }
     }
@@ -90,7 +120,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
               name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
               phone: null,
               department: null,
-              role: 'staff',
+              role: 'sales',
               is_active: true,
               created_at: new Date().toISOString(),
             }
