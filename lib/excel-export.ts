@@ -7,6 +7,272 @@ import * as XLSX from 'xlsx'
 import type { FundPlanData } from '@/types/fund-plan'
 
 // ============================================
+// テンプレートベースExcel出力（完全一致版）
+// ============================================
+
+/**
+ * 資金計画書テンプレートのセルマッピング
+ * テンプレートファイルの各セルとFundPlanDataのフィールドを対応付け
+ */
+const FUND_PLAN_CELL_MAPPING = {
+  // === 基本情報 ===
+  'AH1': 'customerName',        // 顧客名（様邸のタイトルに反映）
+  'N1': 'productType',          // 商品名（LIFE, LIFE+, HOURS等）
+  'CA1': 'constructionArea',    // 施工面積（坪）
+  'BG1': 'fireProtectionZone',  // 防火区分（〇/×）→準防火なら〇
+  'CJ1': 'floorCount',          // 階数（1, 2, 3）
+  'BM1': 'buildingStructure',   // 建物構造
+
+  // === 日付 ===
+  'DA8': 'scheduleContractDate',      // 請負契約日
+  'DA10': 'scheduleLandSettlement',   // 土地決済日
+
+  // === 太陽光発電 ===
+  'G46': 'solarPanelCount',     // 太陽光パネル枚数
+
+  // === 付帯工事費用A ===
+  'O33': 'confirmationApplicationFee',     // 確認申請費用
+  'O35': 'structuralCalculation',          // 構造計算
+  'O37': 'structuralDrawingFee',           // 構造図作成費用
+  'O39': 'belsApplicationFee',             // BELS評価書申請費用
+  // O41は数式で自動計算（長期優良住宅申請費用）
+
+  // === 付帯工事費用C ===
+  // O59は数式（準防火）
+  // O65は数式（給排水引き込み）
+  // O67は数式（地盤改良）
+
+  // === 諸費用 ===
+  'O86': 'bridgeLoanFee',                  // つなぎローン諸費用
+  'O88': 'loanContractStampDuty',          // 金銭消費貸借契約印紙代
+  'O92': 'fireInsurance',                  // 火災保険料
+  'O96': 'exteriorConstruction',           // 外構工事
+
+  // === 借入計画 ===
+  'BA33': 'loanAmountA',        // 銀行A借入額
+  'BG33': 'interestRateA',      // 銀行A金利
+  'BO33': 'loanYearsA',         // 銀行A借入年数
+  'BA35': 'loanAmountB',        // 銀行B借入額
+  'BG35': 'interestRateB',      // 銀行B金利
+  'BO35': 'loanYearsB',         // 銀行B借入年数
+  'BA37': 'loanAmountC',        // 銀行C借入額
+  'BG37': 'interestRateC',      // 銀行C金利
+  'BO37': 'loanYearsC',         // 銀行C借入年数
+} as const
+
+/**
+ * FundPlanDataからセル値を取得するヘルパー
+ */
+function getCellValueFromData(data: FundPlanData, fieldPath: string): string | number | null {
+  // ネストされたフィールドパスに対応
+  const parts = fieldPath.split('.')
+  let value: unknown = data
+
+  for (const part of parts) {
+    if (value && typeof value === 'object' && part in value) {
+      value = (value as Record<string, unknown>)[part]
+    } else {
+      return null
+    }
+  }
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    return value
+  }
+  return null
+}
+
+/**
+ * テンプレートを使用して資金計画書をExcel出力（完全一致版）
+ */
+export async function exportFundPlanFromTemplate(
+  data: FundPlanData,
+  filename?: string
+): Promise<void> {
+  try {
+    // テンプレートファイルを読み込み
+    const templatePath = '/templates/fund-plan-template.xlsx'
+    const response = await fetch(templatePath)
+
+    if (!response.ok) {
+      throw new Error(`テンプレートファイルの読み込みに失敗しました: ${response.status}`)
+    }
+
+    const arrayBuffer = await response.arrayBuffer()
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' })
+
+    // 資金計画書シートを取得
+    const sheetName = '【資金計画書】'
+    const sheet = workbook.Sheets[sheetName]
+
+    if (!sheet) {
+      throw new Error(`シート「${sheetName}」が見つかりません`)
+    }
+
+    // データをセルに書き込み
+    fillFundPlanData(sheet, data)
+
+    // 契約のご案内シートにもデータを書き込み
+    const guideSheet = workbook.Sheets['契約のご案内（お客様用）']
+    if (guideSheet) {
+      fillContractGuideData(guideSheet, data)
+    }
+
+    // 資金の流れシートにもデータを書き込み
+    const flowSheet = workbook.Sheets['資金の流れ（LIFE・LIFE＋）']
+    if (flowSheet) {
+      fillFundFlowData(flowSheet, data)
+    }
+
+    // ダウンロード
+    const defaultFilename = `資金計画書_${data.teiName || data.customerName}_${new Date().toISOString().split('T')[0]}`
+    downloadWorkbook(workbook, filename || defaultFilename)
+
+  } catch (error) {
+    console.error('Excel出力エラー:', error)
+    throw error
+  }
+}
+
+/**
+ * 資金計画書シートにデータを書き込み
+ */
+function fillFundPlanData(sheet: XLSX.WorkSheet, data: FundPlanData): void {
+  // 顧客名（AH1 → F1の「様邸 資金計画書」の前に入る）
+  if (data.customerName) {
+    setCellValue(sheet, 'AH1', data.customerName)
+  }
+
+  // 商品タイプ
+  if (data.productType) {
+    setCellValue(sheet, 'N1', data.productType)
+  }
+
+  // 施工面積（坪）
+  if (data.constructionArea) {
+    setCellValue(sheet, 'CA1', data.constructionArea)
+  }
+
+  // 防火区分（準防火地域なら〇）
+  if (data.fireProtectionZone) {
+    const isQuasiFireProof = data.fireProtectionZone.includes('準防火')
+    setCellValue(sheet, 'BG1', isQuasiFireProof ? '〇' : '×')
+  }
+
+  // 階数
+  if (data.floorCount) {
+    setCellValue(sheet, 'CJ1', data.floorCount)
+  }
+
+  // 建物構造
+  if (data.buildingStructure) {
+    setCellValue(sheet, 'BM1', data.buildingStructure)
+  }
+
+  // 太陽光パネル枚数
+  if (data.incidentalCostB?.solarPanelCount) {
+    setCellValue(sheet, 'G46', data.incidentalCostB.solarPanelCount)
+  }
+
+  // 付帯工事費用A
+  if (data.incidentalCostA) {
+    const costA = data.incidentalCostA
+    setCellValue(sheet, 'O33', costA.confirmationApplicationFee)
+    setCellValue(sheet, 'O35', costA.structuralCalculation)
+    setCellValue(sheet, 'O37', costA.structuralDrawingFee)
+    setCellValue(sheet, 'O39', costA.belsApplicationFee)
+  }
+
+  // 諸費用
+  if (data.miscellaneousCosts) {
+    const misc = data.miscellaneousCosts
+    setCellValue(sheet, 'O86', misc.bridgeLoanFee)
+    setCellValue(sheet, 'O88', misc.loanContractStampDuty)
+    setCellValue(sheet, 'O92', misc.fireInsurance)
+    setCellValue(sheet, 'O96', misc.exteriorConstruction)
+  }
+
+  // 借入計画
+  if (data.loanPlan) {
+    const { bankA, bankB, bankC } = data.loanPlan
+
+    if (bankA) {
+      setCellValue(sheet, 'BA33', bankA.amount)
+      setCellValue(sheet, 'BG33', bankA.interestRate)
+      setCellValue(sheet, 'BO33', bankA.loanYears)
+    }
+    if (bankB) {
+      setCellValue(sheet, 'BA35', bankB.amount)
+      setCellValue(sheet, 'BG35', bankB.interestRate)
+      setCellValue(sheet, 'BO35', bankB.loanYears)
+    }
+    if (bankC) {
+      setCellValue(sheet, 'BA37', bankC.amount)
+      setCellValue(sheet, 'BG37', bankC.interestRate)
+      setCellValue(sheet, 'BO37', bankC.loanYears)
+    }
+  }
+}
+
+/**
+ * 契約のご案内シートにデータを書き込み
+ */
+function fillContractGuideData(sheet: XLSX.WorkSheet, data: FundPlanData): void {
+  // 顧客名
+  if (data.customerName) {
+    setCellValue(sheet, 'B3', `${data.customerName}　様`)
+  }
+
+  // 契約金（通常100万円）
+  if (data.paymentPlanConstruction?.contractFee) {
+    setCellValue(sheet, 'D20', data.paymentPlanConstruction.contractFee.totalAmount)
+  }
+}
+
+/**
+ * 資金の流れシートにデータを書き込み
+ */
+function fillFundFlowData(sheet: XLSX.WorkSheet, data: FundPlanData): void {
+  // 顧客名
+  if (data.customerName) {
+    setCellValue(sheet, 'C2', `${data.customerName}様　資金の流れ`)
+  }
+
+  // 各支払段階の金額を設定
+  if (data.paymentPlanConstruction) {
+    const plan = data.paymentPlanConstruction
+
+    // 建物契約金
+    if (plan.contractFee) {
+      setCellValue(sheet, 'F14', plan.contractFee.totalAmount)
+    }
+  }
+}
+
+/**
+ * セルに値を設定するヘルパー
+ */
+function setCellValue(
+  sheet: XLSX.WorkSheet,
+  address: string,
+  value: string | number | null | undefined
+): void {
+  if (value === null || value === undefined) return
+
+  // セルが存在しない場合は作成
+  if (!sheet[address]) {
+    sheet[address] = {}
+  }
+
+  // 数値の場合
+  if (typeof value === 'number') {
+    sheet[address] = { t: 'n', v: value }
+  } else {
+    sheet[address] = { t: 's', v: String(value) }
+  }
+}
+
+// ============================================
 // 共通ユーティリティ
 // ============================================
 
