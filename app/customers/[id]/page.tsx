@@ -33,8 +33,10 @@ import {
   Megaphone,
   TrendingUp,
   Upload,
+  ClipboardCheck,
 } from 'lucide-react'
 import { MeetingRecordDropzone } from '@/components/customers/meeting-record-dropzone'
+import { CustomerChecklist } from '@/components/customers/customer-checklist'
 import { toast } from 'sonner'
 import {
   type Customer,
@@ -370,12 +372,23 @@ export default function CustomerDetailPage() {
 
           {/* Tabs Section */}
           <div className="lg:col-span-2">
-            <Tabs defaultValue="documents" className="w-full">
+            <Tabs defaultValue="checklist" className="w-full">
               <TabsList className="mb-4">
+                <TabsTrigger value="checklist" className="flex items-center gap-1">
+                  <ClipboardCheck className="w-4 h-4" />
+                  チェックリスト
+                </TabsTrigger>
                 <TabsTrigger value="documents">関連書類</TabsTrigger>
                 <TabsTrigger value="activity">活動履歴</TabsTrigger>
                 <TabsTrigger value="notes">メモ</TabsTrigger>
               </TabsList>
+
+              <TabsContent value="checklist">
+                <CustomerChecklist
+                  customerId={customer.id}
+                  currentStatus={customer.pipeline_status}
+                />
+              </TabsContent>
 
               <TabsContent value="documents" className="space-y-4">
                 {/* Quick Actions */}

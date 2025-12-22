@@ -17,6 +17,7 @@ import {
   Download,
   Building,
   Link2,
+  ClipboardCheck,
 } from 'lucide-react'
 
 const adminMenus = [
@@ -68,6 +69,13 @@ const adminMenus = [
     icon: Link2,
     href: '/admin/integrations',
     color: 'from-cyan-500 to-blue-500',
+  },
+  {
+    title: 'パイプラインチェックリスト',
+    description: '各ステージでやるべきことを設定',
+    icon: ClipboardCheck,
+    href: '/admin/checklists',
+    color: 'from-emerald-500 to-green-500',
   },
   {
     title: '営業目標設定',
