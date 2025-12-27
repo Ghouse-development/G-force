@@ -665,6 +665,7 @@ export function DocumentManager({ customerId, landStatus }: DocumentManagerProps
           <div className="mt-4 overflow-auto max-h-[70vh]">
             {previewDoc?.url ? (
               previewDoc.file_type.startsWith('image/') ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={previewDoc.url}
                   alt={previewDoc.file_name}

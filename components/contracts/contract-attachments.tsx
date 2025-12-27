@@ -293,6 +293,7 @@ export function ContractAttachments({ contractId, editable = true }: ContractAtt
           </DialogHeader>
           {previewFile && (
             <div className="flex justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={previewFile.dataUrl}
                 alt={previewFile.name}

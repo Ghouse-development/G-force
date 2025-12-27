@@ -315,8 +315,9 @@ export function DynamicForm({
   isLoading = false,
   readOnly = false,
 }: DynamicFormProps) {
-  const fields = formDefinition.fields || []
-  const sortedFields = [...fields].sort((a, b) => a.sort_order - b.sort_order)
+  // フィールドをメモ化して依存関係を安定させる
+  const fields = useMemo(() => formDefinition.fields || [], [formDefinition.fields])
+  const sortedFields = useMemo(() => [...fields].sort((a, b) => a.sort_order - b.sort_order), [fields])
 
   // スキーマを生成
   const schema = useMemo(() => createFormSchema(fields), [fields])
