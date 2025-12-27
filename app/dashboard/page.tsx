@@ -202,9 +202,7 @@ export default function DashboardPage() {
       changeContracts: customers.filter(c =>
         ['変更契約前', '変更契約後'].includes(c.pipeline_status)
       ).length,
-      changeContractsAmount: contracts.reduce((sum, c) =>
-        c.contract_type === '変更契約' ? sum + (c.total_amount || 0) : sum, 0
-      ),
+      changeContractsAmount: 0, // TODO: 変更契約の金額集計（contract_typeフィールド追加後）
       completedHandovers: customers.filter(c => c.pipeline_status === 'オーナー').length,
     }
   }, [customers, contracts, mounted])

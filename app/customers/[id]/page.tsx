@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/select'
 import {
   ArrowLeft,
-  Edit,
   Phone,
   Mail,
   MapPin,
@@ -25,20 +24,16 @@ import {
   User,
   Users as UsersIcon,
   FileText,
-  Plus,
   Calendar,
-  Clock,
   FileEdit,
   FileSignature,
   Megaphone,
   TrendingUp,
-  Upload,
   ClipboardCheck,
   Map,
   ClipboardList,
   FileQuestion,
 } from 'lucide-react'
-import { MeetingRecordDropzone } from '@/components/customers/meeting-record-dropzone'
 import { CustomerChecklist } from '@/components/customers/customer-checklist'
 import { JourneyMap } from '@/components/customers/journey-map'
 import { JourneyEventDialog } from '@/components/customers/journey-event-dialog'
@@ -47,7 +42,7 @@ import { LandConditionsEditor } from '@/components/land/land-conditions-editor'
 import { LandMatchList } from '@/components/land/land-match-list'
 import { ReceptionRecordView } from '@/components/kintone/reception-record-view'
 import { HearingSheetView } from '@/components/kintone/hearing-sheet-view'
-import { useLandStore } from '@/store/land-store'
+import { DocumentManager } from '@/components/customers/document-manager'
 import { useKintoneStore } from '@/store/kintone-store'
 import { toast } from 'sonner'
 import {
@@ -290,12 +285,37 @@ export default function CustomerDetailPage() {
               </p>
             </div>
           </div>
-          <div className="flex space-x-3">
+          <div className="flex items-center gap-2">
+            {/* クイックアクション */}
+            <div className="hidden md:flex gap-2">
+              <Link href={`/fund-plans/new?customer=${customer.id}`}>
+                <Button variant="outline" size="sm">
+                  <FileText className="w-4 h-4 mr-1.5 text-blue-500" />
+                  資金計画
+                </Button>
+              </Link>
+              {fundPlans.length > 0 && (
+                <>
+                  <Link href={`/plan-requests/new?customer=${customer.id}`}>
+                    <Button variant="outline" size="sm">
+                      <FileEdit className="w-4 h-4 mr-1.5 text-orange-500" />
+                      プラン依頼
+                    </Button>
+                  </Link>
+                  <Link href={`/contract-requests/new?customer=${customer.id}`}>
+                    <Button variant="outline" size="sm">
+                      <FileSignature className="w-4 h-4 mr-1.5 text-purple-500" />
+                      契約書
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </div>
             <Select
               value={customer.pipeline_status}
               onValueChange={(value) => handleStatusChange(value as PipelineStatus)}
             >
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-[140px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -312,10 +332,6 @@ export default function CustomerDetailPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline">
-              <Edit className="w-4 h-4 mr-2" />
-              編集
-            </Button>
           </div>
         </div>
 
@@ -489,11 +505,18 @@ export default function CustomerDetailPage() {
                   <ClipboardCheck className="w-4 h-4" />
                   チェックリスト
                 </TabsTrigger>
-                <TabsTrigger value="kintone" className="flex items-center gap-1">
+                <TabsTrigger value="reception" className="flex items-center gap-1">
                   <ClipboardList className="w-4 h-4" />
-                  受付・ヒアリング
+                  受付台帳
                 </TabsTrigger>
-                <TabsTrigger value="documents">関連書類</TabsTrigger>
+                <TabsTrigger value="hearing" className="flex items-center gap-1">
+                  <FileQuestion className="w-4 h-4" />
+                  ヒアリング
+                </TabsTrigger>
+                <TabsTrigger value="documents" className="flex items-center gap-1">
+                  <FileText className="w-4 h-4" />
+                  書類
+                </TabsTrigger>
                 <TabsTrigger value="land" className="flex items-center gap-1">
                   <Map className="w-4 h-4" />
                   土地条件
@@ -520,92 +543,19 @@ export default function CustomerDetailPage() {
                 />
               </TabsContent>
 
-              <TabsContent value="kintone" className="space-y-4">
-                <KintoneRecordsSection customerId={customer.id} />
+              <TabsContent value="reception" className="space-y-4">
+                <ReceptionRecordSection customerId={customer.id} />
+              </TabsContent>
+
+              <TabsContent value="hearing" className="space-y-4">
+                <HearingSheetSection customerId={customer.id} />
               </TabsContent>
 
               <TabsContent value="documents" className="space-y-4">
-                {/* Quick Actions */}
-                <div className="grid grid-cols-3 gap-3">
-                  <Link href={`/fund-plans/new?customer=${customer.id}`}>
-                    <Button variant="outline" className="w-full justify-start">
-                      <FileText className="w-4 h-4 mr-2 text-blue-500" />
-                      資金計画書
-                    </Button>
-                  </Link>
-                  {fundPlans.length > 0 ? (
-                    <Link href={`/plan-requests/new?customer=${customer.id}`}>
-                      <Button variant="outline" className="w-full justify-start">
-                        <FileEdit className="w-4 h-4 mr-2 text-orange-500" />
-                        プラン依頼
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Button variant="outline" className="w-full justify-start" disabled title="資金計画書を作成してください">
-                      <FileEdit className="w-4 h-4 mr-2 text-gray-400" />
-                      プラン依頼
-                    </Button>
-                  )}
-                  {fundPlans.length > 0 ? (
-                    <Link href={`/contract-requests/new?customer=${customer.id}`}>
-                      <Button variant="outline" className="w-full justify-start">
-                        <FileSignature className="w-4 h-4 mr-2 text-purple-500" />
-                        契約書作成
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Button variant="outline" className="w-full justify-start" disabled title="資金計画書を作成してください">
-                      <FileSignature className="w-4 h-4 mr-2 text-gray-400" />
-                      契約書作成
-                    </Button>
-                  )}
-                </div>
-
-                {/* Fund Plans */}
-                <Card className="border-0 shadow-lg">
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="flex items-center text-lg">
-                      <FileText className="w-5 h-5 mr-2 text-orange-500" />
-                      資金計画書
-                    </CardTitle>
-                    <Link href={`/fund-plans/new?customer=${customer.id}`}>
-                      <Button size="sm" className="bg-gradient-to-r from-orange-500 to-yellow-500">
-                        <Plus className="w-4 h-4 mr-1" />
-                        作成
-                      </Button>
-                    </Link>
-                  </CardHeader>
-                  <CardContent>
-                    {fundPlans.length === 0 ? (
-                      <p className="text-gray-500 text-center py-4">
-                        資金計画書がありません
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                        {fundPlans.map((plan) => (
-                          <Link key={plan.id} href={`/fund-plans/${plan.id}`}>
-                            <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 transition-colors">
-                              <div className="flex items-center space-x-3">
-                                <FileText className="w-5 h-5 text-gray-400" />
-                                <div>
-                                  <p className="font-medium">
-                                    v{plan.version}
-                                  </p>
-                                  <p className="text-sm text-gray-500">
-                                    {plan.created_at && new Date(plan.created_at).toLocaleDateString('ja-JP')}
-                                  </p>
-                                </div>
-                              </div>
-                              <Badge variant="outline">
-                                {plan.status === 'draft' ? '下書き' : plan.status === 'submitted' ? '提出済' : '承認済'}
-                              </Badge>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                <DocumentManager
+                  customerId={customer.id}
+                  landStatus={landStatus}
+                />
               </TabsContent>
 
               <TabsContent value="land" className="space-y-4">
@@ -663,26 +613,15 @@ export default function CustomerDetailPage() {
   )
 }
 
-// kintoneレコード表示セクション
-function KintoneRecordsSection({ customerId }: { customerId: string }) {
-  const { receptionRecords, hearingSheetRecords, linkedRecords } = useKintoneStore()
+// 初回受付台帳セクション
+function ReceptionRecordSection({ customerId }: { customerId: string }) {
+  const { receptionRecords, linkedRecords } = useKintoneStore()
 
   // 顧客に紐づくレコードを検索
-  const linkedRecord = linkedRecords.find(lr => lr.customerId === customerId)
-
-  // 紐づいたレコードを取得
-  const receptionRecord = linkedRecord?.kintoneRecordType === 'reception'
+  const linkedRecord = linkedRecords.find(lr => lr.customerId === customerId && lr.kintoneRecordType === 'reception')
+  const receptionRecord = linkedRecord
     ? receptionRecords.find(r => r.id === linkedRecord.kintoneRecordId)
-    : receptionRecords.find(r => {
-        // 電話番号やメールで検索（デモ用）
-        return false
-      })
-
-  const hearingSheet = linkedRecord?.kintoneRecordType === 'hearing_sheet'
-    ? hearingSheetRecords.find(r => r.id === linkedRecord.kintoneRecordId)
-    : hearingSheetRecords.find(r => {
-        return false
-      })
+    : undefined
 
   // デモ用のモックデータ
   const mockReceptionRecord = {
@@ -704,6 +643,32 @@ function KintoneRecordsSection({ customerId }: { customerId: string }) {
     updatedAt: '2024-12-15T14:00:00Z',
   }
 
+  return (
+    <Card className="border-0 shadow-lg">
+      <CardHeader>
+        <CardTitle className="flex items-center text-lg">
+          <ClipboardList className="w-5 h-5 mr-2 text-orange-500" />
+          初回受付台帳
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ReceptionRecordView record={receptionRecord || mockReceptionRecord} />
+      </CardContent>
+    </Card>
+  )
+}
+
+// ヒアリングシートセクション
+function HearingSheetSection({ customerId }: { customerId: string }) {
+  const { hearingSheetRecords, linkedRecords } = useKintoneStore()
+
+  // 顧客に紐づくレコードを検索
+  const linkedRecord = linkedRecords.find(lr => lr.customerId === customerId && lr.kintoneRecordType === 'hearing_sheet')
+  const hearingSheet = linkedRecord
+    ? hearingSheetRecords.find(r => r.id === linkedRecord.kintoneRecordId)
+    : undefined
+
+  // デモ用のモックデータ
   const mockHearingSheet = {
     id: 'demo-hs-1',
     recordNumber: 'HS-001',
@@ -724,9 +689,16 @@ function KintoneRecordsSection({ customerId }: { customerId: string }) {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <ReceptionRecordView record={receptionRecord || mockReceptionRecord} />
-      <HearingSheetView record={hearingSheet || mockHearingSheet} />
-    </div>
+    <Card className="border-0 shadow-lg">
+      <CardHeader>
+        <CardTitle className="flex items-center text-lg">
+          <FileQuestion className="w-5 h-5 mr-2 text-indigo-500" />
+          ヒアリングシート
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <HearingSheetView record={hearingSheet || mockHearingSheet} />
+      </CardContent>
+    </Card>
   )
 }

@@ -1,5 +1,67 @@
 # G-force 開発記録
 
+## 2024年12月27日 - 書類管理機能・契約ウィザード改善・TypeScript修正
+
+### 実装した機能
+
+#### 1. 顧客書類管理（DocumentManager）
+
+**ファイル:** `components/customers/document-manager.tsx`
+
+土地の状況に応じた書類アップロード機能:
+
+| 土地状況 | 必要書類 |
+|---------|---------|
+| 土地あり | 土地謄本、公図、地積測量図、運転免許証、健康保険証、ローン事前審査、建築地写真、住宅地図 |
+| 土地探し中 | 運転免許証、健康保険証、ローン事前審査 |
+| 土地契約済 | 土地謄本、公図、地積測量図、土地重説、土地契約書、運転免許証、健康保険証、ローン事前審査、建築地写真、住宅地図 |
+| 土地決済済 | 全書類（位置指定道路含む） |
+
+**機能:**
+- カード型UIで直感的な操作
+- ドラッグ＆ドロップ対応
+- アップロード済み書類は緑表示
+- 契約ウィザードと連携
+
+#### 2. 契約ウィザードの改善
+
+**ファイル:** `components/contracts/contract-wizard.tsx`
+
+- 資金計画書（FundPlanData）からのデータ取り込み修正
+- スケジュール情報の正確な取得（着工日・竣工日）
+- 支払計画・ローン情報の連携修正
+- 書類確認ステップでDocumentManagerと連携
+
+#### 3. TypeScriptエラー修正
+
+**修正ファイル:**
+- `components/contracts/contract-wizard.tsx` - FundPlanDataプロパティアクセス修正
+- `app/plan-requests/new/page.tsx` - constructionArea参照修正
+- `components/customers/customer-checklist.tsx` - PipelineStatus値修正
+- `components/dashboard/pipeline-funnel.tsx` - PipelineStatus値修正
+- `app/dashboard/page.tsx` - 無効なプロパティ参照削除
+- `store/demo-store.ts` - 型キャスト修正
+- `store/index.ts` - DocumentCategory型更新
+
+**主な修正内容:**
+- `fundPlan.xxx` → `fundPlan.data.xxx` へのアクセス修正
+- `schedule.contractDate` → `schedule.constructionStart` 修正
+- `payment.xxx` → `paymentPlanConstruction.xxx.totalAmount` 修正
+- `funding.xxx` → `loanPlan.bankA.xxx` 修正
+
+### ファイル変更
+
+| ファイル | 変更内容 |
+|---------|---------|
+| `components/customers/document-manager.tsx` | 新規作成 - 書類管理コンポーネント |
+| `app/customers/[id]/page.tsx` | 書類タブ追加 |
+| `components/contracts/contract-wizard.tsx` | FundPlanData連携修正 |
+| `app/plan-requests/new/page.tsx` | プロパティ名修正 |
+| `store/index.ts` | DocumentCategory型追加 |
+| `store/demo-store.ts` | 型キャスト修正 |
+
+---
+
 ## 2024年12月26日 - 顧客管理画面の分離・ナビゲーション改善
 
 ### 実装した機能

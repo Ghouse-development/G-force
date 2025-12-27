@@ -18,6 +18,7 @@ import {
   Building,
   Link2,
   ClipboardCheck,
+  Sliders,
 } from 'lucide-react'
 
 const adminMenus = [
@@ -76,6 +77,13 @@ const adminMenus = [
     icon: ClipboardCheck,
     href: '/admin/checklists',
     color: 'from-emerald-500 to-green-500',
+  },
+  {
+    title: 'ノーコード設定',
+    description: 'パイプライン・ジャーニー・土地条件',
+    icon: Sliders,
+    href: '/admin/nocode-settings',
+    color: 'from-purple-500 to-indigo-500',
   },
   {
     title: '営業目標設定',

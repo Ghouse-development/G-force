@@ -115,7 +115,7 @@ function NewPlanRequestForm() {
 
   // 資金計画書から施工面積を取得
   const fundPlanBuildingArea = useMemo(() => {
-    return latestFundPlan?.data?.buildingArea?.toString() || ''
+    return latestFundPlan?.data?.constructionArea?.toString() || ''
   }, [latestFundPlan])
 
   // フォームデータ

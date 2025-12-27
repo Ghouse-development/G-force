@@ -69,14 +69,15 @@ const STEPS: { key: WizardStep; label: string; icon: React.ReactNode }[] = [
   { key: 'confirm', label: '確認', icon: <CheckCircle className="w-4 h-4" /> },
 ]
 
-// 必要書類リスト
+// 必要書類リスト（DocumentManagerと連携）
 const REQUIRED_DOCUMENTS = [
-  { id: 'land_registry', label: '土地謄本', icon: FileText },
-  { id: 'land_photos', label: '建築地写真', icon: ImageIcon },
-  { id: 'housing_map', label: '住宅地図', icon: MapPin },
   { id: 'drivers_license', label: '運転免許証', icon: CreditCard },
   { id: 'health_insurance', label: '健康保険証', icon: User },
-  { id: 'loan_docs', label: '住宅ローン書類', icon: FileText },
+  { id: 'loan_preapproval', label: 'ローン事前審査', icon: FileText },
+  { id: 'land_registry', label: '土地謄本', icon: FileText },
+  { id: 'cadastral_map', label: '公図', icon: MapPin },
+  { id: 'land_survey', label: '地積測量図', icon: FileText },
+  { id: 'site_photos', label: '建築地写真', icon: ImageIcon },
 ]
 
 export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) {
@@ -126,11 +127,11 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
     }
     // 顧客に紐づく最新の資金計画書を探す
     if (customerId) {
-      const customerPlans = fundPlans.filter(fp => fp.customer_id === customerId)
+      const customerPlans = fundPlans.filter(fp => fp.customerId === customerId)
       if (customerPlans.length > 0) {
         return customerPlans.sort((a, b) =>
-          new Date(b.updated_at || b.created_at || 0).getTime() -
-          new Date(a.updated_at || a.created_at || 0).getTime()
+          new Date(b.updatedAt || b.createdAt || 0).getTime() -
+          new Date(a.updatedAt || a.createdAt || 0).getTime()
         )[0]
       }
     }
@@ -142,14 +143,11 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
     return files.filter(f => f.customerId === customerId)
   }, [files, customerId])
 
-  // 書類の有無をチェック
+  // 書類の有無をチェック（DocumentManagerと連携）
   const documentStatus = useMemo(() => {
     const status: Record<string, boolean> = {}
     for (const doc of REQUIRED_DOCUMENTS) {
-      status[doc.id] = customerFiles.some(f =>
-        f.documentCategory === doc.id ||
-        f.name.toLowerCase().includes(doc.label.toLowerCase())
-      )
+      status[doc.id] = customerFiles.some(f => f.documentCategory === doc.id)
     }
     return status
   }, [customerFiles])
@@ -161,22 +159,34 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
         ...prev,
         ownership_type: customer.ownership_type || '単独',
         partner_name: customer.partner_name || '',
-        product_name: customer.product_name || fundPlan?.product_name || '',
-        construction_method: customer.construction_method || 'conventional',
+        product_name: fundPlan?.data?.productType || '',
+        construction_method: 'conventional',
         customer_address: customer.address || '',
-        land_address: customer.land_address || customer.address || '',
+        land_address: customer.address || '',
       }))
     }
     if (fundPlan) {
+      // FundPlanDataから値を取得
+      const data = fundPlan.data
       setSelections(prev => ({
         ...prev,
-        product_name: prev.product_name || fundPlan.product_name || '',
-        total_amount: fundPlan.total_amount || 0,
-        construction_start: fundPlan.construction_start || '',
-        construction_end: fundPlan.construction_end || '',
+        product_name: prev.product_name || data?.productType || '',
+        total_amount: data ? calculateTotalFromData(data) : 0,
+        construction_start: data?.schedule?.constructionStart || '',
+        construction_end: data?.schedule?.completion || '',
       }))
     }
   }, [customer, fundPlan])
+
+  // FundPlanDataから合計金額を計算
+  const calculateTotalFromData = (data: any): number => {
+    if (!data) return 0
+    const buildingPrice = data.constructionArea * (data.pricePerTsubo || 0)
+    const incidentalA = Object.values(data.incidentalCostA || {}).reduce((sum: number, v: any) => sum + (Number(v) || 0), 0)
+    const incidentalB = Object.values(data.incidentalCostB || {}).reduce((sum: number, v: any) => sum + (Number(v) || 0), 0)
+    const incidentalC = Object.values(data.incidentalCostC || {}).reduce((sum: number, v: any) => sum + (Number(v) || 0), 0)
+    return buildingPrice + incidentalA + incidentalB + incidentalC
+  }
 
   // 現在のステップインデックス
   const currentStepIndex = STEPS.findIndex(s => s.key === currentStep)
@@ -219,10 +229,7 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
       updateCustomer(customerId, {
         ownership_type: selections.ownership_type,
         partner_name: selections.partner_name || null,
-        product_name: selections.product_name,
-        construction_method: selections.construction_method,
         address: selections.customer_address,
-        land_address: selections.land_address,
       })
     }
   }
@@ -240,6 +247,7 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
       // 顧客情報を更新
       updateCustomerInfo()
 
+      const fpData = fundPlan?.data
       const id = addContract({
         customer_id: customerId || `temp-${Date.now()}`,
         fund_plan_id: fundPlanId || fundPlan?.id || null,
@@ -251,32 +259,31 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
         partner_name: selections.ownership_type === '共有' ? selections.partner_name : null,
         ownership_type: selections.ownership_type,
         sales_person: user?.name || null,
-        design_person: null, // 設計者は別途設定
-        important_matter_explainer: selectedExplainer ? `${selectedExplainer.name} (${selectedExplainer.license_number})` : null,
+        design_person: null,
         construction_person: null,
         ic_person: null,
         land_address: selections.land_address,
-        land_area: customer?.land_area || fundPlan?.land_area || null,
-        building_area: customer?.building_area || fundPlan?.building_area || null,
+        land_area: customer?.land_area || null,
+        building_area: customer?.building_area || null,
         product_name: selections.product_name,
-        building_price: fundPlan?.building_base_price || null,
-        option_price: fundPlan?.option_price || null,
-        exterior_price: fundPlan?.exterior_price || null,
-        other_price: fundPlan?.other_construction_price || null,
+        building_price: fpData ? fpData.constructionArea * (fpData.pricePerTsubo || 0) : null,
+        option_price: null,
+        exterior_price: null,
+        other_price: null,
         discount_amount: null,
-        tax_amount: fundPlan?.consumption_tax || null,
-        total_amount: selections.total_amount || fundPlan?.total_amount || null,
-        payment_at_contract: fundPlan?.payment_at_contract || null,
-        payment_at_start: fundPlan?.payment_at_start || null,
-        payment_at_frame: fundPlan?.payment_at_frame || null,
-        payment_at_completion: fundPlan?.payment_at_completion || null,
+        tax_amount: null,
+        total_amount: selections.total_amount || null,
+        payment_at_contract: fpData?.paymentPlanConstruction?.contractFee?.totalAmount || null,
+        payment_at_start: fpData?.paymentPlanConstruction?.interimPayment1?.totalAmount || null,
+        payment_at_frame: fpData?.paymentPlanConstruction?.interimPayment2?.totalAmount || null,
+        payment_at_completion: fpData?.paymentPlanConstruction?.finalPayment?.totalAmount || null,
         identity_verified: false,
         identity_doc_type: null,
         identity_verified_date: null,
         identity_verified_by: null,
-        loan_type: fundPlan?.loan_bank ? '住宅ローン' : null,
-        loan_bank: fundPlan?.loan_bank || null,
-        loan_amount: fundPlan?.loan_amount || null,
+        loan_type: fpData?.loanPlan?.bankA?.amount ? '住宅ローン' : null,
+        loan_bank: fpData?.loanPlan?.bankA?.bankName || null,
+        loan_amount: fpData?.loanPlan?.bankA?.amount || null,
         loan_approved: false,
         loan_approved_date: null,
         important_notes: null,
@@ -403,7 +410,7 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
         )
 
       case 'product':
-        const currentProduct = fundPlan?.product_name || customer?.product_name || ''
+        const currentProduct = fundPlan?.data?.productType || ''
         return (
           <div className="space-y-6">
             <div className="text-center mb-8">
@@ -495,7 +502,7 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
         )
 
       case 'method':
-        const currentMethod = customer?.construction_method || 'conventional'
+        const currentMethod = selections.construction_method || 'conventional'
         const isCurrentlyTechno = currentMethod === 'technostructure'
         return (
           <div className="space-y-6">
@@ -587,20 +594,20 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
                       <div className="flex justify-between py-2 border-b">
                         <span className="text-gray-600 text-sm">契約金額（税込）</span>
                         <span className="font-bold text-orange-600">
-                          ¥{(fundPlan.total_amount || 0).toLocaleString()}
+                          ¥{calculateTotalFromData(fundPlan.data).toLocaleString()}
                         </span>
                       </div>
                       <div className="flex justify-between py-2 border-b">
                         <span className="text-gray-600 text-sm">着工予定日</span>
-                        <span className="font-medium">{fundPlan.construction_start || '未設定'}</span>
+                        <span className="font-medium">{fundPlan.data?.schedule?.constructionStart || '未設定'}</span>
                       </div>
                       <div className="flex justify-between py-2 border-b">
                         <span className="text-gray-600 text-sm">竣工予定日</span>
-                        <span className="font-medium">{fundPlan.construction_end || '未設定'}</span>
+                        <span className="font-medium">{fundPlan.data?.schedule?.completion || '未設定'}</span>
                       </div>
                       <div className="flex justify-between py-2">
                         <span className="text-gray-600 text-sm">商品名</span>
-                        <span className="font-medium">{fundPlan.product_name || '未設定'}</span>
+                        <span className="font-medium">{fundPlan.data?.productType || '未設定'}</span>
                       </div>
                     </>
                   ) : (
@@ -634,7 +641,7 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
                       </div>
                       <div className="flex justify-between py-2 border-b">
                         <span className="text-gray-600 text-sm">建築地の地番</span>
-                        <span className="font-medium text-right text-sm max-w-[200px]">{customer.land_address || customer.address || '未設定'}</span>
+                        <span className="font-medium text-right text-sm max-w-[200px]">{customer.address || '未設定'}</span>
                       </div>
                       <div className="flex justify-between py-2">
                         <span className="text-gray-600 text-sm">電話番号</span>
@@ -661,11 +668,11 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
                     setSelections(prev => ({
                       ...prev,
                       importConfirmed: true,
-                      total_amount: fundPlan?.total_amount || 0,
-                      construction_start: fundPlan?.construction_start || '',
-                      construction_end: fundPlan?.construction_end || '',
+                      total_amount: fundPlan ? calculateTotalFromData(fundPlan.data) : 0,
+                      construction_start: fundPlan?.data?.schedule?.constructionStart || '',
+                      construction_end: fundPlan?.data?.schedule?.completion || '',
                       customer_address: customer?.address || '',
-                      land_address: customer?.land_address || customer?.address || '',
+                      land_address: customer?.address || '',
                     }))
                     toast.success('情報を取り込みました')
                     nextStep()

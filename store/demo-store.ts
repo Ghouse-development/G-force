@@ -36,8 +36,8 @@ const monthsAgo = (months: number) => {
   return date.toISOString()
 }
 
-// デモ顧客データ
-export const DEMO_CUSTOMERS: Customer[] = [
+// デモ顧客データ（必須フィールドのみ定義、他はnull/デフォルト値）
+export const DEMO_CUSTOMERS = [
   // 限定会員前顧客
   {
     id: 'demo-cust-001',
@@ -375,10 +375,10 @@ export const DEMO_CUSTOMERS: Customer[] = [
     created_at: monthsAgo(20),
     updated_at: monthsAgo(6),
   },
-] as Customer[]
+] as unknown as Customer[]
 
-// デモプラン依頼データ
-export const DEMO_PLAN_REQUESTS: PlanRequest[] = [
+// デモプラン依頼データ（必須フィールドのみ定義）
+export const DEMO_PLAN_REQUESTS = [
   {
     id: 'demo-pr-001',
     customer_id: 'demo-cust-009',
@@ -437,7 +437,7 @@ export const DEMO_PLAN_REQUESTS: PlanRequest[] = [
     created_at: daysAgo(3),
     updated_at: daysAgo(3),
   },
-] as PlanRequest[]
+] as unknown as PlanRequest[]
 
 // デモ契約データ
 export const DEMO_CONTRACTS: StoredContract[] = [

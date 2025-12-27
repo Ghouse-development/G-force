@@ -125,16 +125,16 @@ export function PipelineFunnel({
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">契約件数</p>
+              <p className="text-xs text-gray-500">内定件数</p>
               <p className="font-bold text-lg text-orange-600">
-                {data.find(d => d.status === '契約')?.count || 0}件
+                {data.find(d => d.status === '内定')?.count || 0}件
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">契約率</p>
+              <p className="text-xs text-gray-500">内定率</p>
               <p className="font-bold text-lg text-green-600">
                 {data[0]?.count > 0
-                  ? Math.round(((data.find(d => d.status === '契約')?.count || 0) / data[0].count) * 100)
+                  ? Math.round(((data.find(d => d.status === '内定')?.count || 0) / data[0].count) * 100)
                   : 0}%
               </p>
             </div>

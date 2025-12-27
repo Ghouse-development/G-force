@@ -871,19 +871,17 @@ export type FileCategory = 'document' | 'audio' | 'image' | 'memo'
 // 書類の詳細カテゴリ
 export type DocumentCategory =
   | 'land_registry' // 土地謄本
-  | 'land_map' // 公図
+  | 'cadastral_map' // 公図
   | 'land_survey' // 地積測量図
-  | 'government_docs' // 役所書類
-  | 'site_survey' // 敷地調査図
   | 'land_explanation' // 土地重説
   | 'land_contract' // 土地契約書
+  | 'road_designation' // 位置指定道路
   | 'drivers_license' // 運転免許証
   | 'health_insurance' // 健康保険証
-  | 'loan_docs' // 住宅ローン書類
-  | 'land_photos' // 土地写真
+  | 'loan_preapproval' // ローン事前審査
+  | 'site_photos' // 建築地写真
+  | 'housing_map' // 住宅地図
   | 'meeting_records' // 議事録
-  | 'initial_reception' // 初回受付台帳
-  | 'hearing_sheet' // ヒアリングシート
   | 'other' // その他
 
 export interface StoredFile {
