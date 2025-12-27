@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Progress } from '@/components/ui/progress'
@@ -70,22 +70,7 @@ export function CustomerChecklist({ customerId, currentStatus }: CustomerCheckli
   const [saving, setSaving] = useState<string | null>(null)
   const [expandedStages, setExpandedStages] = useState<Record<string, boolean>>({})
 
-  useEffect(() => {
-    fetchChecklists()
-  }, [customerId])
-
-  useEffect(() => {
-    // 現在のステータスとその前後のステージを展開
-    const currentIndex = PIPELINE_ORDER.indexOf(currentStatus)
-    const expanded: Record<string, boolean> = {}
-    PIPELINE_ORDER.forEach((stage, index) => {
-      // 現在のステータスと前後1つずつを展開
-      expanded[stage] = Math.abs(index - currentIndex) <= 1
-    })
-    setExpandedStages(expanded)
-  }, [currentStatus])
-
-  const fetchChecklists = async () => {
+  const fetchChecklists = useCallback(async () => {
     try {
       const res = await fetch(`/api/customer-checklists?customerId=${customerId}`)
       const data = await res.json()
@@ -98,7 +83,22 @@ export function CustomerChecklist({ customerId, currentStatus }: CustomerCheckli
     } finally {
       setLoading(false)
     }
-  }
+  }, [customerId])
+
+  useEffect(() => {
+    fetchChecklists()
+  }, [fetchChecklists])
+
+  useEffect(() => {
+    // 現在のステータスとその前後のステージを展開
+    const currentIndex = PIPELINE_ORDER.indexOf(currentStatus)
+    const expanded: Record<string, boolean> = {}
+    PIPELINE_ORDER.forEach((stage, index) => {
+      // 現在のステータスと前後1つずつを展開
+      expanded[stage] = Math.abs(index - currentIndex) <= 1
+    })
+    setExpandedStages(expanded)
+  }, [currentStatus])
 
   const handleToggleItem = async (templateId: string, currentCompleted: boolean) => {
     setSaving(templateId)

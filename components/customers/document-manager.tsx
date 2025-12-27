@@ -15,7 +15,6 @@ import {
   FileSignature,
   Eye,
   Trash2,
-  Car,
   Banknote,
   Loader2,
 } from 'lucide-react'
