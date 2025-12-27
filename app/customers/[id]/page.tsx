@@ -315,30 +315,63 @@ export default function CustomerDetailPage() {
           </div>
         </div>
 
-        {/* クイックアクション - モバイル対応 */}
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-none">
+        {/* 次のステップカード */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <Link href={`/fund-plans/new?customer=${customer.id}`}>
-            <Button variant="outline" size="sm" className="whitespace-nowrap">
-              <FileText className="w-4 h-4 mr-1.5 text-blue-500" />
-              資金計画
-            </Button>
+            <Card className={`border-2 hover:shadow-lg transition-all cursor-pointer h-full ${
+              fundPlans.length === 0
+                ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-200'
+                : 'border-gray-200 hover:border-blue-300'
+            }`}>
+              <CardContent className="p-4 text-center">
+                <div className={`w-12 h-12 mx-auto rounded-xl flex items-center justify-center mb-2 ${
+                  fundPlans.length === 0 ? 'bg-blue-500' : 'bg-blue-100'
+                }`}>
+                  <FileText className={`w-6 h-6 ${fundPlans.length === 0 ? 'text-white' : 'text-blue-600'}`} />
+                </div>
+                <p className="font-bold text-sm text-gray-900">資金計画書</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {fundPlans.length === 0 ? '作成する' : `${fundPlans.length}件作成済`}
+                </p>
+                {fundPlans.length === 0 && (
+                  <Badge className="mt-2 bg-blue-500 text-white text-[10px]">まずはこちら</Badge>
+                )}
+              </CardContent>
+            </Card>
           </Link>
-          {fundPlans.length > 0 && (
-            <>
-              <Link href={`/plan-requests/new?customer=${customer.id}`}>
-                <Button variant="outline" size="sm" className="whitespace-nowrap">
-                  <FileEdit className="w-4 h-4 mr-1.5 text-orange-500" />
-                  プラン依頼
-                </Button>
-              </Link>
-              <Link href={`/contract-requests/new?customer=${customer.id}`}>
-                <Button variant="outline" size="sm" className="whitespace-nowrap">
-                  <FileSignature className="w-4 h-4 mr-1.5 text-purple-500" />
-                  契約書
-                </Button>
-              </Link>
-            </>
-          )}
+
+          <Link href={`/plan-requests/new?customer=${customer.id}`}>
+            <Card className={`border-2 hover:shadow-lg transition-all cursor-pointer h-full ${
+              fundPlans.length > 0
+                ? 'border-orange-300 bg-orange-50 ring-2 ring-orange-200'
+                : 'border-gray-200 opacity-60'
+            }`}>
+              <CardContent className="p-4 text-center">
+                <div className={`w-12 h-12 mx-auto rounded-xl flex items-center justify-center mb-2 ${
+                  fundPlans.length > 0 ? 'bg-orange-500' : 'bg-gray-100'
+                }`}>
+                  <FileEdit className={`w-6 h-6 ${fundPlans.length > 0 ? 'text-white' : 'text-gray-400'}`} />
+                </div>
+                <p className="font-bold text-sm text-gray-900">プラン依頼</p>
+                <p className="text-xs text-gray-500 mt-0.5">設計依頼</p>
+                {fundPlans.length > 0 && (
+                  <Badge className="mt-2 bg-orange-500 text-white text-[10px]">次のステップ</Badge>
+                )}
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href={`/contract-requests/new?customer=${customer.id}`}>
+            <Card className="border-2 border-gray-200 hover:border-green-300 hover:shadow-lg transition-all cursor-pointer h-full">
+              <CardContent className="p-4 text-center">
+                <div className="w-12 h-12 mx-auto bg-green-100 rounded-xl flex items-center justify-center mb-2">
+                  <FileSignature className="w-6 h-6 text-green-600" />
+                </div>
+                <p className="font-bold text-sm text-gray-900">契約依頼</p>
+                <p className="text-xs text-gray-500 mt-0.5">契約書作成</p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* 次のアクションガイド */}

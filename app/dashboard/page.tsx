@@ -143,28 +143,69 @@ export default function DashboardPage() {
     return tasks
   }, [mounted, planRequests, contracts, customers, user?.role])
 
-  // パイプライン概要
+  // 自分の担当顧客
+  const myCustomers = useMemo(() => {
+    if (!mounted || !user?.id) return customers
+    return customers.filter(c => c.assigned_to === user.id)
+  }, [mounted, customers, user?.id])
+
+  // パイプライン概要（自分の顧客のみ）
   const pipelineSummary = useMemo(() => {
     if (!mounted) return []
     const statuses: PipelineStatus[] = ['限定会員', '面談', '建築申込', 'プラン提出', '内定']
     return statuses.map(status => {
-      const count = customers.filter(c => c.pipeline_status === status).length
+      const statusCustomers = myCustomers.filter(c => c.pipeline_status === status)
+      const count = statusCustomers.length
+      const amount = statusCustomers.reduce((sum, c) => sum + (c.estimated_amount || 0), 0)
       const config = PIPELINE_CONFIG[status]
-      return { status, count, config }
+      // 内定の場合は顧客詳細も返す
+      const customers = status === '内定' ? statusCustomers : []
+      return { status, count, amount, config, customers }
     })
-  }, [mounted, customers])
+  }, [mounted, myCustomers])
 
-  // 今期の実績
+  // 今期の実績（自分の担当のみ）
   const fiscalStats = useMemo(() => {
-    if (!mounted) return { contracts: 0, handovers: 0, activeCustomers: 0 }
-    return {
-      contracts: contracts.filter(c => c.status === '契約完了').length,
-      handovers: customers.filter(c => c.pipeline_status === 'オーナー').length,
-      activeCustomers: customers.filter(c =>
-        ['限定会員', '面談', '建築申込', 'プラン提出', '内定'].includes(c.pipeline_status)
-      ).length,
+    if (!mounted) return {
+      contracts: 0,
+      contractAmount: 0,
+      handovers: 0,
+      handoverAmount: 0,
+      activeCustomers: 0,
+      estimatedAmount: 0,
     }
-  }, [mounted, contracts, customers])
+
+    // 契約済み顧客（変更契約前以降）
+    const contractedCustomers = myCustomers.filter(c =>
+      ['変更契約前', '変更契約後', 'オーナー'].includes(c.pipeline_status) &&
+      c.contract_amount
+    )
+
+    // 引渡し済み顧客
+    const handoverCustomers = myCustomers.filter(c =>
+      c.pipeline_status === 'オーナー' && c.contract_amount
+    )
+
+    // 商談中顧客
+    const activeCustomers = myCustomers.filter(c =>
+      ['限定会員', '面談', '建築申込', 'プラン提出', '内定'].includes(c.pipeline_status)
+    )
+
+    return {
+      contracts: contractedCustomers.length,
+      contractAmount: contractedCustomers.reduce((sum, c) => sum + (c.contract_amount || 0), 0),
+      handovers: handoverCustomers.length,
+      handoverAmount: handoverCustomers.reduce((sum, c) => sum + (c.contract_amount || 0), 0),
+      activeCustomers: activeCustomers.length,
+      estimatedAmount: activeCustomers.reduce((sum, c) => sum + (c.estimated_amount || 0), 0),
+    }
+  }, [mounted, myCustomers])
+
+  // 金額フォーマット（税別・万円）
+  const formatAmount = (amount: number) => {
+    const man = Math.round(amount / 10000)
+    return man.toLocaleString()
+  }
 
   // 挨拶
   const getGreeting = () => {
@@ -265,59 +306,88 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* 今期実績：シンプルな3つの数字 */}
+        {/* 今期実績：棟数と金額 */}
         <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
             <CardContent className="p-3 sm:p-4 text-center">
               <p className="text-blue-100 text-[10px] sm:text-sm">商談中</p>
-              <p className="text-2xl sm:text-4xl font-bold mt-0.5 sm:mt-1">{fiscalStats.activeCustomers}</p>
+              <p className="text-2xl sm:text-4xl font-bold mt-0.5 sm:mt-1">{fiscalStats.activeCustomers}<span className="text-base sm:text-lg ml-0.5">件</span></p>
+              <p className="text-blue-200 text-[9px] sm:text-xs mt-1">
+                {formatAmount(fiscalStats.estimatedAmount)}万円
+              </p>
             </CardContent>
           </Card>
           <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
             <CardContent className="p-3 sm:p-4 text-center">
               <p className="text-green-100 text-[10px] sm:text-sm">今期契約</p>
-              <p className="text-2xl sm:text-4xl font-bold mt-0.5 sm:mt-1">{fiscalStats.contracts}</p>
+              <p className="text-2xl sm:text-4xl font-bold mt-0.5 sm:mt-1">{fiscalStats.contracts}<span className="text-base sm:text-lg ml-0.5">棟</span></p>
+              <p className="text-green-200 text-[9px] sm:text-xs mt-1">
+                {formatAmount(fiscalStats.contractAmount)}万円（税別）
+              </p>
             </CardContent>
           </Card>
           <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white">
             <CardContent className="p-3 sm:p-4 text-center">
               <p className="text-orange-100 text-[10px] sm:text-sm">今期引渡</p>
-              <p className="text-2xl sm:text-4xl font-bold mt-0.5 sm:mt-1">{fiscalStats.handovers}</p>
+              <p className="text-2xl sm:text-4xl font-bold mt-0.5 sm:mt-1">{fiscalStats.handovers}<span className="text-base sm:text-lg ml-0.5">棟</span></p>
+              <p className="text-orange-200 text-[9px] sm:text-xs mt-1">
+                {formatAmount(fiscalStats.handoverAmount)}万円（税別）
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* パイプライン：横スクロールなしの縦表示 */}
-        <Card className="border-0 shadow-lg">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-gray-900 flex items-center">
-                <TrendingUp className="w-5 h-5 mr-2 text-orange-500" />
-                パイプライン
-              </h3>
-              <Link href="/customers">
-                <Button variant="ghost" size="sm" className="text-orange-600">
-                  詳細 <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
-            </div>
-            <div className="space-y-3">
-              {pipelineSummary.map(({ status, count, config }) => (
-                <Link key={status} href={`/customers?status=${status}`}>
-                  <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-10 h-10 rounded-lg ${config?.bgColor || 'bg-gray-100'} flex items-center justify-center`}>
-                        <span className={`font-bold ${config?.color || 'text-gray-600'}`}>{count}</span>
-                      </div>
-                      <span className="font-medium text-gray-900">{config?.label || status}</span>
+        {/* パイプライン：カード形式 */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-gray-900 flex items-center">
+              <TrendingUp className="w-5 h-5 mr-2 text-orange-500" />
+              自分のパイプライン
+            </h3>
+            <Link href="/customers">
+              <Button variant="ghost" size="sm" className="text-orange-600">
+                すべて見る <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
+            {pipelineSummary.map(({ status, count, amount, config, customers: statusCustomers }) => (
+              <Link key={status} href={`/customers?status=${status}`}>
+                <Card className={`border-0 shadow-md hover:shadow-lg transition-all cursor-pointer h-full ${
+                  count > 0 ? '' : 'opacity-50'
+                }`}>
+                  <CardContent className="p-3 sm:p-4">
+                    <div className={`w-10 h-10 rounded-xl ${config?.bgColor || 'bg-gray-100'} flex items-center justify-center mb-2`}>
+                      <span className={`text-lg font-bold ${config?.color || 'text-gray-600'}`}>{count}</span>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                    <p className="font-bold text-sm text-gray-900">{config?.label || status}</p>
+                    {amount > 0 && (
+                      <p className="text-xs text-gray-500 mt-0.5">{formatAmount(amount)}万円</p>
+                    )}
+                    {/* 内定の場合は契約予定日を表示 */}
+                    {status === '内定' && statusCustomers && statusCustomers.length > 0 && (
+                      <div className="mt-2 pt-2 border-t space-y-1">
+                        {statusCustomers.slice(0, 3).map((c) => (
+                          <div key={c.id} className="text-[10px] sm:text-xs">
+                            <span className="text-gray-600 truncate block">{c.tei_name || c.name}</span>
+                            <span className="text-purple-600 font-medium">
+                              {c.contract_date
+                                ? new Date(c.contract_date).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })
+                                : '日程未定'}
+                            </span>
+                          </div>
+                        ))}
+                        {statusCustomers.length > 3 && (
+                          <p className="text-[10px] text-gray-400">他{statusCustomers.length - 3}件</p>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
 
         {/* 停滞アラート */}
         <StagnationAlerts customers={customers as Partial<Customer>[]} maxItems={3} />
