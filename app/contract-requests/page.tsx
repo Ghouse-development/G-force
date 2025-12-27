@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -24,7 +23,6 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/store'
 import type { ContractRequestStatus, UserRole } from '@/types/database'
-import { ROLE_CONFIG } from '@/types/database'
 
 // 契約依頼ステータス設定
 const CONTRACT_REQUEST_STATUS_CONFIG: Record<ContractRequestStatus, {
@@ -125,11 +123,10 @@ const mockContractRequests: ContractRequest[] = [
 ]
 
 export default function ContractRequestsPage() {
-  const router = useRouter()
   const { user } = useAuthStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStatus, setSelectedStatus] = useState<ContractRequestStatus | 'all'>('all')
-  const [requests, setRequests] = useState<ContractRequest[]>(mockContractRequests)
+  const [requests] = useState<ContractRequest[]>(mockContractRequests)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {

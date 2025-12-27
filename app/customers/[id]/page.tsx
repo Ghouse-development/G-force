@@ -48,7 +48,6 @@ import { toast } from 'sonner'
 import {
   type Customer,
   type PipelineStatus,
-  type LeadSource,
   type FundPlan,
   type CustomerJourneyEvent,
   type CustomerLandStatus,

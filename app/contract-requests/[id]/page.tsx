@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Layout } from '@/components/layout/layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -22,7 +22,6 @@ import {
   FileEdit,
   User,
   Building,
-  Calendar,
   MapPin,
   Phone,
   Mail,
@@ -134,7 +133,6 @@ const STATUS_CONFIG: Record<ContractRequestStatus, {
 
 export default function ContractRequestDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const { user } = useAuthStore()
   const [detail, setDetail] = useState<ContractRequestDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)

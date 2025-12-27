@@ -1,5 +1,76 @@
 # G-force 開発記録
 
+## 2024年12月27日（午後） - UI/UX統一・Supabase Storage API接続
+
+### 実装した機能
+
+#### 1. SmartSelectionコンポーネント
+
+**ファイル:** `components/ui/smart-selection.tsx`
+
+「現在の値」vs「それ以外」の2択UIパターン:
+- 営業が考えなくて済む仕組み
+- 資金計画書の値を推奨として表示
+- それ以外を選ぶ場合のみ選択肢を展開
+
+#### 2. 書類アップロードAPI（Supabase Storage）
+
+**ファイル:** `app/api/documents/route.ts`
+
+| メソッド | 機能 |
+|---------|------|
+| GET | 顧客の書類一覧取得（署名付きURL付き） |
+| POST | ファイルアップロード（Storage + DB記録） |
+| DELETE | ファイル削除（Storage + DB） |
+
+**バケット:** `customer-documents`
+**テーブル:** `customer_documents`
+
+#### 3. DocumentManager → API接続
+
+**ファイル:** `components/customers/document-manager.tsx`
+
+- ローカルストレージ → Supabase Storage APIへ変更
+- 署名付きURLでセキュアなプレビュー
+- ローディング状態の表示
+
+#### 4. 契約ウィザードのSmartSelection適用
+
+**ファイル:** `components/contracts/contract-wizard.tsx`
+
+- 商品選択: 資金計画書の商品 vs それ以外
+- 紹介元選択: 紹介なし vs 紹介あり（オーナー/社員/業者）
+
+#### 5. 新規反響登録のカード選択化
+
+**ファイル:** `app/customers/new/page.tsx`
+
+- 反響経路をドロップダウン → 8枚のアイコンカードに変更
+- 直感的なタップ操作
+
+#### 6. TypeScriptエラー・未使用インポート修正
+
+10ファイル以上の未使用インポートを削除:
+- contract-requests/page.tsx
+- contract-requests/[id]/page.tsx
+- contracts/page.tsx, new/page.tsx, [id]/page.tsx
+- customers/page.tsx, new/page.tsx, [id]/page.tsx
+- contracts/contract-wizard.tsx
+- api/documents/route.ts
+
+### 残タスク（UI/UX統一の継続）
+
+以下の画面にSmartSelection/カード選択UIを適用する必要あり:
+
+| 画面 | 対象項目 | 状態 |
+|-----|---------|------|
+| プラン依頼 `/plan-requests/new` | 商品、工法など | 未実施 |
+| 顧客詳細 `/customers/[id]` | 土地状況、ステータス変更 | 未実施 |
+| 契約依頼 `/contract-requests/new` | 各選択項目 | 未実施 |
+| 資金計画書作成 | 商品、ローン先など | 未実施 |
+
+---
+
 ## 2024年12月27日 - 書類管理機能・契約ウィザード改善・TypeScript修正
 
 ### 実装した機能

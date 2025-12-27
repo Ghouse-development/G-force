@@ -8,13 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import {
   ArrowLeft,
@@ -26,21 +19,16 @@ import {
   Globe,
   Instagram,
   Users,
-  MessageSquare,
   Building,
-  Eye,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/store'
 import {
   type OwnershipType,
   type LeadSource,
-  LEAD_SOURCE_CONFIG,
 } from '@/types/database'
 
 export default function NewCustomerPage() {
   const router = useRouter()
-  const { user } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
 
   const [formData, setFormData] = useState({

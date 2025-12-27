@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, use, useEffect, useMemo } from 'react'
+import { useState, use, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Layout } from '@/components/layout/layout'
@@ -28,14 +28,12 @@ import {
   FileSignature,
   Home,
   Wallet,
-  Calendar,
   User,
   Users,
   FileEdit,
   FileSearch,
   UserCheck,
   CheckCircle2,
-  Clock,
   Download,
   Printer,
   Edit,
@@ -49,21 +47,16 @@ import {
   History,
   MessageSquare,
   Building,
-  Phone,
-  Mail,
   MapPin,
-  Ruler,
   FileSpreadsheet,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useContractStore, type StoredContract, useNotificationStore } from '@/store'
+import { useContractStore, useNotificationStore } from '@/store'
 import { useAuthStore } from '@/store'
 import { ContractAttachments } from '@/components/contracts/contract-attachments'
-import type { ContractStatus, ContractAction, UserRole } from '@/types/database'
+import type { ContractStatus, UserRole } from '@/types/database'
 import {
   CONTRACT_STATUS_CONFIG,
-  CONTRACT_STATUS_ACTIONS,
-  CONTRACT_ACTION_CONFIG,
   CONTRACT_STATUS_TRANSITIONS,
   getAvailableContractActions,
   checkContractPermission,

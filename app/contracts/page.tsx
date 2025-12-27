@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Layout } from '@/components/layout/layout'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -18,22 +18,13 @@ import {
   FileSearch,
   UserCheck,
   CheckCircle2,
-  AlertTriangle,
   RotateCcw,
   Clock,
   TrendingUp,
-  Filter,
   Download,
   LayoutList,
   LayoutGrid,
 } from 'lucide-react'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,7 +32,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useContractStore, type StoredContract } from '@/store'
-import { useAuthStore } from '@/store'
 import type { ContractStatus } from '@/types/database'
 import { CONTRACT_STATUS_CONFIG, CONTRACT_STATUS_ORDER } from '@/types/database'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
@@ -311,17 +301,19 @@ export default function ContractsPage() {
   const [mounted, setMounted] = useState(false)
 
   const { contracts, addContract } = useContractStore()
-  const { user } = useAuthStore()
 
   // クライアントサイドでのみマウント
   useEffect(() => {
     setMounted(true)
-    // 初期データがなければモックデータを追加
-    if (contracts.length === 0) {
+  }, [])
+
+  // 初期データがなければモックデータを追加
+  useEffect(() => {
+    if (mounted && contracts.length === 0) {
       const mockData = createMockContracts()
       mockData.forEach((c) => addContract(c))
     }
-  }, [])
+  }, [mounted, contracts.length, addContract])
 
   // フィルタリング
   const filteredContracts = useMemo(() => {

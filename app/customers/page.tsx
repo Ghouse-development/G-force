@@ -6,7 +6,6 @@ import { Layout } from '@/components/layout/layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import {
   Users,
   Search,
@@ -18,13 +17,11 @@ import {
 } from 'lucide-react'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { CustomerListSkeleton } from '@/components/ui/skeleton-loaders'
-import { HelpTooltip } from '@/components/ui/help-tooltip'
 import { exportToCSV, customerExportColumns } from '@/lib/export'
 import {
   type Customer,
   type PipelineStatus,
   type PreContractStatus,
-  PIPELINE_CONFIG,
   PRE_CONTRACT_STATUS_ORDER,
   PRE_CONTRACT_LOST,
   getCurrentFiscalYear,
@@ -113,15 +110,6 @@ export default function CustomersPage() {
       customer.phone?.includes(searchQuery)
     )
   })
-
-  // ステータスごとの件数
-  const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    for (const status of [...PRE_CONTRACT_STATUS_ORDER, ...PRE_CONTRACT_LOST]) {
-      counts[status] = preContractCustomers.filter(c => c.pipeline_status === status).length
-    }
-    return counts
-  }, [preContractCustomers])
 
   const conversionRates = calculateConversionRates(activeCustomers as Partial<Customer>[])
 

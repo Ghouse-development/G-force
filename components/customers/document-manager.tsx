@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,7 @@ import {
   Trash2,
   Car,
   Banknote,
+  Loader2,
 } from 'lucide-react'
 import {
   Dialog,
@@ -24,11 +25,41 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { useFileStore, useAuthStore, type StoredFile, type DocumentCategory } from '@/store'
+import { useAuthStore } from '@/store'
 import { toast } from 'sonner'
 import type { CustomerLandStatus } from '@/types/database'
 
-// 書類定義（storeのDocumentCategoryと連携）
+// 書類カテゴリの型定義
+type DocumentCategory =
+  | 'land_registry'
+  | 'cadastral_map'
+  | 'land_survey'
+  | 'land_explanation'
+  | 'land_contract'
+  | 'road_designation'
+  | 'drivers_license'
+  | 'health_insurance'
+  | 'loan_preapproval'
+  | 'site_photos'
+  | 'housing_map'
+  | 'meeting_records'
+  | 'other'
+
+// APIから返ってくるドキュメントの型
+interface ApiDocument {
+  id: string
+  customer_id: string
+  category: DocumentCategory
+  file_name: string
+  file_type: string
+  file_size: number
+  storage_path: string
+  uploaded_by: string | null
+  uploaded_at: string
+  url: string | null
+}
+
+// 書類定義
 const DOCUMENT_TYPES: Record<DocumentCategory, { label: string; icon: typeof FileText; group: string }> = {
   land_registry: { label: '土地謄本', icon: FileText, group: 'land' },
   cadastral_map: { label: '公図', icon: MapPin, group: 'land' },
@@ -80,16 +111,33 @@ interface DocumentManagerProps {
 
 export function DocumentManager({ customerId, landStatus }: DocumentManagerProps) {
   const { user } = useAuthStore()
-  const { files, addFile, deleteFile } = useFileStore()
+  const [documents, setDocuments] = useState<ApiDocument[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [uploadingTo, setUploadingTo] = useState<DocumentCategory | null>(null)
-  const [previewFile, setPreviewFile] = useState<StoredFile | null>(null)
+  const [previewDoc, setPreviewDoc] = useState<ApiDocument | null>(null)
 
-  // 顧客のファイルを取得
-  const customerFiles = files.filter(f => f.customerId === customerId) as StoredFile[]
+  // ドキュメントをAPIから取得
+  const fetchDocuments = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/documents?customerId=${customerId}`)
+      const data = await res.json()
+      setDocuments(data.documents || [])
+    } catch (error) {
+      console.error('Failed to fetch documents:', error)
+      // エラー時は空配列で続行（テーブルがない場合など）
+      setDocuments([])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [customerId])
 
-  // 書類タイプごとのファイル
-  const getFilesForType = (typeId: DocumentCategory) => {
-    return customerFiles.filter(f => f.documentCategory === typeId)
+  useEffect(() => {
+    fetchDocuments()
+  }, [fetchDocuments])
+
+  // 書類タイプごとのドキュメント
+  const getDocsForType = (typeId: DocumentCategory) => {
+    return documents.filter(d => d.category === typeId)
   }
 
   // 表示する書類リスト
@@ -103,38 +151,70 @@ export function DocumentManager({ customerId, landStatus }: DocumentManagerProps
     return groupOrder.indexOf(aGroup) - groupOrder.indexOf(bGroup)
   })
 
+  // アップロード処理
   const handleUpload = useCallback(async (files: File[], typeId: DocumentCategory) => {
+    setUploadingTo(typeId)
+
     for (const file of files) {
       try {
-        const reader = new FileReader()
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string)
-          reader.onerror = reject
-          reader.readAsDataURL(file)
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('customerId', customerId)
+        formData.append('category', typeId)
+        if (user?.id) {
+          formData.append('uploadedBy', user.id)
+        }
+
+        const res = await fetch('/api/documents', {
+          method: 'POST',
+          body: formData,
         })
 
-        addFile({
-          customerId,
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          dataUrl,
-          category: file.type.startsWith('image/') ? 'image' : 'document',
-          uploadedBy: user?.id || null,
-          documentCategory: typeId,
-        } as Omit<StoredFile, 'id' | 'uploadedAt'>)
+        if (!res.ok) {
+          throw new Error('Upload failed')
+        }
+
+        const data = await res.json()
+        if (data.document) {
+          setDocuments(prev => [data.document, ...prev])
+        }
 
         toast.success(`${DOCUMENT_TYPES[typeId].label}をアップロードしました`)
-      } catch {
+      } catch (error) {
+        console.error('Upload error:', error)
         toast.error('アップロードに失敗しました')
       }
     }
-    setUploadingTo(null)
-  }, [customerId, addFile, user])
 
-  const handleDelete = (file: StoredFile) => {
-    deleteFile(file.id)
-    toast.success('削除しました')
+    setUploadingTo(null)
+  }, [customerId, user])
+
+  // 削除処理
+  const handleDelete = async (doc: ApiDocument) => {
+    try {
+      const res = await fetch(`/api/documents?id=${doc.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) {
+        throw new Error('Delete failed')
+      }
+
+      setDocuments(prev => prev.filter(d => d.id !== doc.id))
+      toast.success('削除しました')
+      setPreviewDoc(null)
+    } catch (error) {
+      console.error('Delete error:', error)
+      toast.error('削除に失敗しました')
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+      </div>
+    )
   }
 
   return (
@@ -143,8 +223,8 @@ export function DocumentManager({ customerId, landStatus }: DocumentManagerProps
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {sortedDocs.map(typeId => {
           const config = DOCUMENT_TYPES[typeId]
-          const typeFiles = getFilesForType(typeId)
-          const hasFile = typeFiles.length > 0
+          const typeDocs = getDocsForType(typeId)
+          const hasDoc = typeDocs.length > 0
           const Icon = config.icon
 
           return (
@@ -152,10 +232,10 @@ export function DocumentManager({ customerId, landStatus }: DocumentManagerProps
               key={typeId}
               label={config.label}
               icon={<Icon className="w-6 h-6" />}
-              hasFile={hasFile}
-              fileCount={typeFiles.length}
+              hasFile={hasDoc}
+              fileCount={typeDocs.length}
               onUpload={(files) => handleUpload(files, typeId)}
-              onView={() => hasFile && setPreviewFile(typeFiles[0])}
+              onView={() => hasDoc && setPreviewDoc(typeDocs[0])}
               isUploading={uploadingTo === typeId}
             />
           )
@@ -163,20 +243,19 @@ export function DocumentManager({ customerId, landStatus }: DocumentManagerProps
       </div>
 
       {/* プレビューダイアログ */}
-      <Dialog open={!!previewFile} onOpenChange={() => setPreviewFile(null)}>
+      <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between pr-8">
-              <span className="truncate">{previewFile?.name}</span>
+              <span className="truncate">{previewDoc?.file_name}</span>
               <div className="flex gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
                   className="text-red-500"
                   onClick={() => {
-                    if (previewFile) {
-                      handleDelete(previewFile)
-                      setPreviewFile(null)
+                    if (previewDoc) {
+                      handleDelete(previewDoc)
                     }
                   }}
                 >
@@ -186,22 +265,37 @@ export function DocumentManager({ customerId, landStatus }: DocumentManagerProps
             </DialogTitle>
           </DialogHeader>
           <div className="mt-4 overflow-auto max-h-[70vh]">
-            {previewFile?.type.startsWith('image/') ? (
-              <img
-                src={previewFile.dataUrl}
-                alt={previewFile.name}
-                className="w-full h-auto object-contain"
-              />
-            ) : previewFile?.type === 'application/pdf' ? (
-              <iframe
-                src={previewFile.dataUrl}
-                className="w-full h-[65vh]"
-                title={previewFile.name}
-              />
+            {previewDoc?.url ? (
+              previewDoc.file_type.startsWith('image/') ? (
+                <img
+                  src={previewDoc.url}
+                  alt={previewDoc.file_name}
+                  className="w-full h-auto object-contain"
+                />
+              ) : previewDoc.file_type === 'application/pdf' ? (
+                <iframe
+                  src={previewDoc.url}
+                  className="w-full h-[65vh]"
+                  title={previewDoc.file_name}
+                />
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <p>プレビューできません</p>
+                  <a
+                    href={previewDoc.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline mt-2 inline-block"
+                  >
+                    ダウンロード
+                  </a>
+                </div>
+              )
             ) : (
               <div className="text-center py-12 text-gray-500">
                 <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <p>プレビューできません</p>
+                <p>ファイルを読み込めません</p>
               </div>
             )}
           </div>
@@ -270,7 +364,7 @@ function DocumentCard({
             hasFile ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'
           )}>
             {isUploading ? (
-              <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin" />
             ) : hasFile ? (
               <Check className="w-6 h-6" />
             ) : (

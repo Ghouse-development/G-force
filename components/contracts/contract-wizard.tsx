@@ -8,8 +8,8 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
-import { SelectionCard, MultiSelectCard, ConfirmationCard } from './selection-card'
-import { SmartSelection, SmartConfirmation } from '@/components/ui/smart-selection'
+import { SelectionCard, MultiSelectCard } from './selection-card'
+import { SmartSelection } from '@/components/ui/smart-selection'
 import {
   Select,
   SelectContent,
@@ -29,12 +29,10 @@ import {
   CheckCircle,
   FileSignature,
   AlertCircle,
-  Calendar,
   MapPin,
   DollarSign,
   FileCheck,
   Download,
-  Building,
   CreditCard,
   Image as ImageIcon,
   XCircle,
@@ -48,7 +46,8 @@ import {
   REFERRAL_LIST,
   IMPORTANT_MATTER_EXPLAINER_LIST,
 } from '@/types/database'
-import type { OwnershipType, Customer, ImportantMatterExplainer } from '@/types/database'
+import type { OwnershipType } from '@/types/database'
+import type { FundPlanData } from '@/types/fund-plan'
 
 interface ContractWizardProps {
   customerId?: string
@@ -180,12 +179,12 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
   }, [customer, fundPlan])
 
   // FundPlanDataから合計金額を計算
-  const calculateTotalFromData = (data: any): number => {
+  const calculateTotalFromData = (data: FundPlanData | undefined): number => {
     if (!data) return 0
-    const buildingPrice = data.constructionArea * (data.pricePerTsubo || 0)
-    const incidentalA = Object.values(data.incidentalCostA || {}).reduce((sum: number, v: any) => sum + (Number(v) || 0), 0)
-    const incidentalB = Object.values(data.incidentalCostB || {}).reduce((sum: number, v: any) => sum + (Number(v) || 0), 0)
-    const incidentalC = Object.values(data.incidentalCostC || {}).reduce((sum: number, v: any) => sum + (Number(v) || 0), 0)
+    const buildingPrice = (data.constructionArea || 0) * (data.pricePerTsubo || 0)
+    const incidentalA = Object.values(data.incidentalCostA || {}).reduce((sum: number, v: unknown) => sum + (Number(v) || 0), 0)
+    const incidentalB = Object.values(data.incidentalCostB || {}).reduce((sum: number, v: unknown) => sum + (Number(v) || 0), 0)
+    const incidentalC = Object.values(data.incidentalCostC || {}).reduce((sum: number, v: unknown) => sum + (Number(v) || 0), 0)
     return buildingPrice + incidentalA + incidentalB + incidentalC
   }
 
