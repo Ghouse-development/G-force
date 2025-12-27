@@ -68,11 +68,19 @@ import type { Customer, OwnershipType, DeliverableType, ConstructionArea, LandSt
 
 // モックの営業担当データ
 const mockSalesPersons = [
-  { id: 'sales-001', name: '西野 太郎' },
-  { id: 'sales-002', name: '山田 花子' },
-  { id: 'sales-003', name: '佐藤 一郎' },
-  { id: 'sales-004', name: '田中 次郎' },
+  { id: 'dev-sales-001', name: '田中 一郎' },
+  { id: 'dev-sales-002', name: '山田 花子' },
+  { id: 'dev-sales-003', name: '佐藤 健太' },
+  { id: 'dev-sales-004', name: '鈴木 美咲' },
+  { id: 'dev-sales-005', name: '高橋 翔太' },
 ]
+
+// 担当者IDから名前を取得
+const getSalesPersonName = (id: string | null | undefined): string => {
+  if (!id) return ''
+  const person = mockSalesPersons.find(p => p.id === id)
+  return person?.name || ''
+}
 
 function NewPlanRequestForm() {
   const router = useRouter()
@@ -105,6 +113,11 @@ function NewPlanRequestForm() {
     return latestFundPlan?.data?.productType || ''
   }, [latestFundPlan])
 
+  // 資金計画書から施工面積を取得
+  const fundPlanBuildingArea = useMemo(() => {
+    return latestFundPlan?.data?.buildingArea?.toString() || ''
+  }, [latestFundPlan])
+
   // フォームデータ
   const [formData, setFormData] = useState({
     // 基本情報
@@ -115,8 +128,8 @@ function NewPlanRequestForm() {
     ownershipType: (customer?.ownership_type || '単独') as OwnershipType,
     partnerName: customer?.partner_name || '',
 
-    // 営業担当
-    salesPersonType: 'current' as 'current' | 'other',
+    // 営業担当（お客様の担当者を優先）
+    salesPersonType: (customer?.assigned_to ? 'customer' : 'current') as 'customer' | 'current' | 'other',
     salesPersonId: customer?.assigned_to || user?.id || '',
 
     // 日程（日付と時間を分離）
@@ -180,20 +193,28 @@ function NewPlanRequestForm() {
         partnerName: customer.partner_name || '',
         landAddress: customer.address || '',
         landLotNumber: prev.landLotNumber || '',  // 地番は初期空欄
+        // お客様の担当者を優先
+        salesPersonType: customer.assigned_to ? 'customer' : 'current',
         salesPersonId: customer.assigned_to || user?.id || '',
       }))
     }
   }, [customer, user?.id])
 
-  // 資金計画書の商品が変わったら更新
+  // お客様の担当者名を取得
+  const customerSalesPersonName = useMemo(() => {
+    return getSalesPersonName(customer?.assigned_to)
+  }, [customer?.assigned_to])
+
+  // 資金計画書の商品・施工面積が変わったら更新
   useMemo(() => {
-    if (fundPlanProductName) {
+    if (fundPlanProductName || fundPlanBuildingArea) {
       setFormData(prev => ({
         ...prev,
-        productName: fundPlanProductName,
+        ...(fundPlanProductName && { productName: fundPlanProductName }),
+        ...(fundPlanBuildingArea && { buildingArea: fundPlanBuildingArea }),
       }))
     }
-  }, [fundPlanProductName])
+  }, [fundPlanProductName, fundPlanBuildingArea])
 
   // 現在ログインしているユーザー名を取得
   const currentUserName = useMemo(() => {
@@ -342,6 +363,11 @@ function NewPlanRequestForm() {
             <CardTitle className="flex items-center text-lg">
               <User className="w-5 h-5 mr-2 text-orange-500" />
               お客様名
+              {customer && (
+                <Badge variant="outline" className="ml-2 text-xs bg-green-50 text-green-700 border-green-200">
+                  自動入力
+                </Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -427,30 +453,63 @@ function NewPlanRequestForm() {
             <CardTitle className="flex items-center text-lg">
               <User className="w-5 h-5 mr-2 text-orange-500" />
               営業担当
+              {customerSalesPersonName && (
+                <Badge variant="outline" className="ml-2 text-xs bg-green-50 text-green-700 border-green-200">
+                  自動: {customerSalesPersonName}
+                </Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
-              <SelectionCard
-                value="current"
-                label={currentUserName}
-                description="現在ログイン中の担当者"
-                selected={formData.salesPersonType === 'current'}
-                onClick={() => setFormData(prev => ({
-                  ...prev,
-                  salesPersonType: 'current',
-                  salesPersonId: user?.id || ''
-                }))}
-                icon={<User className="w-6 h-6" />}
-              />
-              <SelectionCard
-                value="other"
-                label={`${currentUserName}以外`}
-                description="別の担当者を選択"
-                selected={formData.salesPersonType === 'other'}
-                onClick={() => setFormData(prev => ({ ...prev, salesPersonType: 'other' }))}
-                icon={<Users className="w-6 h-6" />}
-              />
+              {/* お客様の担当者がいる場合は第一選択肢に */}
+              {customerSalesPersonName ? (
+                <>
+                  <SelectionCard
+                    value="customer"
+                    label={customerSalesPersonName}
+                    description="このお客様の担当者"
+                    selected={formData.salesPersonType === 'customer'}
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      salesPersonType: 'customer',
+                      salesPersonId: customer?.assigned_to || ''
+                    }))}
+                    icon={<User className="w-6 h-6" />}
+                  />
+                  <SelectionCard
+                    value="other"
+                    label="別の担当者"
+                    description="他の担当者を選択"
+                    selected={formData.salesPersonType === 'other'}
+                    onClick={() => setFormData(prev => ({ ...prev, salesPersonType: 'other' }))}
+                    icon={<Users className="w-6 h-6" />}
+                  />
+                </>
+              ) : (
+                <>
+                  <SelectionCard
+                    value="current"
+                    label={currentUserName}
+                    description="現在ログイン中の担当者"
+                    selected={formData.salesPersonType === 'current'}
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      salesPersonType: 'current',
+                      salesPersonId: user?.id || ''
+                    }))}
+                    icon={<User className="w-6 h-6" />}
+                  />
+                  <SelectionCard
+                    value="other"
+                    label="別の担当者"
+                    description="他の担当者を選択"
+                    selected={formData.salesPersonType === 'other'}
+                    onClick={() => setFormData(prev => ({ ...prev, salesPersonType: 'other' }))}
+                    icon={<Users className="w-6 h-6" />}
+                  />
+                </>
+              )}
             </div>
             {formData.salesPersonType === 'other' && (
               <div className="mt-4 space-y-2">
@@ -658,7 +717,11 @@ function NewPlanRequestForm() {
             <CardTitle className="flex items-center text-lg">
               <MapPin className="w-5 h-5 mr-2 text-orange-500" />
               建築地の住所
-              <Badge variant="outline" className="ml-2 text-xs">顧客情報と同期</Badge>
+              {customer?.address && (
+                <Badge variant="outline" className="ml-2 text-xs bg-green-50 text-green-700 border-green-200">
+                  自動入力・顧客情報と同期
+                </Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -668,9 +731,17 @@ function NewPlanRequestForm() {
               placeholder="例: 大阪府豊中市〇〇町1-2-3"
               className="h-12"
             />
-            <p className="text-sm text-gray-500 mt-2">
-              ここで編集した内容は顧客情報にも反映されます
-            </p>
+            {customer?.address && formData.landAddress === customer.address && (
+              <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
+                <FileCheck className="w-4 h-4" />
+                顧客情報から自動入力されました（編集すると顧客情報にも反映されます）
+              </p>
+            )}
+            {customer?.address && formData.landAddress !== customer.address && (
+              <p className="text-sm text-amber-600 mt-2">
+                編集した内容は顧客情報にも反映されます
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -1014,6 +1085,11 @@ function NewPlanRequestForm() {
             <CardTitle className="flex items-center text-lg">
               <Ruler className="w-5 h-5 mr-2 text-orange-500" />
               施工面積（坪）
+              {fundPlanBuildingArea && (
+                <Badge variant="outline" className="ml-2 text-xs bg-green-50 text-green-700 border-green-200">
+                  資金計画書: {fundPlanBuildingArea}坪
+                </Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -1025,6 +1101,12 @@ function NewPlanRequestForm() {
               placeholder="例: 35"
               className="h-12"
             />
+            {fundPlanBuildingArea && formData.buildingArea === fundPlanBuildingArea && (
+              <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
+                <FileCheck className="w-4 h-4" />
+                資金計画書から自動入力されました
+              </p>
+            )}
           </CardContent>
         </Card>
 
