@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Layout } from '@/components/layout/layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -18,21 +18,11 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { ArrowLeft, Save, FileText, User, Home, Calendar, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
-import type { Customer, User as UserType } from '@/types/database'
+import { useCustomerStore, useAuthStore, useHandoverStore, useContractStore } from '@/store'
+import { useDemoData } from '@/hooks/use-demo-data'
 
-// モックデータ
-const mockCustomers: Partial<Customer>[] = [
-  { id: '1', name: '山田 太郎', tei_name: '山田様邸' },
-  { id: '2', name: '佐藤 花子', tei_name: '佐藤様邸' },
-  { id: '3', name: '鈴木 一郎', tei_name: '鈴木様邸' },
-]
-
-const mockSalesStaff: Partial<UserType>[] = [
-  { id: 's1', name: '営業 太郎', department: '営業部' },
-  { id: 's2', name: '営業 次郎', department: '営業部' },
-]
-
-const mockConstructionManagers: Partial<UserType>[] = [
+// モックスタッフ（将来的にはユーザーストアから取得）
+const mockConstructionManagers = [
   { id: 'c1', name: '工事 一郎', department: '工事部' },
   { id: 'c2', name: '工事 二郎', department: '工事部' },
   { id: 'c3', name: '工事 三郎', department: '工事部' },
@@ -57,14 +47,41 @@ function NewHandoverForm() {
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
 
+  // ストア
+  const { user: authUser } = useAuthStore()
+  const { customers: storeCustomers } = useCustomerStore()
+  const { contracts: storeContracts } = useContractStore()
+  const { addHandover } = useHandoverStore()
+  const { isDemoMode, customers: demoCustomers, contracts: demoContracts, user: demoUser } = useDemoData()
+
+  const user = isDemoMode ? demoUser : authUser
+  const customers = isDemoMode ? demoCustomers : storeCustomers
+  const contracts = isDemoMode ? demoContracts : storeContracts
+
+  // 契約済み顧客のみ（内定以降）
+  const eligibleCustomers = useMemo(() => {
+    return customers.filter(c =>
+      ['内定', '変更契約前', '変更契約後', 'オーナー'].includes(c.pipeline_status)
+    )
+  }, [customers])
+
   // customer または customer_id のどちらでも対応
   const customerId = searchParams.get('customer_id') || searchParams.get('customer') || ''
   const contractId = searchParams.get('contract_id') || ''
 
+  // 選択された顧客（将来的にプリフィル用）
+  const _selectedCustomer = useMemo(() => {
+    return customers.find(c => c.id === customerId)
+  }, [customers, customerId])
+
+  // 選択された契約（将来的にプリフィル用）
+  const _selectedContract = useMemo(() => {
+    return contracts.find(c => c.id === contractId)
+  }, [contracts, contractId])
+
   const [formData, setFormData] = useState({
     customerId,
     contractId,
-    salesStaffId: '',
     constructionManagerId: '',
     handoverDate: '',
     contractSummary: '',
@@ -96,10 +113,6 @@ function NewHandoverForm() {
       toast.error('顧客を選択してください')
       return
     }
-    if (!formData.salesStaffId) {
-      toast.error('営業担当を選択してください')
-      return
-    }
     if (!formData.constructionManagerId) {
       toast.error('工事担当を選択してください')
       return
@@ -108,9 +121,40 @@ function NewHandoverForm() {
     setIsLoading(true)
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      const customer = customers.find(c => c.id === formData.customerId)
+      const constructionManager = mockConstructionManagers.find(m => m.id === formData.constructionManagerId)
+
+      // チェックリストをカテゴリ別に整形
+      const checklist = Object.entries(groupedChecklist).map(([category, items]) => ({
+        category,
+        items: items.map(item => ({
+          label: item.label,
+          checked: formData.checklistCompleted.includes(item.id),
+        })),
+      }))
+
+      const handoverId = addHandover({
+        customer_id: formData.customerId,
+        contract_id: formData.contractId || null,
+        from_user_id: user?.id || null,
+        from_user_name: user?.name || null,
+        to_user_id: formData.constructionManagerId,
+        to_user_name: constructionManager?.name || null,
+        status: 'draft',
+        customer_name: customer?.name || null,
+        tei_name: customer?.tei_name || null,
+        customer_notes: formData.customerCharacter || null,
+        site_notes: formData.siteNotes || null,
+        schedule_notes: formData.handoverDate ? `引渡予定日: ${formData.handoverDate}` : null,
+        special_notes: formData.specialRequests || null,
+        checklist,
+        confirmed_by: null,
+        confirmed_by_name: null,
+        confirmed_at: null,
+      })
+
       toast.success('引継書を作成しました')
-      router.push('/handovers')
+      router.push(`/handovers/${handoverId}`)
     } catch {
       toast.error('作成に失敗しました')
     } finally {
@@ -165,13 +209,16 @@ function NewHandoverForm() {
                     <SelectValue placeholder="顧客を選択" />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockCustomers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id!}>
+                    {eligibleCustomers.map((customer) => (
+                      <SelectItem key={customer.id} value={customer.id}>
                         {customer.tei_name} ({customer.name})
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {eligibleCustomers.length === 0 && (
+                  <p className="text-sm text-gray-500">内定以降の顧客がいません</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -187,22 +234,12 @@ function NewHandoverForm() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label>営業担当 <span className="text-red-500">*</span></Label>
-                <Select
-                  value={formData.salesStaffId}
-                  onValueChange={(value) => setFormData({ ...formData, salesStaffId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="営業担当を選択" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {mockSalesStaff.map((staff) => (
-                      <SelectItem key={staff.id} value={staff.id!}>
-                        {staff.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>営業担当（引継元）</Label>
+                <Input
+                  value={user?.name || '未設定'}
+                  disabled
+                  className="bg-gray-50"
+                />
               </div>
 
               <div className="space-y-2">
@@ -216,7 +253,7 @@ function NewHandoverForm() {
                   </SelectTrigger>
                   <SelectContent>
                     {mockConstructionManagers.map((manager) => (
-                      <SelectItem key={manager.id} value={manager.id!}>
+                      <SelectItem key={manager.id} value={manager.id}>
                         {manager.name}
                       </SelectItem>
                     ))}

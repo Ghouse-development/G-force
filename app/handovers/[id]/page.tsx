@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, use } from 'react'
+import { useState, use, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Layout } from '@/components/layout/layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -29,8 +30,11 @@ import {
   Download,
   Printer,
   Edit,
+  ExternalLink,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useHandoverStore, useCustomerStore, useAuthStore } from '@/store'
+import { useDemoData } from '@/hooks/use-demo-data'
 import type { DocumentStatus } from '@/types/database'
 
 // ステータス設定
@@ -41,56 +45,63 @@ const STATUS_CONFIG: Record<DocumentStatus, { label: string; color: string; bgCo
   'rejected': { label: '差戻し', color: 'text-red-700', bgColor: 'bg-red-100', icon: Clock },
 }
 
-// 引継チェックリスト項目
-const checklistItems = [
-  { id: 'contract_confirmed', label: '契約内容確認', category: '契約関連' },
-  { id: 'drawings_handed', label: '図面引渡', category: '契約関連' },
-  { id: 'specifications_confirmed', label: '仕様確認', category: '契約関連' },
-  { id: 'schedule_confirmed', label: '工程確認', category: 'スケジュール' },
-  { id: 'groundbreaking_date_set', label: '着工日確定', category: 'スケジュール' },
-  { id: 'completion_date_set', label: '完成予定日確定', category: 'スケジュール' },
-  { id: 'customer_preferences', label: '顧客要望共有', category: '顧客情報' },
-  { id: 'special_notes', label: '特記事項共有', category: '顧客情報' },
-  { id: 'neighbor_info', label: '近隣情報共有', category: '現場情報' },
-  { id: 'site_access', label: '現場アクセス確認', category: '現場情報' },
-]
-
-// モックデータ
-const mockHandover = {
-  id: '1',
-  customer_id: '1',
-  customer_name: '山田 太郎',
-  customer_phone: '090-1234-5678',
-  tei_name: '山田様邸',
-  status: 'submitted' as DocumentStatus,
-  sales_staff_name: '営業 太郎',
-  construction_manager_name: '工事 一郎',
-  handover_date: '2024-12-20',
-  contract_summary: '・木造2階建て\n・延床面積: 35.5坪\n・契約金額: 3,800万円（税込）\n・着工: 2025/2/1、完成: 2025/6/30',
-  customer_character: '細かいことを気にされる方。連絡はメールより電話を好む。返信は遅め（1-2日）。',
-  special_requests: '・収納スペースへの強いこだわり\n・北側の窓は大きめに\n・キッチンは対面式必須\n・将来的な2世帯への拡張を視野に',
-  site_notes: '・近隣への配慮が必要（特に北側の〇〇様）\n・駐車スペースは前面道路のみ\n・工事車両の進入は北側から',
-  checklist_completed: ['contract_confirmed', 'drawings_handed', 'specifications_confirmed', 'schedule_confirmed', 'groundbreaking_date_set', 'customer_preferences'],
-  created_at: '2024-12-16T10:00:00Z',
-  created_by_name: '営業 太郎',
-  updated_at: '2024-12-17T15:00:00Z',
-}
-
 export default function HandoverDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
   const router = useRouter()
   const [isUpdating, setIsUpdating] = useState(false)
-  const [status, setStatus] = useState<DocumentStatus>(mockHandover.status)
-  const [checklistCompleted, setChecklistCompleted] = useState<string[]>(mockHandover.checklist_completed)
 
-  const statusConfig = STATUS_CONFIG[status]
+  // ストア
+  const { user: authUser } = useAuthStore()
+  const { handovers, updateHandover, updateHandoverStatus, confirmHandover } = useHandoverStore()
+  const { customers: storeCustomers } = useCustomerStore()
+  const { isDemoMode, customers: demoCustomers, user: demoUser } = useDemoData()
+
+  const user = isDemoMode ? demoUser : authUser
+  const customers = isDemoMode ? demoCustomers : storeCustomers
+
+  // 引継書データを取得
+  const handover = useMemo(() => {
+    return handovers.find(h => h.id === resolvedParams.id)
+  }, [handovers, resolvedParams.id])
+
+  // 関連顧客
+  const customer = useMemo(() => {
+    if (!handover?.customer_id) return null
+    return customers.find(c => c.id === handover.customer_id)
+  }, [customers, handover?.customer_id])
+
+  // チェックリスト完了数（handoverがない場合はデフォルト値）
+  const checklistStats = useMemo(() => {
+    if (!handover) return { total: 0, completed: 0 }
+    const total = handover.checklist.reduce((sum, cat) => sum + cat.items.length, 0)
+    const completed = handover.checklist.reduce(
+      (sum, cat) => sum + cat.items.filter(i => i.checked).length,
+      0
+    )
+    return { total, completed }
+  }, [handover])
+
+  // 引継書が見つからない場合
+  if (!handover) {
+    return (
+      <Layout>
+        <div className="max-w-4xl mx-auto text-center py-12">
+          <p className="text-gray-500 mb-4">引継書が見つかりません</p>
+          <Button onClick={() => router.push('/handovers')}>
+            一覧に戻る
+          </Button>
+        </div>
+      </Layout>
+    )
+  }
+
+  const statusConfig = STATUS_CONFIG[handover.status]
   const StatusIcon = statusConfig.icon
 
   const handleStatusChange = async (newStatus: DocumentStatus) => {
     setIsUpdating(true)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 300))
-      setStatus(newStatus)
+      updateHandoverStatus(handover.id, newStatus)
       toast.success(`ステータスを「${STATUS_CONFIG[newStatus].label}」に更新しました`)
     } catch {
       toast.error('更新に失敗しました')
@@ -99,13 +110,25 @@ export default function HandoverDetailPage({ params }: { params: Promise<{ id: s
     }
   }
 
-  const handleChecklistChange = async (itemId: string, checked: boolean) => {
-    const newChecklist = checked
-      ? [...checklistCompleted, itemId]
-      : checklistCompleted.filter(id => id !== itemId)
-
-    setChecklistCompleted(newChecklist)
+  const handleChecklistChange = async (categoryIndex: number, itemIndex: number, checked: boolean) => {
+    const newChecklist = handover.checklist.map((cat, cIdx) => {
+      if (cIdx !== categoryIndex) return cat
+      return {
+        ...cat,
+        items: cat.items.map((item, iIdx) => {
+          if (iIdx !== itemIndex) return item
+          return { ...item, checked }
+        }),
+      }
+    })
+    updateHandover(handover.id, { checklist: newChecklist })
     toast.success('チェックリストを更新しました')
+  }
+
+  const handleConfirm = () => {
+    if (!user) return
+    confirmHandover(handover.id, user.id, user.name)
+    toast.success('引継書を承認しました')
   }
 
   const handlePrint = () => {
@@ -116,15 +139,6 @@ export default function HandoverDetailPage({ params }: { params: Promise<{ id: s
   const handleDownloadPDF = () => {
     toast.success('PDFをダウンロードしています...')
   }
-
-  // チェックリストをカテゴリ別にグループ化
-  const groupedChecklist = checklistItems.reduce((acc, item) => {
-    if (!acc[item.category]) {
-      acc[item.category] = []
-    }
-    acc[item.category].push(item)
-    return acc
-  }, {} as Record<string, typeof checklistItems>)
 
   return (
     <Layout>
@@ -142,7 +156,7 @@ export default function HandoverDetailPage({ params }: { params: Promise<{ id: s
             <div>
               <div className="flex items-center space-x-3">
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {mockHandover.tei_name}
+                  {handover.tei_name || '引継書'}
                 </h1>
                 <Badge
                   variant="outline"
@@ -166,7 +180,7 @@ export default function HandoverDetailPage({ params }: { params: Promise<{ id: s
               PDF
             </Button>
             <Select
-              value={status}
+              value={handover.status}
               onValueChange={(value) => handleStatusChange(value as DocumentStatus)}
               disabled={isUpdating}
             >
@@ -198,28 +212,31 @@ export default function HandoverDetailPage({ params }: { params: Promise<{ id: s
                 <p className="text-xs text-gray-500 mb-1">顧客名</p>
                 <p className="font-medium flex items-center">
                   <User className="w-4 h-4 mr-1 text-gray-400" />
-                  {mockHandover.customer_name}
+                  {handover.customer_name || '未設定'}
+                  {customer && (
+                    <Link href={`/customers/${customer.id}`}>
+                      <ExternalLink className="w-3 h-3 ml-1 text-blue-500" />
+                    </Link>
+                  )}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 mb-1">電話番号</p>
-                <p className="font-medium">{mockHandover.customer_phone}</p>
+                <p className="font-medium">{customer?.phone || '未設定'}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 mb-1">営業担当</p>
-                <p className="font-medium">{mockHandover.sales_staff_name}</p>
+                <p className="text-xs text-gray-500 mb-1">営業担当（引継元）</p>
+                <p className="font-medium">{handover.from_user_name || '未設定'}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 mb-1">工事担当</p>
-                <p className="font-medium">{mockHandover.construction_manager_name}</p>
+                <p className="text-xs text-gray-500 mb-1">工事担当（引継先）</p>
+                <p className="font-medium">{handover.to_user_name || '未設定'}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 mb-1">引渡予定日</p>
+                <p className="text-xs text-gray-500 mb-1">スケジュール</p>
                 <p className="font-medium flex items-center">
                   <Calendar className="w-4 h-4 mr-1 text-gray-400" />
-                  {mockHandover.handover_date
-                    ? new Date(mockHandover.handover_date).toLocaleDateString('ja-JP')
-                    : '未定'}
+                  {handover.schedule_notes || '未定'}
                 </p>
               </div>
             </div>
@@ -235,29 +252,27 @@ export default function HandoverDetailPage({ params }: { params: Promise<{ id: s
                 引継チェックリスト
               </span>
               <span className="text-sm font-normal text-gray-500">
-                {checklistCompleted.length} / {checklistItems.length} 完了
+                {checklistStats.completed} / {checklistStats.total} 完了
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {Object.entries(groupedChecklist).map(([category, items]) => (
-                <div key={category}>
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">{category}</h4>
+              {handover.checklist.map((category, catIdx) => (
+                <div key={category.category}>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">{category.category}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {items.map((item) => (
-                      <div key={item.id} className="flex items-center space-x-2">
+                    {category.items.map((item, itemIdx) => (
+                      <div key={`${catIdx}-${itemIdx}`} className="flex items-center space-x-2">
                         <Checkbox
-                          id={item.id}
-                          checked={checklistCompleted.includes(item.id)}
-                          onCheckedChange={(checked) => handleChecklistChange(item.id, checked as boolean)}
+                          id={`${catIdx}-${itemIdx}`}
+                          checked={item.checked}
+                          onCheckedChange={(checked) => handleChecklistChange(catIdx, itemIdx, checked as boolean)}
                         />
                         <Label
-                          htmlFor={item.id}
+                          htmlFor={`${catIdx}-${itemIdx}`}
                           className={`text-sm cursor-pointer ${
-                            checklistCompleted.includes(item.id)
-                              ? 'text-green-700 line-through'
-                              : ''
+                            item.checked ? 'text-green-700 line-through' : ''
                           }`}
                         >
                           {item.label}
@@ -282,30 +297,15 @@ export default function HandoverDetailPage({ params }: { params: Promise<{ id: s
           <CardContent className="space-y-4">
             <div>
               <p className="text-xs text-gray-500 mb-2">お客様の性格・傾向</p>
-              <div className="bg-yellow-50 rounded-lg p-4 text-gray-700">
-                {mockHandover.customer_character || '記載なし'}
+              <div className="bg-yellow-50 rounded-lg p-4 text-gray-700 whitespace-pre-wrap">
+                {handover.customer_notes || '記載なし'}
               </div>
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-2">特別なご要望・こだわり</p>
               <div className="bg-blue-50 rounded-lg p-4 whitespace-pre-wrap text-gray-700">
-                {mockHandover.special_requests || '記載なし'}
+                {handover.special_notes || '記載なし'}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 契約概要 */}
-        <Card className="border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <Home className="w-5 h-5 mr-2 text-orange-500" />
-              契約概要
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-gray-700">
-              {mockHandover.contract_summary || '記載なし'}
             </div>
           </CardContent>
         </Card>
@@ -314,26 +314,40 @@ export default function HandoverDetailPage({ params }: { params: Promise<{ id: s
         <Card className="border-0 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center text-lg">
-              <Calendar className="w-5 h-5 mr-2 text-orange-500" />
+              <Home className="w-5 h-5 mr-2 text-orange-500" />
               現場情報・注意事項
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="bg-red-50 rounded-lg p-4 whitespace-pre-wrap text-gray-700">
-              {mockHandover.site_notes || '記載なし'}
+              {handover.site_notes || '記載なし'}
             </div>
           </CardContent>
         </Card>
+
+        {/* 確認情報 */}
+        {handover.confirmed_at && (
+          <Card className="border-0 shadow-lg bg-green-50">
+            <CardContent className="p-4">
+              <div className="flex items-center text-green-700">
+                <CheckCircle className="w-5 h-5 mr-2" />
+                <span>
+                  {handover.confirmed_by_name} が {new Date(handover.confirmed_at).toLocaleString('ja-JP')} に確認しました
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* 更新履歴 */}
         <Card className="border-0 shadow-lg">
           <CardContent className="p-4">
             <div className="flex items-center justify-between text-sm text-gray-500">
               <span>
-                作成: {new Date(mockHandover.created_at).toLocaleString('ja-JP')} ({mockHandover.created_by_name})
+                作成: {new Date(handover.created_at).toLocaleString('ja-JP')} ({handover.from_user_name || '不明'})
               </span>
               <span>
-                更新: {new Date(mockHandover.updated_at).toLocaleString('ja-JP')}
+                更新: {new Date(handover.updated_at).toLocaleString('ja-JP')}
               </span>
             </div>
           </CardContent>
@@ -348,7 +362,7 @@ export default function HandoverDetailPage({ params }: { params: Promise<{ id: s
             <Edit className="w-4 h-4 mr-2" />
             編集
           </Button>
-          {status === 'draft' && (
+          {handover.status === 'draft' && (
             <Button
               onClick={() => handleStatusChange('submitted')}
               disabled={isUpdating}
@@ -358,14 +372,14 @@ export default function HandoverDetailPage({ params }: { params: Promise<{ id: s
               提出する
             </Button>
           )}
-          {status === 'submitted' && (
+          {handover.status === 'submitted' && !handover.confirmed_at && (
             <Button
-              onClick={() => handleStatusChange('approved')}
+              onClick={handleConfirm}
               disabled={isUpdating}
               className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
             >
               <CheckCircle className="w-4 h-4 mr-2" />
-              承認
+              確認完了
             </Button>
           )}
         </div>
