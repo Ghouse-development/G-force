@@ -194,6 +194,19 @@ export const useUIStore = create<UIState>((set) => ({
 import type { FundPlanData } from '@/types/fund-plan'
 import type { DocumentStatus } from '@/types/database'
 
+// ロックタイプ
+export type FundPlanLockType = 'contract' | 'change_contract' | null
+
+// バージョン履歴アイテム
+export interface FundPlanVersionHistory {
+  version: number
+  data: FundPlanData
+  savedAt: string
+  savedBy: string | null
+  lockType: FundPlanLockType
+  note?: string
+}
+
 export interface StoredFundPlan {
   id: string
   customerId: string | null
@@ -205,17 +218,29 @@ export interface StoredFundPlan {
   createdBy: string | null
   createdAt: string
   updatedAt: string
+  // バージョン管理・ロック機能
+  isLocked: boolean
+  lockType: FundPlanLockType
+  lockedAt: string | null
+  lockedBy: string | null
+  versionHistory: FundPlanVersionHistory[]
 }
 
 interface FundPlanState {
   fundPlans: StoredFundPlan[]
   isLoading: boolean
-  addFundPlan: (plan: Omit<StoredFundPlan, 'id' | 'createdAt' | 'updatedAt' | 'version'>) => string
+  addFundPlan: (plan: Omit<StoredFundPlan, 'id' | 'createdAt' | 'updatedAt' | 'version' | 'isLocked' | 'lockType' | 'lockedAt' | 'lockedBy' | 'versionHistory'>) => string
   updateFundPlan: (id: string, updates: Partial<Omit<StoredFundPlan, 'id' | 'createdAt'>>) => void
   deleteFundPlan: (id: string) => void
   getFundPlan: (id: string) => StoredFundPlan | undefined
   getFundPlansByCustomer: (customerId: string) => StoredFundPlan[]
   setLoading: (loading: boolean) => void
+  // バージョン管理・ロック機能
+  lockFundPlan: (id: string, lockType: FundPlanLockType, lockedBy: string | null, note?: string) => void
+  unlockFundPlan: (id: string) => void
+  getVersionHistory: (id: string) => FundPlanVersionHistory[]
+  restoreVersion: (id: string, version: number) => void
+  createNewVersion: (id: string, data: FundPlanData, savedBy: string | null) => void
 }
 
 export const useFundPlanStore = create<FundPlanState>()(
@@ -232,6 +257,17 @@ export const useFundPlanStore = create<FundPlanState>()(
           version: 1,
           createdAt: now,
           updatedAt: now,
+          isLocked: false,
+          lockType: null,
+          lockedAt: null,
+          lockedBy: null,
+          versionHistory: [{
+            version: 1,
+            data: plan.data,
+            savedAt: now,
+            savedBy: plan.createdBy,
+            lockType: null,
+          }],
         }
         set((state) => ({
           fundPlans: [newPlan, ...state.fundPlans],
@@ -240,16 +276,16 @@ export const useFundPlanStore = create<FundPlanState>()(
       },
       updateFundPlan: (id, updates) => {
         set((state) => ({
-          fundPlans: state.fundPlans.map((plan) =>
-            plan.id === id
-              ? {
-                  ...plan,
-                  ...updates,
-                  version: plan.version + 1,
-                  updatedAt: new Date().toISOString(),
-                }
-              : plan
-          ),
+          fundPlans: state.fundPlans.map((plan) => {
+            if (plan.id !== id) return plan
+            // ロックされている場合は更新不可
+            if (plan.isLocked) return plan
+            return {
+              ...plan,
+              ...updates,
+              updatedAt: new Date().toISOString(),
+            }
+          }),
         }))
       },
       deleteFundPlan: (id) => {
@@ -264,6 +300,105 @@ export const useFundPlanStore = create<FundPlanState>()(
         return get().fundPlans.filter((plan) => plan.customerId === customerId)
       },
       setLoading: (loading) => set({ isLoading: loading }),
+      // バージョン管理・ロック機能
+      lockFundPlan: (id, lockType, lockedBy, note) => {
+        set((state) => ({
+          fundPlans: state.fundPlans.map((plan) => {
+            if (plan.id !== id) return plan
+            const now = new Date().toISOString()
+            // 現在のデータをバージョン履歴に追加（ロック時点を記録）
+            const newVersion = plan.version + 1
+            const newHistoryItem: FundPlanVersionHistory = {
+              version: newVersion,
+              data: { ...plan.data },
+              savedAt: now,
+              savedBy: lockedBy,
+              lockType: lockType,
+              note: note || (lockType === 'contract' ? '請負契約時' : lockType === 'change_contract' ? '変更契約時' : undefined),
+            }
+            return {
+              ...plan,
+              version: newVersion,
+              isLocked: true,
+              lockType: lockType,
+              lockedAt: now,
+              lockedBy: lockedBy,
+              updatedAt: now,
+              versionHistory: [...plan.versionHistory, newHistoryItem],
+            }
+          }),
+        }))
+      },
+      unlockFundPlan: (id) => {
+        set((state) => ({
+          fundPlans: state.fundPlans.map((plan) =>
+            plan.id === id
+              ? {
+                  ...plan,
+                  isLocked: false,
+                  lockType: null,
+                  lockedAt: null,
+                  lockedBy: null,
+                  updatedAt: new Date().toISOString(),
+                }
+              : plan
+          ),
+        }))
+      },
+      getVersionHistory: (id) => {
+        const plan = get().fundPlans.find((p) => p.id === id)
+        return plan?.versionHistory || []
+      },
+      restoreVersion: (id, version) => {
+        set((state) => ({
+          fundPlans: state.fundPlans.map((plan) => {
+            if (plan.id !== id) return plan
+            const historyItem = plan.versionHistory.find((h) => h.version === version)
+            if (!historyItem) return plan
+            // ロックされたバージョンは復元できない（閲覧のみ）
+            // 新しいバージョンとして復元データを保存
+            const now = new Date().toISOString()
+            const newVersion = plan.version + 1
+            return {
+              ...plan,
+              data: { ...historyItem.data },
+              version: newVersion,
+              updatedAt: now,
+              versionHistory: [...plan.versionHistory, {
+                version: newVersion,
+                data: { ...historyItem.data },
+                savedAt: now,
+                savedBy: null,
+                lockType: null,
+                note: `v${version}から復元`,
+              }],
+            }
+          }),
+        }))
+      },
+      createNewVersion: (id, data, savedBy) => {
+        set((state) => ({
+          fundPlans: state.fundPlans.map((plan) => {
+            if (plan.id !== id) return plan
+            if (plan.isLocked) return plan // ロック中は新バージョン作成不可
+            const now = new Date().toISOString()
+            const newVersion = plan.version + 1
+            return {
+              ...plan,
+              data: data,
+              version: newVersion,
+              updatedAt: now,
+              versionHistory: [...plan.versionHistory, {
+                version: newVersion,
+                data: data,
+                savedAt: now,
+                savedBy: savedBy,
+                lockType: null,
+              }],
+            }
+          }),
+        }))
+      },
     }),
     {
       name: 'ghouse-fund-plans',
@@ -276,6 +411,7 @@ import type { Customer, PipelineStatus } from '@/types/database'
 
 interface CustomerState {
   customers: Customer[]
+  challengeCustomerIds: string[] // チャレンジ（当月見込）フラグを持つ顧客ID
   isLoading: boolean
   addCustomer: (customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => string
   updateCustomer: (id: string, updates: Partial<Customer>) => void
@@ -284,12 +420,17 @@ interface CustomerState {
   getCustomer: (id: string) => Customer | undefined
   setCustomers: (customers: Customer[]) => void
   setLoading: (loading: boolean) => void
+  // チャレンジフラグ操作
+  toggleChallenge: (id: string) => void
+  isChallenge: (id: string) => boolean
+  getChallengeCustomers: () => Customer[]
 }
 
 export const useCustomerStore = create<CustomerState>()(
   persist(
     (set, get) => ({
       customers: [],
+      challengeCustomerIds: [],
       isLoading: false,
       addCustomer: (customer) => {
         const id = `cust-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
@@ -326,6 +467,7 @@ export const useCustomerStore = create<CustomerState>()(
       deleteCustomer: (id) => {
         set((state) => ({
           customers: state.customers.filter((c) => c.id !== id),
+          challengeCustomerIds: state.challengeCustomerIds.filter((cid) => cid !== id),
         }))
       },
       getCustomer: (id) => {
@@ -333,6 +475,24 @@ export const useCustomerStore = create<CustomerState>()(
       },
       setCustomers: (customers) => set({ customers }),
       setLoading: (loading) => set({ isLoading: loading }),
+      // チャレンジフラグ操作
+      toggleChallenge: (id) => {
+        set((state) => {
+          const isCurrentlyChallenge = state.challengeCustomerIds.includes(id)
+          return {
+            challengeCustomerIds: isCurrentlyChallenge
+              ? state.challengeCustomerIds.filter((cid) => cid !== id)
+              : [...state.challengeCustomerIds, id],
+          }
+        })
+      },
+      isChallenge: (id) => {
+        return get().challengeCustomerIds.includes(id)
+      },
+      getChallengeCustomers: () => {
+        const { customers, challengeCustomerIds } = get()
+        return customers.filter((c) => challengeCustomerIds.includes(c.id))
+      },
     }),
     {
       name: 'ghouse-customers',
@@ -708,6 +868,24 @@ export const useContractStore = create<ContractState>()(
 // File Store - ファイルアップロード管理
 export type FileCategory = 'document' | 'audio' | 'image' | 'memo'
 
+// 書類の詳細カテゴリ
+export type DocumentCategory =
+  | 'land_registry' // 土地謄本
+  | 'land_map' // 公図
+  | 'land_survey' // 地積測量図
+  | 'government_docs' // 役所書類
+  | 'site_survey' // 敷地調査図
+  | 'land_explanation' // 土地重説
+  | 'land_contract' // 土地契約書
+  | 'drivers_license' // 運転免許証
+  | 'health_insurance' // 健康保険証
+  | 'loan_docs' // 住宅ローン書類
+  | 'land_photos' // 土地写真
+  | 'meeting_records' // 議事録
+  | 'initial_reception' // 初回受付台帳
+  | 'hearing_sheet' // ヒアリングシート
+  | 'other' // その他
+
 export interface StoredFile {
   id: string
   customerId: string
@@ -716,6 +894,7 @@ export interface StoredFile {
   size: number
   dataUrl: string // Base64 data URL
   category: FileCategory // ファイルカテゴリ
+  documentCategory?: DocumentCategory // 書類の詳細カテゴリ
   uploadedAt: string
   uploadedBy: string | null
   // テキストメモ用

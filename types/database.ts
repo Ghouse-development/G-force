@@ -79,20 +79,38 @@ export type CompetitorResult =
 export type OwnershipType = '単独' | '共有'
 export type DocumentStatus = 'draft' | 'submitted' | 'approved' | 'rejected'
 
-// 顧客パイプラインステータス（反響→契約→引渡の全フロー）
-export type PipelineStatus =
-  | '反響'           // 初期反響
-  | 'イベント参加'    // モデルハウス見学会など
+// 顧客パイプラインステータス
+
+// 限定会員前顧客
+export type PreMemberStatus =
+  | '資料請求'        // 資料請求
+  | 'イベント予約'     // イベント予約
+  | 'イベント参加'     // イベント参加（非会員）
+
+// 契約前顧客
+export type PreContractStatus =
   | '限定会員'        // 会員登録
   | '面談'           // 商談・打合せ
   | '建築申込'        // 申込済み
+  | 'プラン提出'      // プラン提出
   | '内定'           // 契約予定
-  | 'ボツ'           // 失注（自社都合）
-  | '他決'           // 失注（他社決定）
-  | '契約'           // 契約締結
-  | '着工'           // 工事開始
-  | '引渡'           // 完了
-  | '引渡済'         // 期をまたいだ過去案件
+  | 'ボツ・他決'      // 失注（ボツ・他決統合）
+
+// 契約後顧客
+export type PostContractStatus =
+  | '変更契約前'      // 変更契約前
+  | '変更契約後'      // 変更契約後
+
+// オーナー
+export type OwnerStatus =
+  | 'オーナー'        // 引き渡し後
+
+// 全ステータス統合型
+export type PipelineStatus =
+  | PreMemberStatus
+  | PreContractStatus
+  | PostContractStatus
+  | OwnerStatus
 
 // 反響経路（リードソース）
 export type LeadSource =
@@ -123,13 +141,13 @@ export type PlanRequestStatus =
 export type InvestigationType = 'ネット/TEL調査' | '役所往訪'
 
 // 仕上がりタイプ
-export type DeliverableType = 'ラフプラン' | 'プレゼン（パース無）' | 'プレゼン（パース有）' | '契約図'
+export type DeliverableType = '手描きラフ' | 'プレゼン（パース外観のみ）' | 'プレゼン（パース有）' | '契約図'
 
 // 施工エリア
-export type ConstructionArea = 'Gハウス施工' | '業者施工'
+export type ConstructionArea = 'Gハウス施工' | 'ファブレス施工'
 
 // 土地の状況
-export type LandStatus = '決済済' | '買付提出済' | '土地検討中' | '所有地'
+export type LandStatus = 'お客様所有' | '契約済（決済前）' | '買付提出済'
 
 // 設計事務所
 export type DesignOffice =
@@ -1004,36 +1022,62 @@ export type Handover = Tables<'handovers'>
 export type Activity = Tables<'activities'>
 export type SalesTarget = Tables<'sales_targets'>
 
-// パイプライン順序（遷移率計算用）
-export const PIPELINE_ORDER: PipelineStatus[] = [
-  '反響',
+// 限定会員前顧客のステータス順序
+export const PRE_MEMBER_STATUS_ORDER: PreMemberStatus[] = [
+  '資料請求',
+  'イベント予約',
   'イベント参加',
+]
+
+// 契約前顧客のステータス順序
+export const PRE_CONTRACT_STATUS_ORDER: PreContractStatus[] = [
   '限定会員',
   '面談',
   '建築申込',
+  'プラン提出',
   '内定',
-  '契約',
-  '着工',
-  '引渡',
-  '引渡済',
 ]
 
-export const PIPELINE_LOST: PipelineStatus[] = ['ボツ', '他決']
+// 契約前顧客の失注ステータス
+export const PRE_CONTRACT_LOST: PreContractStatus[] = ['ボツ・他決']
+
+// 契約後顧客のステータス順序
+export const POST_CONTRACT_STATUS_ORDER: PostContractStatus[] = [
+  '変更契約前',
+  '変更契約後',
+]
+
+// オーナーステータス
+export const OWNER_STATUS: OwnerStatus[] = ['オーナー']
+
+// 全パイプライン順序（遷移率計算用）
+export const PIPELINE_ORDER: PipelineStatus[] = [
+  ...PRE_MEMBER_STATUS_ORDER,
+  ...PRE_CONTRACT_STATUS_ORDER,
+  ...POST_CONTRACT_STATUS_ORDER,
+  ...OWNER_STATUS,
+]
+
+export const PIPELINE_LOST: PipelineStatus[] = ['ボツ・他決']
 
 // パイプラインステータスの表示設定
 export const PIPELINE_CONFIG: Record<PipelineStatus, { label: string; color: string; bgColor: string }> = {
-  '反響': { label: '反響', color: 'text-blue-700', bgColor: 'bg-blue-100' },
-  'イベント参加': { label: 'イベント', color: 'text-purple-700', bgColor: 'bg-purple-100' },
+  // 限定会員前顧客
+  '資料請求': { label: '資料請求', color: 'text-slate-700', bgColor: 'bg-slate-100' },
+  'イベント予約': { label: 'イベント予約', color: 'text-blue-700', bgColor: 'bg-blue-100' },
+  'イベント参加': { label: 'イベント参加', color: 'text-purple-700', bgColor: 'bg-purple-100' },
+  // 契約前顧客
   '限定会員': { label: '限定会員', color: 'text-indigo-700', bgColor: 'bg-indigo-100' },
   '面談': { label: '面談', color: 'text-cyan-700', bgColor: 'bg-cyan-100' },
-  '建築申込': { label: '申込', color: 'text-teal-700', bgColor: 'bg-teal-100' },
+  '建築申込': { label: '建築申込', color: 'text-teal-700', bgColor: 'bg-teal-100' },
+  'プラン提出': { label: 'プラン提出', color: 'text-sky-700', bgColor: 'bg-sky-100' },
   '内定': { label: '内定', color: 'text-emerald-700', bgColor: 'bg-emerald-100' },
-  'ボツ': { label: 'ボツ', color: 'text-gray-700', bgColor: 'bg-gray-100' },
-  '他決': { label: '他決', color: 'text-red-700', bgColor: 'bg-red-100' },
-  '契約': { label: '契約', color: 'text-orange-700', bgColor: 'bg-orange-100' },
-  '着工': { label: '着工', color: 'text-amber-700', bgColor: 'bg-amber-100' },
-  '引渡': { label: '引渡', color: 'text-green-700', bgColor: 'bg-green-100' },
-  '引渡済': { label: '引渡済', color: 'text-gray-500', bgColor: 'bg-gray-50' },
+  'ボツ・他決': { label: 'ボツ・他決', color: 'text-gray-700', bgColor: 'bg-gray-100' },
+  // 契約後顧客
+  '変更契約前': { label: '変更契約前', color: 'text-orange-700', bgColor: 'bg-orange-100' },
+  '変更契約後': { label: '変更契約後', color: 'text-amber-700', bgColor: 'bg-amber-100' },
+  // オーナー
+  'オーナー': { label: 'オーナー', color: 'text-green-700', bgColor: 'bg-green-100' },
 }
 
 // 反響経路の表示設定
@@ -1113,12 +1157,149 @@ export const DESIGN_OFFICE_CONFIG: Record<DesignOffice, { label: string; color: 
   'その他': { label: 'その他', color: 'text-gray-600' },
 }
 
-// 商品リスト（仮）
+// 商品リスト
 export const PRODUCT_LIST = [
   { value: 'LIFE+ Limited', label: 'LIFE+ Limited（55万/坪）' },
   { value: 'LIFE+ Standard', label: 'LIFE+ Standard（50万/坪）' },
   { value: 'LIFE+ Basic', label: 'LIFE+ Basic（45万/坪）' },
   { value: 'Custom', label: 'カスタム仕様' },
+]
+
+// キャンペーンリスト
+export const CAMPAIGN_LIST = [
+  { value: 'none', label: 'キャンペーンなし', description: '通常価格での契約' },
+  { value: 'limited', label: 'Limitedキャンペーン', description: '期間限定の特別価格' },
+  { value: 'solar', label: '太陽光載せ放題キャンペーン', description: '太陽光パネル無料設置' },
+  { value: 'ground', label: '地盤改良キャンペーン', description: '地盤改良費用サポート' },
+]
+
+// 工法リスト
+export const CONSTRUCTION_METHOD_LIST = [
+  { value: 'conventional', label: '在来軸組工法', description: '日本の伝統的な木造軸組工法' },
+  { value: 'technostructure', label: 'テクノストラクチャー', description: 'パナソニック製の耐震住宅工法' },
+]
+
+// 紹介の有無
+export const REFERRAL_LIST = [
+  { value: 'none', label: '紹介無し', description: '自己来場・広告経由' },
+  { value: 'owner', label: 'オーナー紹介あり', description: '既存オーナー様からの紹介' },
+  { value: 'vendor', label: '業者紹介あり', description: '不動産会社・金融機関からの紹介' },
+]
+
+// 設計者マスタ（管理者モードで追加可能）
+export interface Designer {
+  id: string
+  name: string
+  license_number: string
+}
+
+export const DESIGNER_LIST: Designer[] = [
+  { id: 'designer-001', name: '山田 一郎', license_number: '一級建築士 第123456号' },
+  { id: 'designer-002', name: '佐藤 二郎', license_number: '一級建築士 第234567号' },
+  { id: 'designer-003', name: '鈴木 三郎', license_number: '二級建築士 第345678号' },
+]
+
+// ===== プラン依頼用定数 =====
+
+// 仕上がりタイプリスト
+export const DELIVERABLE_TYPE_LIST = [
+  { value: '手描きラフ', label: '手描きラフ', description: '手書きの簡易プラン' },
+  { value: 'プレゼン（パース外観のみ）', label: 'プレゼン（パース外観のみ）', description: '外観パースのみ作成' },
+  { value: 'プレゼン（パース有）', label: 'プレゼン（パース有）', description: '外観・内観パース付き' },
+]
+
+// 施工対応エリアリスト
+export const CONSTRUCTION_AREA_LIST = [
+  { value: 'Gハウス施工', label: 'Gハウス施工', description: '自社施工エリア' },
+  { value: 'ファブレス施工', label: 'ファブレス施工', description: '協力業者施工エリア' },
+]
+
+// 土地の状況リスト
+export const LAND_STATUS_LIST = [
+  { value: 'お客様所有', label: 'お客様所有', description: '既に土地を所有している' },
+  { value: '契約済（決済前）', label: '契約済（決済前）', description: '土地の売買契約は完了、決済前' },
+  { value: '買付提出済', label: '買付提出済', description: '買付証明書を提出済み' },
+]
+
+// 宅地造成の相談について
+export const LAND_DEVELOPMENT_LIST = [
+  { value: 'required', label: '要', description: '例：高低差がある物件は必要' },
+  { value: 'not_required', label: '不要', description: '造成工事不要' },
+]
+
+// 役所調査タイプリスト
+export const INVESTIGATION_TYPE_LIST = [
+  { value: 'ネット/TEL調査', label: 'ネット/TEL調査', description: 'ネットや電話での調査' },
+  { value: '役所往訪', label: '役所往訪', description: '役所へ直接訪問して調査' },
+]
+
+// 役所往訪の理由リスト
+export const INVESTIGATION_REASON_LIST = [
+  { value: 'urbanization_control_area', label: '市街化調整区域', description: '' },
+  { value: 'retaining_wall', label: '擁壁あり', description: '' },
+  { value: 'article_43', label: '43条申請', description: '' },
+]
+
+// 水道調査リスト
+export const WATER_SURVEY_LIST = [
+  { value: 'required', label: '要', description: '' },
+  { value: 'not_required', label: '不要', description: '' },
+]
+
+// 解体についてリスト（現状）
+export const DEMOLITION_LIST = [
+  { value: 'none', label: '不要（現状更地）', description: '' },
+  { value: 'ghouse', label: 'Gハウス手配（古家付）', description: '' },
+  { value: 'customer', label: 'お客様手配（古家付）', description: '' },
+  { value: 'seller', label: '売主手配（古家付）', description: '' },
+]
+
+// 競合有無リスト
+export const COMPETITION_LIST = [
+  { value: 'exists', label: '有り', description: '' },
+  { value: 'none', label: '無し', description: '' },
+]
+
+// 競合先マスタ
+export const COMPETITOR_LIST = [
+  { value: 'ai_koumuten', label: 'アイ工務店' },
+  { value: 'ichijo', label: '一条工務店' },
+  { value: 'senboku', label: '泉北ホーム' },
+  { value: 'yamato', label: 'ヤマト住建' },
+  { value: 'sekisui_house', label: '積水ハウス' },
+  { value: 'sumitomo', label: '住友林業' },
+  { value: 'sekisui_heim', label: 'セキスイハイム' },
+  { value: 'hebel', label: 'ヘーベルハウス' },
+  { value: 'tamahome', label: 'タマホーム' },
+  { value: 'hikari', label: 'ひかり工務店' },
+  { value: 'other', label: 'その他' },
+]
+
+// 階数リスト
+export const FLOOR_LIST = [
+  { value: '1', label: '平屋', description: '' },
+  { value: '2', label: '2階', description: '' },
+  { value: '3', label: '3階', description: '' },
+]
+
+// 世帯数リスト
+export const HOUSEHOLD_TYPE_LIST = [
+  { value: 'single', label: '単世帯', description: '' },
+  { value: 'two_generation', label: '二世帯（完全分離）', description: '' },
+  { value: 'two_generation_partial', label: '二世帯（一部共有）', description: '' },
+]
+
+// 重要事項説明者マスタ（管理者モードで追加可能）
+export interface ImportantMatterExplainer {
+  id: string
+  name: string
+  license_number: string
+}
+
+export const IMPORTANT_MATTER_EXPLAINER_LIST: ImportantMatterExplainer[] = [
+  { id: 'explainer-001', name: '田中 太郎', license_number: '宅地建物取引士 第123456号' },
+  { id: 'explainer-002', name: '高橋 次郎', license_number: '宅地建物取引士 第234567号' },
+  { id: 'explainer-003', name: '伊藤 三郎', license_number: '宅地建物取引士 第345678号' },
 ]
 
 // === 契約承認フロー設定 ===

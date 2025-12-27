@@ -240,6 +240,41 @@
   }
 }
 
+/* A3印刷用スタイル */
+@media print {
+  @page {
+    size: A3 landscape;
+    margin: 5mm;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* 印刷時にページ区切りを防ぐ */
+  .print-no-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* 印刷時に非表示にする要素 */
+  .no-print {
+    display: none !important;
+  }
+
+  /* 印刷時に表示する要素 */
+  .print-only {
+    display: block !important;
+  }
+
+  /* 印刷時のフォント設定 */
+  .print-view {
+    font-size: 9px !important;
+    line-height: 1.2 !important;
+  }
+}
+
 @layer utilities {
   /* ===========================================
      アクセシビリティ改善 - 高齢者・初心者対応

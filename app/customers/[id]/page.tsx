@@ -34,9 +34,18 @@ import {
   TrendingUp,
   Upload,
   ClipboardCheck,
+  Map,
+  ClipboardList,
+  FileQuestion,
 } from 'lucide-react'
 import { MeetingRecordDropzone } from '@/components/customers/meeting-record-dropzone'
 import { CustomerChecklist } from '@/components/customers/customer-checklist'
+import { LandConditionsEditor } from '@/components/land/land-conditions-editor'
+import { LandMatchList } from '@/components/land/land-match-list'
+import { ReceptionRecordView } from '@/components/kintone/reception-record-view'
+import { HearingSheetView } from '@/components/kintone/hearing-sheet-view'
+import { useLandStore } from '@/store/land-store'
+import { useKintoneStore } from '@/store/kintone-store'
 import { toast } from 'sonner'
 import {
   type Customer,
@@ -373,12 +382,20 @@ export default function CustomerDetailPage() {
           {/* Tabs Section */}
           <div className="lg:col-span-2">
             <Tabs defaultValue="checklist" className="w-full">
-              <TabsList className="mb-4">
+              <TabsList className="mb-4 flex-wrap">
                 <TabsTrigger value="checklist" className="flex items-center gap-1">
                   <ClipboardCheck className="w-4 h-4" />
                   チェックリスト
                 </TabsTrigger>
+                <TabsTrigger value="kintone" className="flex items-center gap-1">
+                  <ClipboardList className="w-4 h-4" />
+                  受付・ヒアリング
+                </TabsTrigger>
                 <TabsTrigger value="documents">関連書類</TabsTrigger>
+                <TabsTrigger value="land" className="flex items-center gap-1">
+                  <Map className="w-4 h-4" />
+                  土地条件
+                </TabsTrigger>
                 <TabsTrigger value="activity">活動履歴</TabsTrigger>
                 <TabsTrigger value="notes">メモ</TabsTrigger>
               </TabsList>
@@ -390,33 +407,45 @@ export default function CustomerDetailPage() {
                 />
               </TabsContent>
 
+              <TabsContent value="kintone" className="space-y-4">
+                <KintoneRecordsSection customerId={customer.id} />
+              </TabsContent>
+
               <TabsContent value="documents" className="space-y-4">
                 {/* Quick Actions */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <Link href={`/plan-requests/new?customer=${customer.id}`}>
-                    <Button variant="outline" className="w-full justify-start">
-                      <FileEdit className="w-4 h-4 mr-2 text-orange-500" />
-                      プラン依頼
-                    </Button>
-                  </Link>
-                  <Link href={`/contracts/new?customer=${customer.id}`}>
-                    <Button variant="outline" className="w-full justify-start">
-                      <FileSignature className="w-4 h-4 mr-2 text-purple-500" />
-                      契約書作成
-                    </Button>
-                  </Link>
+                <div className="grid grid-cols-3 gap-3">
                   <Link href={`/fund-plans/new?customer=${customer.id}`}>
                     <Button variant="outline" className="w-full justify-start">
                       <FileText className="w-4 h-4 mr-2 text-blue-500" />
                       資金計画書
                     </Button>
                   </Link>
-                  <Link href={`/handovers/new?customer=${customer.id}`}>
-                    <Button variant="outline" className="w-full justify-start">
-                      <FileText className="w-4 h-4 mr-2 text-green-500" />
-                      引継書作成
+                  {fundPlans.length > 0 ? (
+                    <Link href={`/plan-requests/new?customer=${customer.id}`}>
+                      <Button variant="outline" className="w-full justify-start">
+                        <FileEdit className="w-4 h-4 mr-2 text-orange-500" />
+                        プラン依頼
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button variant="outline" className="w-full justify-start" disabled title="資金計画書を作成してください">
+                      <FileEdit className="w-4 h-4 mr-2 text-gray-400" />
+                      プラン依頼
                     </Button>
-                  </Link>
+                  )}
+                  {fundPlans.length > 0 ? (
+                    <Link href={`/contract-requests/new?customer=${customer.id}`}>
+                      <Button variant="outline" className="w-full justify-start">
+                        <FileSignature className="w-4 h-4 mr-2 text-purple-500" />
+                        契約書作成
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button variant="outline" className="w-full justify-start" disabled title="資金計画書を作成してください">
+                      <FileSignature className="w-4 h-4 mr-2 text-gray-400" />
+                      契約書作成
+                    </Button>
+                  )}
                 </div>
 
                 {/* Fund Plans */}
@@ -462,6 +491,28 @@ export default function CustomerDetailPage() {
                         ))}
                       </div>
                     )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="land" className="space-y-4">
+                {/* 土地条件エディタ */}
+                <LandConditionsEditor
+                  customerId={customer.id}
+                  customerName={customer.name}
+                  onSave={() => toast.success('土地条件を保存しました')}
+                />
+
+                {/* マッチング物件一覧 */}
+                <Card className="border-0 shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-lg">
+                      <MapPin className="w-5 h-5 mr-2 text-green-500" />
+                      マッチング物件
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <LandMatchList customerId={customer.id} />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -535,5 +586,73 @@ export default function CustomerDetailPage() {
         </div>
       </div>
     </Layout>
+  )
+}
+
+// kintoneレコード表示セクション
+function KintoneRecordsSection({ customerId }: { customerId: string }) {
+  const { receptionRecords, hearingSheetRecords, linkedRecords } = useKintoneStore()
+
+  // 顧客に紐づくレコードを検索
+  const linkedRecord = linkedRecords.find(lr => lr.customerId === customerId)
+
+  // 紐づいたレコードを取得
+  const receptionRecord = linkedRecord?.kintoneRecordType === 'reception'
+    ? receptionRecords.find(r => r.id === linkedRecord.kintoneRecordId)
+    : receptionRecords.find(r => {
+        // 電話番号やメールで検索（デモ用）
+        return false
+      })
+
+  const hearingSheet = linkedRecord?.kintoneRecordType === 'hearing_sheet'
+    ? hearingSheetRecords.find(r => r.id === linkedRecord.kintoneRecordId)
+    : hearingSheetRecords.find(r => {
+        return false
+      })
+
+  // デモ用のモックデータ
+  const mockReceptionRecord = {
+    id: 'demo-1',
+    recordNumber: '001',
+    customerName: '山田 太郎',
+    customerNameKana: 'ヤマダ タロウ',
+    partnerName: '山田 花子',
+    partnerNameKana: 'ヤマダ ハナコ',
+    phone: '090-1234-5678',
+    phone2: null,
+    email: 'yamada@example.com',
+    postalCode: '530-0001',
+    address: '大阪府大阪市北区梅田1-1-1',
+    leadSource: '資料請求',
+    eventDate: '2024-12-10',
+    notes: '南向きリビング希望。駐車場2台分必要。\n豊中市周辺で土地を探している。',
+    createdAt: '2024-12-01T10:00:00Z',
+    updatedAt: '2024-12-15T14:00:00Z',
+  }
+
+  const mockHearingSheet = {
+    id: 'demo-hs-1',
+    recordNumber: 'HS-001',
+    customerName: '山田 太郎',
+    phone: '090-1234-5678',
+    email: 'yamada@example.com',
+    familyStructure: '夫婦＋子供2人（5歳、3歳）',
+    currentResidence: '賃貸マンション（2LDK）',
+    budget: 3500,
+    desiredArea: '40〜50坪',
+    desiredLocation: '豊中市、箕面市、池田市',
+    landRequirements: '駅徒歩15分以内、南向き希望、角地があれば尚良し',
+    buildingRequirements: 'LDK20帖以上、4LDK、吹き抜け、ウォークインクローゼット',
+    timeline: '2025年中に入居希望',
+    notes: 'テレワーク部屋が欲しい。庭で子供が遊べるスペースがあると良い。',
+    createdAt: '2024-12-15T10:00:00Z',
+    updatedAt: '2024-12-15T14:00:00Z',
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <ReceptionRecordView record={receptionRecord || mockReceptionRecord} />
+      <HearingSheetView record={hearingSheet || mockHearingSheet} />
+    </div>
   )
 }

@@ -57,8 +57,13 @@ function NewHandoverForm() {
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
 
+  // customer または customer_id のどちらでも対応
+  const customerId = searchParams.get('customer_id') || searchParams.get('customer') || ''
+  const contractId = searchParams.get('contract_id') || ''
+
   const [formData, setFormData] = useState({
-    customerId: searchParams.get('customer') || '',
+    customerId,
+    contractId,
     salesStaffId: '',
     constructionManagerId: '',
     handoverDate: '',

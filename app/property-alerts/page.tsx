@@ -45,7 +45,9 @@ import {
   Sparkles,
   AlertCircle,
   Info,
+  Users,
 } from 'lucide-react'
+import { LandAlertsDashboard } from '@/components/land/land-alerts-dashboard'
 
 // 大阪・兵庫・京都の市区町村
 const KANSAI_AREAS = {
@@ -277,7 +279,7 @@ export default function PropertyAlertsPage() {
   const [notifications, setNotifications] = useState<PropertyNotification[]>(DEMO_NOTIFICATIONS)
   const [properties, setProperties] = useState<CrawledPropertyData[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'notifications' | 'alerts' | 'search'>('notifications')
+  const [activeTab, setActiveTab] = useState<'notifications' | 'customer-matching' | 'alerts' | 'search'>('notifications')
   const [filterUnread, setFilterUnread] = useState(false)
   const [filterFavorite, setFilterFavorite] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -687,13 +689,17 @@ export default function PropertyAlertsPage() {
 
       {/* メインコンテンツ */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="w-4 h-4" />
             物件通知
             {unreadCount > 0 && (
               <Badge variant="destructive" className="ml-1">{unreadCount}</Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="customer-matching" className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            顧客マッチング
           </TabsTrigger>
           <TabsTrigger value="alerts" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
@@ -809,6 +815,22 @@ export default function PropertyAlertsPage() {
                       </div>
                     </div>
 
+                    {/* 物件URL */}
+                    {notif.property.sourceUrl && notif.property.sourceUrl !== '#' && (
+                      <div className="mt-3 pt-3 border-t">
+                        <a
+                          href={notif.property.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 truncate"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ExternalLink className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{notif.property.sourceUrl}</span>
+                        </a>
+                      </div>
+                    )}
+
                     {/* マッチ条件 */}
                     <div className="mt-4 pt-4 border-t">
                       <div className="flex flex-wrap gap-2">
@@ -831,6 +853,11 @@ export default function PropertyAlertsPage() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        {/* 顧客マッチングタブ */}
+        <TabsContent value="customer-matching" className="space-y-4">
+          <LandAlertsDashboard />
         </TabsContent>
 
         {/* アラート設定タブ */}
@@ -998,6 +1025,18 @@ export default function PropertyAlertsPage() {
                               </Badge>
                             )}
                           </div>
+                          {/* 物件URL */}
+                          {prop.source_url && (
+                            <a
+                              href={prop.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 mt-2 truncate"
+                            >
+                              <ExternalLink className="w-3 h-3 shrink-0" />
+                              <span className="truncate">{prop.source_url}</span>
+                            </a>
+                          )}
                         </div>
                         <Button variant="outline" size="sm" asChild>
                           <a href={prop.source_url} target="_blank" rel="noopener noreferrer">

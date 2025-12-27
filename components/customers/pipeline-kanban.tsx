@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, type ReactNode } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   DndContext,
   DragOverlay,
@@ -12,6 +13,7 @@ import {
   useSensors,
   type DragEndEvent,
   type DragStartEvent,
+  useDroppable,
 } from '@dnd-kit/core'
 import {
   arrayMove,
@@ -23,11 +25,30 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Phone, Calendar, GripVertical, User } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Phone,
+  Calendar,
+  GripVertical,
+  User,
+  MoreHorizontal,
+  FileText,
+  ClipboardList,
+  FileSignature,
+  Target,
+} from 'lucide-react'
+import { useCustomerStore, useFundPlanStore } from '@/store'
 import {
   type Customer,
   type PipelineStatus,
   PIPELINE_CONFIG,
+  PRE_CONTRACT_STATUS_ORDER,
 } from '@/types/database'
 import { toast } from 'sonner'
 
@@ -35,6 +56,70 @@ interface PipelineKanbanProps {
   customers: Partial<Customer>[]
   onStatusChange?: (customerId: string, newStatus: PipelineStatus) => void
   statuses?: PipelineStatus[]
+}
+
+// 住所から〇〇市〇〇町までを抽出するヘルパー
+function extractCityTown(address: string): string {
+  if (!address) return ''
+  // 都道府県を除去して市区町村を抽出
+  // パターン: 都道府県名 + 市区町村 + 町・大字など
+  const match = address.match(/(.+?[都道府県])(.+?[市区町村郡])(.+?[町村丁目])/)
+  if (match) {
+    return match[2] + match[3].replace(/[0-9０-９\-ー－]+.*$/, '') // 番地以降を除去
+  }
+  // 市区町村までのパターン
+  const simpleMatch = address.match(/(.+?[市区町村郡])/)
+  if (simpleMatch) {
+    return simpleMatch[1]
+  }
+  // フォールバック: 最初の20文字
+  return address.substring(0, 20)
+}
+
+// 資金計画から税抜金額を計算するヘルパー
+function calculateTaxExcludedAmount(data: import('@/types/fund-plan').FundPlanData | undefined): number {
+  if (!data) return 0
+
+  // 建物本体工事（施工面積 × 坪単価）
+  const buildingMain = (data.constructionArea || 0) * (data.pricePerTsubo || 0)
+
+  // 付帯工事A
+  const incidentalA = data.incidentalCostA ? Object.values(data.incidentalCostA).reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0) : 0
+
+  // 付帯工事B（数値のみ）
+  const incidentalB = data.incidentalCostB ? [
+    data.incidentalCostB.solarPanelCost,
+    data.incidentalCostB.storageBatteryCost,
+    data.incidentalCostB.eaveOverhangCost,
+    data.incidentalCostB.lowerRoofCost,
+    data.incidentalCostB.balconyVoidCost,
+    data.incidentalCostB.threeStoryDifference,
+    data.incidentalCostB.roofLengthExtra,
+    data.incidentalCostB.narrowRoadExtra,
+    data.incidentalCostB.areaSizeExtra,
+    data.incidentalCostB.lightingCost,
+    data.incidentalCostB.optionCost,
+  ].reduce((sum, val) => sum + (val || 0), 0) : 0
+
+  // 付帯工事C（数値のみ）
+  const incidentalC = data.incidentalCostC ? [
+    data.incidentalCostC.fireProtectionCost,
+    data.incidentalCostC.demolitionCost,
+    data.incidentalCostC.applicationManagementFee,
+    data.incidentalCostC.waterDrainageFee,
+    data.incidentalCostC.groundImprovementFee,
+    data.incidentalCostC.soilDisposalFee,
+    data.incidentalCostC.electricProtectionPipe,
+    data.incidentalCostC.narrowRoadCubicExtra,
+    data.incidentalCostC.deepFoundationExtra,
+    data.incidentalCostC.elevationExtra,
+    data.incidentalCostC.flagLotExtra,
+    data.incidentalCostC.skyFactorExtra,
+    data.incidentalCostC.quasiFireproofExtra,
+    data.incidentalCostC.roadTimeRestrictionExtra,
+  ].reduce((sum, val) => sum + (val || 0), 0) : 0
+
+  return buildingMain + incidentalA + incidentalB + incidentalC
 }
 
 // ドラッグ可能なカード
@@ -45,6 +130,31 @@ function SortableCustomerCard({
   customer: Partial<Customer>
   overlay?: boolean
 }) {
+  const router = useRouter()
+  const { toggleChallenge, isChallenge } = useCustomerStore()
+  const { getFundPlansByCustomer } = useFundPlanStore()
+  const isChallengeCustomer = customer.id ? isChallenge(customer.id) : false
+
+  // 最新の資金計画書を取得
+  const latestFundPlan = useMemo(() => {
+    if (!customer.id) return null
+    const plans = getFundPlansByCustomer(customer.id)
+    if (plans.length === 0) return null
+    // 最新のものを取得
+    return plans.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0]
+  }, [customer.id, getFundPlansByCustomer])
+
+  // 建築地（資金計画から取得、なければ顧客の住所）
+  const constructionLocation = useMemo(() => {
+    const address = latestFundPlan?.data?.constructionAddress || customer.address || ''
+    return extractCityTown(address)
+  }, [latestFundPlan, customer.address])
+
+  // 金額（税別）
+  const taxExcludedAmount = useMemo(() => {
+    return calculateTaxExcludedAmount(latestFundPlan?.data)
+  }, [latestFundPlan])
+
   const {
     attributes,
     listeners,
@@ -60,57 +170,113 @@ function SortableCustomerCard({
     opacity: isDragging ? 0.5 : 1,
   }
 
+  // アクションメニューのクリックイベントを止める
+  const handleActionClick = (e: React.MouseEvent, path: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    router.push(path)
+  }
+
+  const handleChallengeClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (customer.id) {
+      toggleChallenge(customer.id)
+      toast.success(
+        isChallengeCustomer
+          ? `${customer.tei_name || customer.name}のチャレンジを解除しました`
+          : `${customer.tei_name || customer.name}をチャレンジに設定しました`
+      )
+    }
+  }
+
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
       <Card
-        className={`mb-2 shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing ${
+        className={`mb-1.5 shadow-sm hover:shadow-md transition-shadow ${
           overlay ? 'shadow-lg ring-2 ring-orange-500' : ''
-        }`}
+        } ${isChallengeCustomer ? 'border-l-2 border-l-amber-300' : ''}`}
       >
-        <CardContent className="p-3">
-          <div className="flex items-start gap-2">
+        <CardContent className="p-2">
+          <div className="flex items-start gap-1.5">
             <div
               {...listeners}
-              className="mt-1 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
+              className="mt-0.5 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
             >
-              <GripVertical className="w-4 h-4" />
+              <GripVertical className="w-3 h-3" />
             </div>
-            <Link href={`/customers/${customer.id}`} className="flex-1 min-w-0">
-              <div>
-                <h4 className="font-semibold text-sm text-gray-900 truncate">
-                  {customer.tei_name}
-                </h4>
-                <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                  <User className="w-3 h-3" />
-                  {customer.name}
-                </p>
-                <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-400">
-                  {customer.phone && (
-                    <span className="flex items-center gap-0.5">
-                      <Phone className="w-2.5 h-2.5" />
-                      {customer.phone}
-                    </span>
-                  )}
-                  {customer.lead_date && (
-                    <span className="flex items-center gap-0.5">
-                      <Calendar className="w-2.5 h-2.5" />
-                      {new Date(customer.lead_date).toLocaleDateString('ja-JP', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </span>
-                  )}
-                </div>
-                {(customer.estimated_amount || customer.contract_amount) && (
-                  <p className="text-xs font-medium text-orange-600 mt-1">
-                    ¥
-                    {(
-                      (customer.contract_amount || customer.estimated_amount) ?? 0
-                    ).toLocaleString()}
-                  </p>
-                )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-1">
+                <Link href={`/customers/${customer.id}`} className="flex-1 min-w-0">
+                  <h4 className="font-semibold text-xs truncate hover:text-orange-600 text-gray-900">
+                    {customer.name}
+                    {isChallengeCustomer && <span className="text-amber-400 ml-1 text-[8px]">★</span>}
+                  </h4>
+                </Link>
+                {/* アクションメニュー */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <MoreHorizontal className="w-3 h-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem
+                      onClick={handleChallengeClick}
+                      className={isChallengeCustomer ? 'text-red-600' : ''}
+                    >
+                      <Target className={`w-4 h-4 mr-2 ${isChallengeCustomer ? 'text-red-500' : 'text-gray-500'}`} />
+                      {isChallengeCustomer ? 'チャレンジ解除' : 'チャレンジ設定'}
+                    </DropdownMenuItem>
+                    <div className="border-t my-1" />
+                    <DropdownMenuItem
+                      onClick={(e) => handleActionClick(e as unknown as React.MouseEvent, `/fund-plans/new?customer_id=${customer.id}`)}
+                    >
+                      <FileText className="w-4 h-4 mr-2 text-blue-500" />
+                      資金計画書作成
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => handleActionClick(e as unknown as React.MouseEvent, `/plan-requests/new?customer_id=${customer.id}`)}
+                    >
+                      <ClipboardList className="w-4 h-4 mr-2 text-orange-500" />
+                      プラン依頼作成
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => handleActionClick(e as unknown as React.MouseEvent, `/contract-requests/new?customer_id=${customer.id}`)}
+                    >
+                      <FileSignature className="w-4 h-4 mr-2 text-green-500" />
+                      請負契約書作成
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-            </Link>
+              {/* 建築地 */}
+              {constructionLocation && (
+                <p className="text-[10px] text-gray-500 truncate">
+                  {constructionLocation}
+                </p>
+              )}
+              {/* 最終アクション日 */}
+              {customer.updated_at && (
+                <p className="text-[9px] text-gray-400 mt-0.5">
+                  {new Date(customer.updated_at).toLocaleDateString('ja-JP', {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </p>
+              )}
+              {/* 金額（税別）- 資金計画書から取得 */}
+              {taxExcludedAmount > 0 && (
+                <p className="text-[10px] font-medium text-orange-600 mt-0.5">
+                  ¥{taxExcludedAmount.toLocaleString()}
+                </p>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -118,7 +284,7 @@ function SortableCustomerCard({
   )
 }
 
-// カラム（ステータス）
+// カラム（ステータス）- ドロップ可能エリア
 function PipelineColumn({
   status,
   customers,
@@ -127,28 +293,47 @@ function PipelineColumn({
   customers: Partial<Customer>[]
 }) {
   const config = PIPELINE_CONFIG[status]
+  const { setNodeRef, isOver } = useDroppable({
+    id: status,
+  })
+
+  // 直近のアクション順（updated_at降順）に並び替え
+  const sortedCustomers = useMemo(() => {
+    return [...customers].sort((a, b) => {
+      const aDate = a.updated_at ? new Date(a.updated_at).getTime() : 0
+      const bDate = b.updated_at ? new Date(b.updated_at).getTime() : 0
+      return bDate - aDate // 新しい順
+    })
+  }, [customers])
+
+  if (!config) return null
 
   return (
-    <div className="flex-shrink-0 w-64">
+    <div className="flex-1 min-w-0">
       <div
-        className={`rounded-t-lg px-3 py-2 ${config.bgColor} border-b-2`}
+        className={`rounded-t-lg px-2 py-2 ${config.bgColor} border-b-2`}
         style={{ borderColor: config.color.replace('text-', '') }}
       >
-        <div className="flex items-center justify-between">
-          <h3 className={`font-semibold text-sm ${config.color}`}>
+        <div className="flex items-center justify-between gap-1">
+          <h3 className={`font-semibold text-xs ${config.color} truncate`}>
             {config.label}
           </h3>
-          <Badge variant="secondary" className="text-xs">
+          <Badge variant="secondary" className="text-xs shrink-0">
             {customers.length}
           </Badge>
         </div>
       </div>
-      <div className="bg-gray-50 rounded-b-lg p-2 min-h-[200px]">
+      <div
+        ref={setNodeRef}
+        className={`bg-gray-50 rounded-b-lg p-1.5 min-h-[400px] max-h-[600px] overflow-y-auto transition-colors ${
+          isOver ? 'bg-orange-50 ring-2 ring-orange-300' : ''
+        }`}
+      >
         <SortableContext
-          items={customers.map((c) => c.id || '')}
+          items={sortedCustomers.map((c) => c.id || '')}
           strategy={verticalListSortingStrategy}
         >
-          {customers.map((customer) => (
+          {sortedCustomers.map((customer) => (
             <SortableCustomerCard key={customer.id} customer={customer} />
           ))}
         </SortableContext>
@@ -165,7 +350,7 @@ function PipelineColumn({
 export function PipelineKanban({
   customers: initialCustomers,
   onStatusChange,
-  statuses = ['反響', 'イベント参加', '限定会員', '面談', '建築申込', '内定', '契約', '着工', '引渡'],
+  statuses = PRE_CONTRACT_STATUS_ORDER as PipelineStatus[],
 }: PipelineKanbanProps) {
   const [customers, setCustomers] = useState(initialCustomers)
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -226,13 +411,15 @@ export function PipelineKanban({
     // ドロップ先のコンテナを特定
     let overContainer: PipelineStatus | null = null
 
-    // 別のカードの上にドロップした場合
-    const overCustomer = customers.find((c) => c.id === overId)
-    if (overCustomer) {
-      overContainer = overCustomer.pipeline_status as PipelineStatus
-    } else {
-      // カラム自体にドロップした場合（空のカラム）
+    // ステータス名に直接ドロップした場合
+    if (statuses.includes(overId as PipelineStatus)) {
       overContainer = overId as PipelineStatus
+    } else {
+      // 別のカードの上にドロップした場合
+      const overCustomer = customers.find((c) => c.id === overId)
+      if (overCustomer) {
+        overContainer = overCustomer.pipeline_status as PipelineStatus
+      }
     }
 
     if (!activeContainer || !overContainer) return
@@ -274,8 +461,9 @@ export function PipelineKanban({
         onStatusChange(activeId, overContainer)
       }
 
+      const overConfig = PIPELINE_CONFIG[overContainer]
       toast.success(
-        `${activeCustomer?.tei_name}を「${PIPELINE_CONFIG[overContainer].label}」に移動しました`
+        `${activeCustomer?.tei_name || activeCustomer?.name}を「${overConfig?.label || overContainer}」に移動しました`
       )
     }
   }
@@ -287,12 +475,12 @@ export function PipelineKanban({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="flex gap-2 pb-4">
         {statuses.map((status) => (
           <PipelineColumn
             key={status}
             status={status}
-            customers={customersByStatus[status]}
+            customers={customersByStatus[status] || []}
           />
         ))}
       </div>

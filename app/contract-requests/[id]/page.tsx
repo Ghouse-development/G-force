@@ -32,6 +32,8 @@ import {
   AlertCircle,
   Send,
   Edit,
+  FileOutput,
+  Plus,
 } from 'lucide-react'
 import { useAuthStore } from '@/store'
 import { toast } from 'sonner'
@@ -477,19 +479,43 @@ export default function ContractRequestDetailPage() {
             {/* 関連書類 */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">関連書類</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileOutput className="w-5 h-5" />
+                  関連書類
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <Link href={`/fund-plans/${detail.fund_plan_id}`}>
-                  <Button variant="outline" className="w-full justify-start">
-                    資金計画書を確認
-                  </Button>
-                </Link>
-                <Link href={`/handovers/${detail.handover_id}`}>
-                  <Button variant="outline" className="w-full justify-start">
-                    引継書を確認
-                  </Button>
-                </Link>
+              <CardContent className="space-y-3">
+                {detail.fund_plan_id ? (
+                  <Link href={`/fund-plans/${detail.fund_plan_id}`}>
+                    <Button variant="outline" className="w-full justify-start">
+                      <FileEdit className="w-4 h-4 mr-2" />
+                      資金計画書を確認
+                    </Button>
+                  </Link>
+                ) : (
+                  <div className="text-sm text-gray-500 p-3 bg-gray-50 rounded-lg">
+                    資金計画書が紐づいていません
+                  </div>
+                )}
+
+                {/* 引継書セクション */}
+                {detail.handover_id ? (
+                  <Link href={`/handovers/${detail.handover_id}`}>
+                    <Button variant="outline" className="w-full justify-start">
+                      <FileOutput className="w-4 h-4 mr-2" />
+                      引継書を確認
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href={`/handovers/new?customer_id=${detail.customer_id}&contract_id=${detail.id}`}>
+                    <Button
+                      className="w-full justify-start bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      引継書を作成
+                    </Button>
+                  </Link>
+                )}
               </CardContent>
             </Card>
           </div>

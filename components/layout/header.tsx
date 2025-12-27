@@ -12,17 +12,16 @@ import {
   Settings,
   LogOut,
   FileEdit,
-  FileSignature,
   ClipboardList,
   ChevronDown,
   Search,
   Command,
   Menu,
   X,
-  Landmark,
   MapPin,
   TrendingUp,
   RefreshCw,
+  FlaskConical,
 } from 'lucide-react'
 import { GlobalSearch, useGlobalSearch } from '@/components/search/global-search'
 import { Button } from '@/components/ui/button'
@@ -34,21 +33,25 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore, useNotificationStore } from '@/store'
+import { useDemoModeStore } from '@/store/demo-store'
 import { cn } from '@/lib/utils'
 import { updateAppBadge } from '@/components/providers/pwa-provider'
 
 const navigation = [
   { name: 'ダッシュボード', href: '/dashboard', icon: Home },
-  { name: '顧客管理', href: '/customers', icon: Users },
+]
+
+const customerNavigation = [
+  { name: '限定会員前顧客', href: '/pre-members', icon: Users, description: '資料請求・イベント参加' },
+  { name: '契約前顧客管理', href: '/customers', icon: Users, description: '限定会員〜内定' },
+  { name: '契約後顧客管理', href: '/post-contract', icon: Users, description: '変更契約前・後' },
+  { name: 'オーナー', href: '/owners', icon: Users, description: '引渡済み' },
 ]
 
 const documentNavigation = [
   { name: '資金計画書', href: '/fund-plans', icon: FileText, description: '資金計画作成' },
-  { name: '契約依頼', href: '/contract-requests', icon: FileEdit, description: '契約依頼・承認フロー' },
-  { name: '請負契約書', href: '/contracts', icon: FileSignature, description: '請負契約書作成' },
   { name: 'プラン依頼', href: '/plan-requests', icon: ClipboardList, description: '設計部への依頼' },
-  { name: '引継書', href: '/handovers', icon: ClipboardList, description: '工事部への引継' },
-  { name: 'ローン管理', href: '/loans', icon: Landmark, description: '住宅ローン進捗管理' },
+  { name: '契約依頼', href: '/contract-requests', icon: FileEdit, description: '契約依頼・承認・引継' },
 ]
 
 const infoNavigation = [
@@ -66,6 +69,7 @@ export function Header() {
   const router = useRouter()
   const { user, logout } = useAuthStore()
   const { unreadCount: localUnreadCount } = useNotificationStore()
+  const { isDemoMode, toggleDemoMode } = useDemoModeStore()
   const { isOpen: isSearchOpen, setIsOpen: setSearchOpen } = useGlobalSearch()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [propertyUnreadCount, setPropertyUnreadCount] = useState(0)
@@ -104,6 +108,11 @@ export function Header() {
 
   // Show admin navigation for admin role only
   const showAdminNav = user?.role === 'admin'
+
+  // Check if any customer page is active
+  const isCustomerActive = customerNavigation.some(
+    item => pathname === item.href || pathname.startsWith(item.href + '/')
+  )
 
   // Check if any document page is active
   const isDocumentActive = documentNavigation.some(
@@ -183,6 +192,54 @@ export function Header() {
               </Link>
             )
           })}
+
+          {/* Customer Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={cn(
+                  'flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200',
+                  isCustomerActive
+                    ? 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white shadow-md'
+                    : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600'
+                )}
+              >
+                <Users className="h-4 w-4" />
+                <span>顧客管理</span>
+                <ChevronDown className="h-3 w-3" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              {customerNavigation.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                return (
+                  <DropdownMenuItem
+                    key={item.href}
+                    onClick={() => router.push(item.href)}
+                    className={cn(
+                      'flex items-start space-x-3 py-3 cursor-pointer',
+                      isActive && 'bg-orange-50'
+                    )}
+                  >
+                    <Icon className={cn(
+                      'h-5 w-5 mt-0.5',
+                      isActive ? 'text-orange-500' : 'text-gray-400'
+                    )} />
+                    <div>
+                      <p className={cn(
+                        'font-medium',
+                        isActive ? 'text-orange-600' : 'text-gray-900'
+                      )}>
+                        {item.name}
+                      </p>
+                      <p className="text-xs text-gray-500">{item.description}</p>
+                    </div>
+                  </DropdownMenuItem>
+                )
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Document Dropdown */}
           <DropdownMenu>
@@ -327,6 +384,24 @@ export function Header() {
           </Button>
           <GlobalSearch open={isSearchOpen} onOpenChange={setSearchOpen} />
 
+          {/* Demo Mode Toggle */}
+          <Button
+            variant={isDemoMode ? 'default' : 'outline'}
+            size="sm"
+            onClick={toggleDemoMode}
+            className={cn(
+              'hidden sm:flex items-center gap-1.5 h-9 px-3 transition-all',
+              isDemoMode
+                ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                : 'text-gray-500 hover:text-purple-600 hover:border-purple-300'
+            )}
+          >
+            <FlaskConical className="h-4 w-4" />
+            <span className="text-xs font-medium">
+              {isDemoMode ? 'デモ中' : 'デモ'}
+            </span>
+          </Button>
+
           {/* Notifications */}
           <Link href="/notifications" className="relative">
             <Button variant="ghost" size="icon" className="hover:bg-orange-50">
@@ -425,6 +500,32 @@ export function Header() {
                 </Link>
               )
             })}
+
+            <div className="pt-3 mt-3 border-t">
+              <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
+                顧客管理
+              </p>
+              {customerNavigation.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-all',
+                      isActive
+                        ? 'bg-orange-100 text-orange-700'
+                        : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600'
+                    )}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span>{item.name}</span>
+                  </Link>
+                )
+              })}
+            </div>
 
             <div className="pt-3 mt-3 border-t">
               <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
