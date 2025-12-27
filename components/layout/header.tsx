@@ -23,6 +23,7 @@ import {
   RefreshCw,
   FlaskConical,
   Target,
+  HelpCircle,
 } from 'lucide-react'
 import { GlobalSearch, useGlobalSearch } from '@/components/search/global-search'
 import { Button } from '@/components/ui/button'
@@ -402,6 +403,21 @@ export function Header() {
             <span className="text-xs font-medium">
               {isDemoMode ? 'デモ中' : 'デモ'}
             </span>
+          </Button>
+
+          {/* Help - ガイドを再表示 */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hover:bg-orange-50"
+            onClick={() => {
+              localStorage.removeItem('gforce-onboarding-completed')
+              router.push('/dashboard')
+              window.location.reload()
+            }}
+            title="使い方ガイドを表示"
+          >
+            <HelpCircle className="h-5 w-5 text-gray-600" />
           </Button>
 
           {/* Notifications */}

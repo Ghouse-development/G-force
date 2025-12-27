@@ -29,6 +29,7 @@ import {
 import { Progress } from '@/components/ui/progress'
 import { DashboardSkeleton } from '@/components/ui/skeleton-loaders'
 import { StagnationAlerts } from '@/components/dashboard/stagnation-alerts'
+import { WelcomeGuide } from '@/components/onboarding/welcome-guide'
 import {
   type Customer,
   type PipelineStatus,
@@ -234,6 +235,9 @@ export default function DashboardPage() {
 
   return (
     <Layout>
+      {/* 新人向けオンボーディングガイド */}
+      <WelcomeGuide />
+
       <div className="space-y-6 max-w-4xl mx-auto">
         {/* デモモードバナー */}
         {isDemoMode && (
