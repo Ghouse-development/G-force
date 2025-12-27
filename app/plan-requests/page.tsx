@@ -577,9 +577,80 @@ export default function PlanRequestsPage() {
             )}
           </div>
         ) : (
-          /* カンバンビュー - 後で実装 */
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <p className="text-gray-500 text-center">カンバンビューは開発中です</p>
+          /* カンバンビュー */
+          <div className="overflow-x-auto pb-4">
+            <div className="flex space-x-4 min-w-max">
+              {PLAN_REQUEST_STATUS_ORDER.map((status) => {
+                const config = PLAN_REQUEST_STATUS_CONFIG[status]
+                const statusRequests = filteredRequests.filter(r => r.status === status)
+                const IconComponent = ICON_MAP[config.icon as keyof typeof ICON_MAP] || FileText
+
+                return (
+                  <div key={status} className="w-72 shrink-0">
+                    {/* カラムヘッダー */}
+                    <div className={`${config.bgColor} rounded-t-xl px-4 py-3 flex items-center justify-between`}>
+                      <div className="flex items-center space-x-2">
+                        <IconComponent className={`w-4 h-4 ${config.color}`} />
+                        <span className={`font-bold text-sm ${config.color}`}>{config.label}</span>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {statusRequests.length}
+                      </Badge>
+                    </div>
+
+                    {/* カード一覧 */}
+                    <div className="bg-gray-50 rounded-b-xl p-2 min-h-[400px] space-y-2">
+                      {statusRequests.length === 0 ? (
+                        <div className="text-center py-8 text-gray-400 text-sm">
+                          案件なし
+                        </div>
+                      ) : (
+                        statusRequests.map((request) => {
+                          const isOverdue = request.deadline && new Date(request.deadline) < new Date() && request.status !== '完了'
+
+                          return (
+                            <Link key={request.id} href={`/plan-requests/${request.id}`}>
+                              <Card className={`border-0 shadow-sm hover:shadow-md transition-all cursor-pointer ${isOverdue ? 'ring-2 ring-red-300' : ''}`}>
+                                <CardContent className="p-3">
+                                  <div className="flex items-start justify-between mb-2">
+                                    <h4 className="font-bold text-sm text-gray-900 truncate flex-1">
+                                      {request.tei_name}
+                                    </h4>
+                                    {isOverdue && (
+                                      <AlertCircle className="w-4 h-4 text-red-500 shrink-0 ml-1" />
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-gray-600 mb-2 truncate">
+                                    {request.customer_name}
+                                  </p>
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="text-gray-500">
+                                      {request.building_area && `${request.building_area}坪`}
+                                    </span>
+                                    {request.deadline && (
+                                      <span className={`flex items-center ${isOverdue ? 'text-red-600' : 'text-gray-500'}`}>
+                                        <Calendar className="w-3 h-3 mr-0.5" />
+                                        {new Date(request.deadline).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {request.designer_name && (
+                                    <div className="mt-2 pt-2 border-t flex items-center text-xs text-gray-500">
+                                      <User className="w-3 h-3 mr-1" />
+                                      {request.designer_name}
+                                    </div>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            </Link>
+                          )
+                        })
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )}
       </div>

@@ -24,7 +24,9 @@ import {
   Sparkles,
   Target,
   TrendingUp,
+  Trophy,
 } from 'lucide-react'
+import { Progress } from '@/components/ui/progress'
 import { DashboardSkeleton } from '@/components/ui/skeleton-loaders'
 import { StagnationAlerts } from '@/components/dashboard/stagnation-alerts'
 import {
@@ -54,6 +56,13 @@ export default function DashboardPage() {
   }, [])
 
   const fiscalYear = getCurrentFiscalYear()
+
+  // 今期目標（将来的にはユーザー設定から取得）
+  const fiscalGoals = useMemo(() => ({
+    contracts: 12,           // 年間契約目標（棟）
+    contractAmount: 360000000, // 年間契約金額目標（3.6億円）
+    handovers: 10,           // 年間引渡目標（棟）
+  }), [])
 
   // 今日やることリスト
   const todayTasks = useMemo(() => {
@@ -306,36 +315,83 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* 今期実績：棟数と金額 */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <p className="text-blue-100 text-[10px] sm:text-sm">商談中</p>
-              <p className="text-2xl sm:text-4xl font-bold mt-0.5 sm:mt-1">{fiscalStats.activeCustomers}<span className="text-base sm:text-lg ml-0.5">件</span></p>
-              <p className="text-blue-200 text-[9px] sm:text-xs mt-1">
-                {formatAmount(fiscalStats.estimatedAmount)}万円
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <p className="text-green-100 text-[10px] sm:text-sm">今期契約</p>
-              <p className="text-2xl sm:text-4xl font-bold mt-0.5 sm:mt-1">{fiscalStats.contracts}<span className="text-base sm:text-lg ml-0.5">棟</span></p>
-              <p className="text-green-200 text-[9px] sm:text-xs mt-1">
-                {formatAmount(fiscalStats.contractAmount)}万円（税別）
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <p className="text-orange-100 text-[10px] sm:text-sm">今期引渡</p>
-              <p className="text-2xl sm:text-4xl font-bold mt-0.5 sm:mt-1">{fiscalStats.handovers}<span className="text-base sm:text-lg ml-0.5">棟</span></p>
-              <p className="text-orange-200 text-[9px] sm:text-xs mt-1">
-                {formatAmount(fiscalStats.handoverAmount)}万円（税別）
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* 今期目標と実績 */}
+        <Card className="border-0 shadow-lg overflow-hidden">
+          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-4">
+            <h2 className="text-white font-bold text-lg flex items-center">
+              <Trophy className="w-5 h-5 mr-2" />
+              {fiscalYear}期 目標達成状況
+            </h2>
+          </div>
+          <CardContent className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+              {/* 契約棟数 */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-600">契約</span>
+                  <span className="text-xs text-gray-500">目標: {fiscalGoals.contracts}棟</span>
+                </div>
+                <div className="flex items-end gap-2">
+                  <span className="text-3xl font-bold text-green-600">{fiscalStats.contracts}</span>
+                  <span className="text-lg text-gray-400 mb-1">/ {fiscalGoals.contracts}棟</span>
+                </div>
+                <Progress
+                  value={Math.min((fiscalStats.contracts / fiscalGoals.contracts) * 100, 100)}
+                  className="h-2"
+                />
+                <p className="text-xs text-gray-500">
+                  達成率 <span className={`font-bold ${fiscalStats.contracts >= fiscalGoals.contracts ? 'text-green-600' : 'text-purple-600'}`}>
+                    {Math.round((fiscalStats.contracts / fiscalGoals.contracts) * 100)}%
+                  </span>
+                  {' '}| {formatAmount(fiscalStats.contractAmount)}万円
+                </p>
+              </div>
+
+              {/* 引渡棟数 */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-600">引渡</span>
+                  <span className="text-xs text-gray-500">目標: {fiscalGoals.handovers}棟</span>
+                </div>
+                <div className="flex items-end gap-2">
+                  <span className="text-3xl font-bold text-orange-600">{fiscalStats.handovers}</span>
+                  <span className="text-lg text-gray-400 mb-1">/ {fiscalGoals.handovers}棟</span>
+                </div>
+                <Progress
+                  value={Math.min((fiscalStats.handovers / fiscalGoals.handovers) * 100, 100)}
+                  className="h-2"
+                />
+                <p className="text-xs text-gray-500">
+                  達成率 <span className={`font-bold ${fiscalStats.handovers >= fiscalGoals.handovers ? 'text-green-600' : 'text-purple-600'}`}>
+                    {Math.round((fiscalStats.handovers / fiscalGoals.handovers) * 100)}%
+                  </span>
+                  {' '}| {formatAmount(fiscalStats.handoverAmount)}万円
+                </p>
+              </div>
+
+              {/* 商談中（見込み） */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-600">商談中</span>
+                  <span className="text-xs text-gray-500">見込み案件</span>
+                </div>
+                <div className="flex items-end gap-2">
+                  <span className="text-3xl font-bold text-blue-600">{fiscalStats.activeCustomers}</span>
+                  <span className="text-lg text-gray-400 mb-1">件</span>
+                </div>
+                <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full"
+                    style={{ width: `${Math.min((fiscalStats.activeCustomers / 20) * 100, 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500">
+                  見込み金額 <span className="font-bold text-blue-600">{formatAmount(fiscalStats.estimatedAmount)}万円</span>
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* パイプライン：カード形式 */}
         <div>

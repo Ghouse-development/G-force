@@ -45,6 +45,7 @@ import { DocumentManager } from '@/components/customers/document-manager'
 import { NextActionGuide } from '@/components/customers/next-action-guide'
 import { AISalesAssistant } from '@/components/customers/ai-sales-assistant'
 import { CommunicationLog } from '@/components/customers/communication-log'
+import { DocumentWorkflowProgress } from '@/components/customers/document-workflow-progress'
 import { useKintoneStore } from '@/store/kintone-store'
 import { toast } from 'sonner'
 import {
@@ -314,6 +315,9 @@ export default function CustomerDetailPage() {
             </Select>
           </div>
         </div>
+
+        {/* 書類ワークフロー進捗 */}
+        <DocumentWorkflowProgress customerId={customer.id} />
 
         {/* 次のステップカード */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
