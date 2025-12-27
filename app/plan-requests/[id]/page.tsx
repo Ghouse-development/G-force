@@ -45,6 +45,7 @@ import {
   DESIGN_OFFICE_CONFIG,
 } from '@/types/database'
 import { usePlanRequestStore } from '@/store'
+import { RelatedDocuments } from '@/components/documents/related-documents'
 
 // アイコンマッピング
 const ICON_MAP = {
@@ -459,6 +460,15 @@ export default function PlanRequestDetailPage({ params }: { params: Promise<{ id
             </div>
           </CardContent>
         </Card>
+
+        {/* 関連書類 */}
+        {planRequest.customer_id && (
+          <RelatedDocuments
+            customerId={planRequest.customer_id}
+            currentType="plan-request"
+            currentId={planRequest.id}
+          />
+        )}
       </div>
     </Layout>
   )

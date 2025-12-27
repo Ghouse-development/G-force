@@ -35,6 +35,7 @@ import {
 import { toast } from 'sonner'
 import { useHandoverStore, useCustomerStore, useAuthStore } from '@/store'
 import { useDemoData } from '@/hooks/use-demo-data'
+import { RelatedDocuments } from '@/components/documents/related-documents'
 import type { DocumentStatus } from '@/types/database'
 
 // ステータス設定
@@ -337,6 +338,15 @@ export default function HandoverDetailPage({ params }: { params: Promise<{ id: s
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* 関連書類 */}
+        {handover.customer_id && (
+          <RelatedDocuments
+            customerId={handover.customer_id}
+            currentType="handover"
+            currentId={handover.id}
+          />
         )}
 
         {/* 更新履歴 */}

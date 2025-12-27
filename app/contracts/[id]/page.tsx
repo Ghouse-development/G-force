@@ -63,6 +63,7 @@ import {
 } from '@/types/database'
 import { generateContractPDF } from '@/lib/contract/pdf-generator'
 import { exportContractToExcel, type ContractData } from '@/lib/excel-export'
+import { RelatedDocuments } from '@/components/documents/related-documents'
 
 // アイコンマッピング
 const STATUS_ICONS: Record<ContractStatus, typeof FileEdit> = {
@@ -1018,6 +1019,15 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* 関連書類 */}
+        {contract.customer_id && (
+          <RelatedDocuments
+            customerId={contract.customer_id}
+            currentType="contract"
+            currentId={contract.id}
+          />
         )}
 
         {/* 更新履歴 */}

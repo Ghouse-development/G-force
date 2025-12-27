@@ -12,6 +12,7 @@ import { FundPlanA3PrintView } from '@/components/fund-plans/fund-plan-a3-print-
 import type { FundPlanData, FundPlanCalculation } from '@/types/fund-plan'
 import { generatePDFFromElement } from '@/lib/fund-plan/pdf-generator'
 import { useFundPlanStore, useCustomerStore } from '@/store'
+import { RelatedDocuments } from '@/components/documents/related-documents'
 
 const statusConfig = {
   draft: { label: '下書き', color: 'bg-gray-100 text-gray-700' },
@@ -167,6 +168,15 @@ export default function FundPlanDetailPage() {
           customerId={fundPlan.customerId || undefined}
           customerName={customer?.name}
         />
+
+        {/* 関連書類 */}
+        {fundPlan.customerId && (
+          <RelatedDocuments
+            customerId={fundPlan.customerId}
+            currentType="fund-plan"
+            currentId={fundPlan.id}
+          />
+        )}
       </div>
     </Layout>
   )
