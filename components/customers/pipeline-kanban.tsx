@@ -288,9 +288,11 @@ function SortableCustomerCard({
 function PipelineColumn({
   status,
   customers,
+  isCompact = false,
 }: {
   status: PipelineStatus
   customers: Partial<Customer>[]
+  isCompact?: boolean
 }) {
   const config = PIPELINE_CONFIG[status]
   const { setNodeRef, isOver } = useDroppable({
@@ -309,9 +311,9 @@ function PipelineColumn({
   if (!config) return null
 
   return (
-    <div className="flex-1 min-w-0">
+    <div className={`${isCompact ? 'w-[160px] shrink-0' : 'flex-1 min-w-[180px]'}`}>
       <div
-        className={`rounded-t-lg px-2 py-2 ${config.bgColor} border-b-2`}
+        className={`rounded-t-lg px-2 py-2 ${config.bgColor} border-b-2 sticky top-0 z-10`}
         style={{ borderColor: config.color.replace('text-', '') }}
       >
         <div className="flex items-center justify-between gap-1">
@@ -325,7 +327,7 @@ function PipelineColumn({
       </div>
       <div
         ref={setNodeRef}
-        className={`bg-gray-50 rounded-b-lg p-1.5 min-h-[400px] max-h-[600px] overflow-y-auto transition-colors ${
+        className={`bg-gray-50 rounded-b-lg p-1.5 ${isCompact ? 'min-h-[300px] max-h-[400px]' : 'min-h-[400px] max-h-[600px]'} overflow-y-auto transition-colors ${
           isOver ? 'bg-orange-50 ring-2 ring-orange-300' : ''
         }`}
       >
@@ -338,8 +340,9 @@ function PipelineColumn({
           ))}
         </SortableContext>
         {customers.length === 0 && (
-          <div className="text-center py-8 text-gray-400 text-xs">
-            カードをここにドロップ
+          <div className="text-center py-6 text-gray-400 text-xs">
+            <span className="hidden md:inline">カードをここにドロップ</span>
+            <span className="md:hidden">0件</span>
           </div>
         )}
       </div>
@@ -468,6 +471,13 @@ export function PipelineKanban({
     }
   }
 
+  // モバイル判定用のヘルプテキスト
+  const mobileHint = (
+    <div className="md:hidden text-center text-xs text-gray-500 mb-2 px-2">
+      ← 横にスクロールしてステータスを確認 →
+    </div>
+  )
+
   return (
     <DndContext
       sensors={sensors}
@@ -475,12 +485,14 @@ export function PipelineKanban({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-2 pb-4">
+      {mobileHint}
+      <div className="flex gap-2 pb-4 overflow-x-auto md:overflow-x-visible scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 -mx-2 px-2 md:mx-0 md:px-0">
         {statuses.map((status) => (
           <PipelineColumn
             key={status}
             status={status}
             customers={customersByStatus[status] || []}
+            isCompact={true}
           />
         ))}
       </div>

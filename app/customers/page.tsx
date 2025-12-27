@@ -246,9 +246,26 @@ export default function CustomersPage() {
         {filteredCustomers.length === 0 ? (
           <Card className="border-0 shadow-lg">
             <CardContent className="p-12 text-center">
-              <Users className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-700 text-base">契約前お客様がいません</p>
-              <p className="text-gray-600 text-sm mt-2">新規登録してください</p>
+              <div className="w-16 h-16 mx-auto mb-4 bg-orange-50 rounded-full flex items-center justify-center">
+                <Users className="w-8 h-8 text-orange-400" />
+              </div>
+              <h3 className="font-medium text-gray-900 mb-2">
+                {searchQuery ? '検索結果がありません' : 'お客様がまだ登録されていません'}
+              </h3>
+              <p className="text-gray-500 text-sm mb-4">
+                {searchQuery
+                  ? '検索条件を変更してお試しください'
+                  : '新しいお問い合わせを登録して、お客様管理を始めましょう'
+                }
+              </p>
+              {!searchQuery && (
+                <Link href="/customers/new">
+                  <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
+                    <Plus className="w-4 h-4 mr-2" />
+                    最初のお客様を登録する
+                  </Button>
+                </Link>
+              )}
             </CardContent>
           </Card>
         ) : (

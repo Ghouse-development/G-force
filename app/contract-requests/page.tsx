@@ -256,9 +256,26 @@ export default function ContractRequestsPage() {
           {filteredRequests.length === 0 ? (
             <Card className="border-0 shadow-lg">
               <CardContent className="p-12 text-center">
-                <FileEdit className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-700 text-base">契約依頼が見つかりません</p>
-                <p className="text-gray-600 text-sm mt-2">検索条件を変更するか、新規契約依頼を作成してください</p>
+                <div className="w-16 h-16 mx-auto mb-4 bg-orange-50 rounded-full flex items-center justify-center">
+                  <FileEdit className="w-8 h-8 text-orange-400" />
+                </div>
+                <h3 className="font-medium text-gray-900 mb-2">
+                  {searchQuery || selectedStatus !== 'all' ? '検索結果がありません' : '契約依頼がまだありません'}
+                </h3>
+                <p className="text-gray-500 text-sm mb-4">
+                  {searchQuery || selectedStatus !== 'all'
+                    ? '検索条件やフィルターを変更してお試しください'
+                    : '請負契約の承認依頼を作成できます'
+                  }
+                </p>
+                {!searchQuery && selectedStatus === 'all' && (
+                  <Link href="/contract-requests/new">
+                    <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
+                      <Plus className="w-4 h-4 mr-2" />
+                      契約依頼を作成する
+                    </Button>
+                  </Link>
+                )}
               </CardContent>
             </Card>
           ) : (

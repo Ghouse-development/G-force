@@ -61,21 +61,40 @@ export interface PropertyAlert {
   alertName: string
   isActive: boolean
 
-  // 条件
+  // ===== 条件 =====
+  // エリア条件
   areas?: string[]               // エリア（市区町村）
+  schoolDistricts?: string[]     // 学校区（希望の学区）
+
+  // 沿線条件
+  trainLines?: {                 // 沿線条件
+    lineName: string             // 路線名（例: JR東海道線）
+    stationFrom?: string         // 開始駅（例: 大阪駅）
+    stationTo?: string           // 終了駅（例: 神戸駅）
+  }[]
+  stationWalkMax?: number        // 駅徒歩（分）
+
+  // 価格条件
   minPrice?: number              // 最低価格（万円）
   maxPrice?: number              // 最高価格（万円）
+
+  // 土地条件
   minLandArea?: number           // 最低土地面積（㎡）
   maxLandArea?: number           // 最高土地面積（㎡）
   landShapePreferences?: string[]// 土地形状の希望
+  allowFlagLot?: boolean         // 旗竿地OK（デフォルト: false）
   roadWidthMin?: number          // 前面道路幅員（m）
+
+  // 建築条件
   buildingCoverageMax?: number   // 建ぺい率（%）
   floorAreaRatioMin?: number     // 容積率（%）
-  stationWalkMax?: number        // 駅徒歩（分）
+  allowBuildingCondition?: boolean // 建築条件付き土地OK（デフォルト: false）
+
+  // キーワード
   keywords?: string[]            // キーワード
   excludeKeywords?: string[]     // 除外キーワード
 
-  // 通知設定
+  // ===== 通知設定 =====
   notifyEmail: boolean
   notifyApp: boolean
 

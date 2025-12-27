@@ -43,6 +43,7 @@ import { LandMatchList } from '@/components/land/land-match-list'
 import { ReceptionRecordView } from '@/components/kintone/reception-record-view'
 import { HearingSheetView } from '@/components/kintone/hearing-sheet-view'
 import { DocumentManager } from '@/components/customers/document-manager'
+import { NextActionGuide } from '@/components/customers/next-action-guide'
 import { useKintoneStore } from '@/store/kintone-store'
 import { toast } from 'sonner'
 import {
@@ -338,16 +339,25 @@ export default function CustomerDetailPage() {
           </div>
         </div>
 
+        {/* 次のアクションガイド */}
+        <NextActionGuide
+          customerId={customer.id}
+          pipelineStatus={customer.pipeline_status}
+          landStatus={landStatus}
+          hasFundPlan={fundPlans.length > 0}
+          lastContactDate={customer.updated_at}
+        />
+
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Customer Info */}
           <div className="lg:col-span-1 space-y-6">
-            {/* 反響情報 */}
+            {/* お問い合わせ情報 */}
             <Card className="border-0 shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
                   <Megaphone className="w-5 h-5 mr-2 text-orange-500" />
-                  反響情報
+                  お問い合わせ情報
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">

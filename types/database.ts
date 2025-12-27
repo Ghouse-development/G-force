@@ -8,8 +8,9 @@ export type Json =
 
 // Enums
 export type UserRole =
-  | 'sales'               // 営業
-  | 'sales_leader'        // 営業リーダー
+  | 'sales'               // 営業担当（自分の数字責任）
+  | 'sales_leader'        // 営業リーダー（チームの数字責任）
+  | 'sales_manager'       // 営業部門長（営業部全体の数字責任）
   | 'sales_office'        // 営業事務
   | 'design_manager'      // 設計部門長
   | 'construction_manager' // 工事部門長
@@ -1635,6 +1636,7 @@ export const USER_ROLE_TO_APPROVAL_ROLES: Record<UserRole, ContractApprovalRole[
   'admin': ['作成者', '書類確認者', '承認者'],
   'sales': ['作成者'],
   'sales_leader': ['作成者', '書類確認者', '承認者'],
+  'sales_manager': ['作成者', '書類確認者', '承認者'], // 営業部門長
   'sales_office': ['書類確認者'],
   'design_manager': ['承認者'],
   'construction_manager': ['承認者'],
@@ -1972,9 +1974,15 @@ export const ROLE_CONFIG: Record<UserRole, {
   },
   sales_leader: {
     label: '営業リーダー',
-    description: '営業の権限 + 契約依頼の内容確認',
+    description: 'チームの数字責任 + 契約依頼の内容確認',
     color: 'bg-blue-200 text-blue-800',
     permissions: ['customer:*', 'fund_plan:*', 'contract_request:approve_leader'],
+  },
+  sales_manager: {
+    label: '営業部門長',
+    description: '営業部全体の数字責任 + 全契約依頼の承認',
+    color: 'bg-blue-300 text-blue-900',
+    permissions: ['customer:*', 'fund_plan:*', 'contract_request:*', 'team:*'],
   },
   sales_office: {
     label: '営業事務',

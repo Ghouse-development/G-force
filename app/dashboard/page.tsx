@@ -39,6 +39,7 @@ import { DeadlineAlerts } from '@/components/dashboard/deadline-alerts'
 import { PendingApprovals } from '@/components/dashboard/pending-approvals'
 import { PropertyMatchAlerts } from '@/components/dashboard/property-match-alerts'
 import { OnboardingGuide, HelpButton } from '@/components/help/onboarding-guide'
+import { TodayTasksGuide } from '@/components/dashboard/today-tasks-guide'
 import { getSyncState } from '@/lib/db/sync-service'
 
 export default function DashboardPage() {
@@ -360,7 +361,7 @@ export default function DashboardPage() {
             <Link href="/customers/new">
               <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
                 <UserPlus className="w-4 h-4 mr-2" />
-                新規反響登録
+                新しいお客様を登録
               </Button>
             </Link>
           </div>
@@ -368,6 +369,15 @@ export default function DashboardPage() {
 
         {/* オンボーディングガイド */}
         <OnboardingGuide />
+
+        {/* 今日やることガイド */}
+        <TodayTasksGuide
+          customers={customers}
+          contracts={contracts}
+          planRequests={planRequests}
+          userRole={user?.role}
+          userName={user?.name}
+        />
 
         {/* 今期目標カード（請負契約・引渡し） */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -887,7 +897,7 @@ export default function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center text-lg">
               <Users className="w-5 h-5 mr-2 text-orange-500" />
-              最近の反響
+              最近のお問い合わせ
             </CardTitle>
             <Link href="/customers">
               <Button variant="ghost" className="text-orange-500 hover:text-orange-600 hover:bg-orange-50">
@@ -898,13 +908,18 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {recentCustomers.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                <p>まだ顧客データがありません</p>
+              <div className="text-center py-8">
+                <div className="w-16 h-16 mx-auto mb-4 bg-orange-50 rounded-full flex items-center justify-center">
+                  <Users className="w-8 h-8 text-orange-400" />
+                </div>
+                <h4 className="font-medium text-gray-900 mb-2">お問い合わせがまだありません</h4>
+                <p className="text-gray-500 text-sm mb-4">
+                  最初のお客様情報を登録して、<br />顧客管理を始めましょう
+                </p>
                 <Link href="/customers/new">
-                  <Button className="mt-4" variant="outline">
+                  <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
                     <UserPlus className="w-4 h-4 mr-2" />
-                    最初の顧客を登録
+                    お客様を登録する
                   </Button>
                 </Link>
               </div>
