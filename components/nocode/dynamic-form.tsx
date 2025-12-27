@@ -127,7 +127,7 @@ function createFormSchema(fields: FieldDefinition[]): z.ZodObject<Record<string,
 // 個別フィールドのレンダリング
 function DynamicField({
   field,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   form,
   readOnly,
 }: {

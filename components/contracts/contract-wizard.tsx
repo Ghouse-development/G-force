@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
 import { SelectionCard, MultiSelectCard, ConfirmationCard } from './selection-card'
+import { SmartSelection, SmartConfirmation } from '@/components/ui/smart-selection'
 import {
   Select,
   SelectContent,
@@ -415,33 +416,31 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
           <div className="space-y-6">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">商品の確認</h2>
-              <p className="text-gray-600">最新の資金計画書から商品情報を参照しています</p>
+              <p className="text-gray-600">
+                {currentProduct
+                  ? `資金計画書の商品: ${currentProduct}`
+                  : '商品を選択してください'}
+              </p>
             </div>
 
-            {currentProduct && !selections.showProductOptions ? (
-              <div className="grid grid-cols-2 gap-4">
-                <SelectionCard
-                  value="keep"
-                  label={`${currentProduct}でOK`}
-                  description="資金計画書の商品を使用"
-                  icon={<Package className="w-6 h-6" />}
-                  selected={false}
-                  onClick={() => {
-                    setSelections(prev => ({ ...prev, product_name: currentProduct }))
-                    nextStep()
-                  }}
-                />
-                <SelectionCard
-                  value="change"
-                  label="商品を変更する"
-                  description="別の商品を選択"
-                  icon={<Package className="w-6 h-6" />}
-                  selected={false}
-                  onClick={() => setSelections(prev => ({ ...prev, showProductOptions: true }))}
-                />
-              </div>
+            {currentProduct ? (
+              <SmartSelection
+                currentValue={currentProduct}
+                currentLabel={currentProduct}
+                currentDescription="資金計画書の商品をそのまま使用"
+                currentIcon={<Package className="w-6 h-6" />}
+                options={PRODUCT_LIST.map(p => ({
+                  value: p.value,
+                  label: p.label,
+                  icon: <Package className="w-5 h-5" />,
+                }))}
+                onSelect={(value) => {
+                  setSelections(prev => ({ ...prev, product_name: value }))
+                  nextStep()
+                }}
+              />
             ) : (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {PRODUCT_LIST.map((product) => (
                   <SelectionCard
                     key={product.value}
@@ -450,7 +449,7 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
                     icon={<Package className="w-6 h-6" />}
                     selected={selections.product_name === product.value}
                     onClick={() => {
-                      setSelections(prev => ({ ...prev, product_name: product.value, showProductOptions: false }))
+                      setSelections(prev => ({ ...prev, product_name: product.value }))
                       nextStep()
                     }}
                   />
@@ -544,29 +543,32 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
         )
 
       case 'referral':
+        // 紹介なし vs 紹介あり の2択
+        const referralOptions = REFERRAL_LIST.filter(r => r.value !== 'none')
         return (
           <div className="space-y-6">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">紹介の有無</h2>
-              <p className="text-gray-600">ご紹介元を選択してください</p>
+              <p className="text-gray-600">ご紹介はありますか？</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {REFERRAL_LIST.map((ref) => (
-                <SelectionCard
-                  key={ref.value}
-                  value={ref.value}
-                  label={ref.label}
-                  description={ref.description}
-                  icon={ref.value === 'none' ? <User className="w-6 h-6" /> : <Users className="w-6 h-6" />}
-                  selected={selections.referral === ref.value}
-                  onClick={() => {
-                    setSelections(prev => ({ ...prev, referral: ref.value }))
-                    nextStep()
-                  }}
-                />
-              ))}
-            </div>
+            <SmartSelection
+              currentValue="none"
+              currentLabel="紹介なし"
+              currentDescription="通常の契約（紹介なし）"
+              currentIcon={<User className="w-6 h-6" />}
+              options={referralOptions.map(ref => ({
+                value: ref.value,
+                label: ref.label,
+                description: ref.description,
+                icon: <Users className="w-5 h-5" />,
+              }))}
+              otherLabel="紹介元を選択"
+              onSelect={(value) => {
+                setSelections(prev => ({ ...prev, referral: value }))
+                nextStep()
+              }}
+            />
           </div>
         )
 

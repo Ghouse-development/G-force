@@ -22,11 +22,13 @@ import {
   User,
   Home,
   Phone,
-  Mail,
-  MapPin,
   Megaphone,
-  Calendar,
-  Wallet,
+  Globe,
+  Instagram,
+  Users,
+  MessageSquare,
+  Building,
+  Eye,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store'
@@ -115,47 +117,65 @@ export default function NewCustomerPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* 反響経路をカードで選択 */}
+              <div className="space-y-3">
+                <Label>反響経路 <span className="text-red-500">*</span></Label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { value: '資料請求', icon: Megaphone, color: 'text-blue-600' },
+                    { value: 'モデルハウス見学会予約', icon: Home, color: 'text-orange-600' },
+                    { value: 'HP問合せ', icon: Globe, color: 'text-green-600' },
+                    { value: 'Instagram', icon: Instagram, color: 'text-pink-600' },
+                    { value: 'オーナー紹介', icon: Users, color: 'text-purple-600' },
+                    { value: '社員紹介', icon: Building, color: 'text-indigo-600' },
+                    { value: '業者紹介', icon: Building, color: 'text-teal-600' },
+                    { value: 'TEL問合せ', icon: Phone, color: 'text-amber-600' },
+                  ].map((source) => {
+                    const Icon = source.icon
+                    const isSelected = formData.leadSource === source.value
+                    return (
+                      <button
+                        key={source.value}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, leadSource: source.value as LeadSource })}
+                        className={`p-3 rounded-xl border-2 transition-all text-center ${
+                          isSelected
+                            ? 'border-orange-500 bg-orange-50 shadow-md'
+                            : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50'
+                        }`}
+                      >
+                        <Icon className={`w-6 h-6 mx-auto mb-1 ${isSelected ? 'text-orange-600' : source.color}`} />
+                        <span className={`text-xs font-medium ${isSelected ? 'text-orange-700' : 'text-gray-700'}`}>
+                          {source.value === 'モデルハウス見学会予約' ? 'MH見学会' : source.value}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>反響経路 <span className="text-red-500">*</span></Label>
-                  <Select
-                    value={formData.leadSource}
-                    onValueChange={(value) => setFormData({ ...formData, leadSource: value as LeadSource })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="反響経路を選択" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(Object.keys(LEAD_SOURCE_CONFIG) as LeadSource[]).map((source) => (
-                        <SelectItem key={source} value={source}>
-                          {LEAD_SOURCE_CONFIG[source].label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="leadDate">反響日 <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="leadDate">反響日</Label>
                   <Input
                     id="leadDate"
                     type="date"
                     value={formData.leadDate}
                     onChange={(e) => setFormData({ ...formData, leadDate: e.target.value })}
-                    required
+                    className="h-11"
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="estimatedAmount">見込金額（万円）</Label>
-                <Input
-                  id="estimatedAmount"
-                  type="number"
-                  value={formData.estimatedAmount}
-                  onChange={(e) => setFormData({ ...formData, estimatedAmount: e.target.value })}
-                  placeholder="例: 3500"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="estimatedAmount">見込金額（万円）</Label>
+                  <Input
+                    id="estimatedAmount"
+                    type="number"
+                    value={formData.estimatedAmount}
+                    onChange={(e) => setFormData({ ...formData, estimatedAmount: e.target.value })}
+                    placeholder="例: 3500"
+                    className="h-11"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
