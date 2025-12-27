@@ -29,13 +29,11 @@ import {
   FileSignature,
   Megaphone,
   TrendingUp,
-  ClipboardCheck,
   Map,
   ClipboardList,
   FileQuestion,
   Brain,
 } from 'lucide-react'
-import { CustomerChecklist } from '@/components/customers/customer-checklist'
 import { JourneyMap } from '@/components/customers/journey-map'
 import { JourneyEventDialog } from '@/components/customers/journey-event-dialog'
 import { LandStatusDialog } from '@/components/customers/land-status-dialog'
@@ -525,9 +523,9 @@ export default function CustomerDetailPage() {
                   <TrendingUp className="w-4 h-4" />
                   <span className="hidden sm:inline">ジャーニー</span>
                 </TabsTrigger>
-                <TabsTrigger value="checklist" className="flex items-center gap-1 px-2 md:px-3">
-                  <ClipboardCheck className="w-4 h-4" />
-                  <span className="hidden sm:inline">チェック</span>
+                <TabsTrigger value="documents" className="flex items-center gap-1 px-2 md:px-3">
+                  <FileText className="w-4 h-4" />
+                  <span className="hidden sm:inline">書類</span>
                 </TabsTrigger>
                 <TabsTrigger value="reception" className="flex items-center gap-1 px-2 md:px-3">
                   <ClipboardList className="w-4 h-4" />
@@ -536,10 +534,6 @@ export default function CustomerDetailPage() {
                 <TabsTrigger value="hearing" className="flex items-center gap-1 px-2 md:px-3">
                   <FileQuestion className="w-4 h-4" />
                   <span className="hidden sm:inline">ヒアリング</span>
-                </TabsTrigger>
-                <TabsTrigger value="documents" className="flex items-center gap-1 px-2 md:px-3">
-                  <FileText className="w-4 h-4" />
-                  <span className="hidden sm:inline">書類</span>
                 </TabsTrigger>
                 <TabsTrigger value="land" className="flex items-center gap-1 px-2 md:px-3">
                   <Map className="w-4 h-4" />
@@ -567,13 +561,6 @@ export default function CustomerDetailPage() {
                 />
               </TabsContent>
 
-              <TabsContent value="checklist">
-                <CustomerChecklist
-                  customerId={customer.id}
-                  currentStatus={customer.pipeline_status}
-                />
-              </TabsContent>
-
               <TabsContent value="reception" className="space-y-4">
                 <ReceptionRecordSection customerId={customer.id} />
               </TabsContent>
@@ -586,6 +573,7 @@ export default function CustomerDetailPage() {
                 <DocumentManager
                   customerId={customer.id}
                   landStatus={landStatus}
+                  pipelineStatus={customer.pipeline_status}
                 />
               </TabsContent>
 
