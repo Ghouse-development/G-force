@@ -34,16 +34,27 @@ self.addEventListener('activate', (event) => {
 
 // フェッチ時（ネットワーク優先、失敗時はキャッシュ）
 self.addEventListener('fetch', (event) => {
-  // APIリクエストはキャッシュしない
-  if (event.request.url.includes('/api/')) {
+  const url = event.request.url
+
+  // 以下のリクエストはスキップ（キャッシュしない）
+  // - APIリクエスト
+  // - chrome-extension://スキーム
+  // - Supabase APIリクエスト
+  // - 非HTTPSスキーム
+  if (
+    url.includes('/api/') ||
+    url.startsWith('chrome-extension://') ||
+    url.includes('supabase.co') ||
+    !url.startsWith('http')
+  ) {
     return
   }
 
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // 成功したらキャッシュに保存
-        if (response.status === 200) {
+        // 成功したらキャッシュに保存（HTTPSのみ）
+        if (response.status === 200 && url.startsWith('https://')) {
           const responseClone = response.clone()
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseClone)
