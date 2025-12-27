@@ -470,7 +470,12 @@ export default function PlanRequestsPage() {
               </Card>
             ) : (
               filteredRequests.map((request) => {
-                const statusConfig = PLAN_REQUEST_STATUS_CONFIG[request.status as PlanRequestStatus]
+                const statusConfig = PLAN_REQUEST_STATUS_CONFIG[request.status as PlanRequestStatus] || {
+                  label: request.status || '未設定',
+                  color: 'text-gray-600',
+                  bgColor: 'bg-gray-100',
+                  icon: 'FileText',
+                }
                 const IconComponent = ICON_MAP[statusConfig.icon as keyof typeof ICON_MAP] || FileText
                 const isOverdue = request.deadline && new Date(request.deadline) < new Date() && request.status !== '完了'
                 const isUpcoming = request.deadline && !isOverdue && request.status !== '完了' && (() => {

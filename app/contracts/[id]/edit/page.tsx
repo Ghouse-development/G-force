@@ -281,7 +281,11 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
 
   // 編集可能なステータスかチェック
   const isEditable = contract.status === '作成中'
-  const statusConfig = CONTRACT_STATUS_CONFIG[contract.status]
+  const statusConfig = CONTRACT_STATUS_CONFIG[contract.status] || {
+    label: contract.status || '未設定',
+    color: 'text-gray-600',
+    bgColor: 'bg-gray-100',
+  }
 
   if (!isEditable) {
     return (

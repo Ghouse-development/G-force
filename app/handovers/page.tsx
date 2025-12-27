@@ -184,8 +184,9 @@ export default function HandoversPage() {
             </Card>
           ) : (
             filteredHandovers.map((handover) => {
-              const statusConfig = STATUS_CONFIG[handover.status]
-              const StatusIcon = statusConfig.icon
+              const defaultConfig = { label: handover.status || '未設定', color: 'text-gray-600', bgColor: 'bg-gray-100', icon: Clock }
+              const statusConfig = STATUS_CONFIG[handover.status] || defaultConfig
+              const StatusIcon = statusConfig.icon || Clock
 
               return (
                 <Link key={handover.id} href={`/handovers/${handover.id}`}>

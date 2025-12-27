@@ -911,7 +911,11 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-3">
                 {recentCustomers.map((customer) => {
-                  const statusConfig = PIPELINE_CONFIG[customer.pipeline_status]
+                  const statusConfig = PIPELINE_CONFIG[customer.pipeline_status] || {
+                    label: customer.pipeline_status || '未設定',
+                    color: 'text-gray-600',
+                    bgColor: 'bg-gray-100',
+                  }
                   return (
                     <Link
                       key={customer.id}

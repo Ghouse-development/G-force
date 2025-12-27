@@ -263,9 +263,10 @@ export default function ContractRequestsPage() {
             </Card>
           ) : (
             filteredRequests.map((request) => {
-              const statusConfig = CONTRACT_REQUEST_STATUS_CONFIG[request.status]
+              const defaultConfig = { label: request.status || '未設定', color: 'text-gray-600', bgColor: 'bg-gray-100', icon: Clock }
+              const statusConfig = CONTRACT_REQUEST_STATUS_CONFIG[request.status] || defaultConfig
               const canAct = canActOnRequest(request)
-              const StatusIcon = statusConfig.icon
+              const StatusIcon = statusConfig.icon || Clock
 
               return (
                 <Link key={request.id} href={`/contract-requests/${request.id}`}>

@@ -253,7 +253,11 @@ export default function CustomerDetailPage() {
     )
   }
 
-  const statusConfig = PIPELINE_CONFIG[customer.pipeline_status]
+  const statusConfig = PIPELINE_CONFIG[customer.pipeline_status] || {
+    label: customer.pipeline_status || '未設定',
+    color: 'text-gray-600',
+    bgColor: 'bg-gray-100',
+  }
   const leadSourceConfig = customer.lead_source ? LEAD_SOURCE_CONFIG[customer.lead_source] : null
 
   return (

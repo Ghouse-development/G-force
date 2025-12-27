@@ -24,6 +24,7 @@ import {
   Download,
   LayoutList,
   LayoutGrid,
+  FileText,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -564,8 +565,12 @@ export default function ContractsPage() {
               </Card>
             ) : (
               filteredContracts.map((contract) => {
-                const statusConfig = CONTRACT_STATUS_CONFIG[contract.status]
-                const StatusIcon = STATUS_ICONS[contract.status]
+                const statusConfig = CONTRACT_STATUS_CONFIG[contract.status] || {
+                  label: contract.status || '未設定',
+                  color: 'text-gray-600',
+                  bgColor: 'bg-gray-100',
+                }
+                const StatusIcon = STATUS_ICONS[contract.status] || FileText
 
                 return (
                   <Link key={contract.id} href={`/contracts/${contract.id}`}>

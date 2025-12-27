@@ -122,8 +122,13 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
     )
   }
 
-  const statusConfig = CONTRACT_STATUS_CONFIG[contract.status]
-  const StatusIcon = STATUS_ICONS[contract.status]
+  const statusConfig = CONTRACT_STATUS_CONFIG[contract.status] || {
+    label: contract.status || '未設定',
+    color: 'text-gray-600',
+    bgColor: 'bg-gray-100',
+    icon: 'FileText',
+  }
+  const StatusIcon = STATUS_ICONS[contract.status] || FileText
   const transitions = CONTRACT_STATUS_TRANSITIONS[contract.status]
 
   // 権限に基づく利用可能なアクションを取得
