@@ -40,6 +40,9 @@ import {
 } from 'lucide-react'
 import { MeetingRecordDropzone } from '@/components/customers/meeting-record-dropzone'
 import { CustomerChecklist } from '@/components/customers/customer-checklist'
+import { JourneyMap } from '@/components/customers/journey-map'
+import { JourneyEventDialog } from '@/components/customers/journey-event-dialog'
+import { LandStatusDialog } from '@/components/customers/land-status-dialog'
 import { LandConditionsEditor } from '@/components/land/land-conditions-editor'
 import { LandMatchList } from '@/components/land/land-match-list'
 import { ReceptionRecordView } from '@/components/kintone/reception-record-view'
@@ -52,6 +55,9 @@ import {
   type PipelineStatus,
   type LeadSource,
   type FundPlan,
+  type CustomerJourneyEvent,
+  type CustomerLandStatus,
+  type JourneyEventType,
   PIPELINE_CONFIG,
   PIPELINE_ORDER,
   PIPELINE_LOST,
@@ -108,6 +114,61 @@ const mockFundPlans: Partial<FundPlan>[] = [
   },
 ]
 
+// モックジャーニーイベント
+const mockJourneyEvents: CustomerJourneyEvent[] = [
+  {
+    id: 'je-1',
+    customer_id: '1',
+    event_type: '資料請求',
+    event_date: '2024-12-01',
+    notes: 'HPからの資料請求。豊中市内での建築を検討中。',
+    outcome: '良好',
+    next_action: 'MH見学会への案内',
+    next_action_date: '2024-12-05',
+    created_at: '2024-12-01T10:00:00Z',
+    updated_at: '2024-12-01T10:00:00Z',
+  },
+  {
+    id: 'je-2',
+    customer_id: '1',
+    event_type: 'MH見学会予約',
+    event_date: '2024-12-05',
+    location: '高槻MH',
+    staff_name: '田中',
+    notes: '12/10の見学会を予約',
+    outcome: '良好',
+    created_at: '2024-12-05T10:00:00Z',
+    updated_at: '2024-12-05T10:00:00Z',
+  },
+  {
+    id: 'je-3',
+    customer_id: '1',
+    event_type: 'MH見学会参加',
+    event_date: '2024-12-10',
+    location: '高槻MH',
+    staff_name: '田中',
+    notes: 'モデルハウス見学会に参加。LIFEシリーズに興味あり。吹き抜けに感動されていた。',
+    outcome: '良好',
+    next_action: '面談日程調整',
+    next_action_date: '2024-12-12',
+    created_at: '2024-12-10T10:00:00Z',
+    updated_at: '2024-12-10T10:00:00Z',
+  },
+  {
+    id: 'je-4',
+    customer_id: '1',
+    event_type: '初回面談',
+    event_date: '2024-12-15',
+    staff_name: '田中',
+    notes: '初回面談を実施。南向きリビングと駐車場2台分のご要望確認。テレワーク部屋も希望。',
+    outcome: '良好',
+    next_action: '土地情報の紹介',
+    next_action_date: '2024-12-20',
+    created_at: '2024-12-15T14:00:00Z',
+    updated_at: '2024-12-15T14:00:00Z',
+  },
+]
+
 // アクティブステータス（ボツ・他決以外）
 const activeStatuses: PipelineStatus[] = [...PIPELINE_ORDER]
 
@@ -116,16 +177,53 @@ export default function CustomerDetailPage() {
   const params = useParams()
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [fundPlans, setFundPlans] = useState<Partial<FundPlan>[]>([])
+  const [journeyEvents, setJourneyEvents] = useState<CustomerJourneyEvent[]>([])
+  const [landStatus, setLandStatus] = useState<CustomerLandStatus>('土地探し中')
   const [isLoading, setIsLoading] = useState(true)
+  const [showEventDialog, setShowEventDialog] = useState(false)
+  const [showLandStatusDialog, setShowLandStatusDialog] = useState(false)
 
   useEffect(() => {
     // Simulate loading customer data
     setTimeout(() => {
       setCustomer(mockCustomer)
       setFundPlans(mockFundPlans)
+      setJourneyEvents(mockJourneyEvents)
+      setLandStatus('土地探し中')
       setIsLoading(false)
     }, 300)
   }, [params.id])
+
+  const handleAddEvent = async (event: {
+    event_type: JourneyEventType
+    event_date: string
+    location?: string
+    notes?: string
+    outcome?: string
+    next_action?: string
+    next_action_date?: string
+  }) => {
+    const newEvent: CustomerJourneyEvent = {
+      id: `je-${Date.now()}`,
+      customer_id: customer?.id || '',
+      event_type: event.event_type,
+      event_date: event.event_date,
+      location: event.location,
+      notes: event.notes,
+      outcome: event.outcome,
+      next_action: event.next_action,
+      next_action_date: event.next_action_date,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+    setJourneyEvents([...journeyEvents, newEvent])
+    toast.success('イベントを追加しました')
+  }
+
+  const handleUpdateLandStatus = async (status: CustomerLandStatus) => {
+    setLandStatus(status)
+    toast.success(`土地状況を「${status}」に変更しました`)
+  }
 
   const handleStatusChange = async (newStatus: PipelineStatus) => {
     if (!customer) return
@@ -381,8 +479,12 @@ export default function CustomerDetailPage() {
 
           {/* Tabs Section */}
           <div className="lg:col-span-2">
-            <Tabs defaultValue="checklist" className="w-full">
+            <Tabs defaultValue="journey" className="w-full">
               <TabsList className="mb-4 flex-wrap">
+                <TabsTrigger value="journey" className="flex items-center gap-1">
+                  <TrendingUp className="w-4 h-4" />
+                  ジャーニー
+                </TabsTrigger>
                 <TabsTrigger value="checklist" className="flex items-center gap-1">
                   <ClipboardCheck className="w-4 h-4" />
                   チェックリスト
@@ -396,9 +498,20 @@ export default function CustomerDetailPage() {
                   <Map className="w-4 h-4" />
                   土地条件
                 </TabsTrigger>
-                <TabsTrigger value="activity">活動履歴</TabsTrigger>
                 <TabsTrigger value="notes">メモ</TabsTrigger>
               </TabsList>
+
+              <TabsContent value="journey">
+                <JourneyMap
+                  customerId={customer.id}
+                  customerName={customer.name}
+                  landStatus={landStatus}
+                  events={journeyEvents}
+                  pipelineStatus={customer.pipeline_status}
+                  onAddEvent={() => setShowEventDialog(true)}
+                  onEditLandStatus={() => setShowLandStatusDialog(true)}
+                />
+              </TabsContent>
 
               <TabsContent value="checklist">
                 <CustomerChecklist
@@ -517,61 +630,6 @@ export default function CustomerDetailPage() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="activity" className="space-y-4">
-                {/* 商談記録ドロップゾーン */}
-                <MeetingRecordDropzone customerId={customer.id} />
-
-                {/* 活動履歴 */}
-                <Card className="border-0 shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-lg">
-                      <Clock className="w-5 h-5 mr-2 text-orange-500" />
-                      活動履歴
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Clock className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">面談実施</p>
-                          <p className="text-sm text-gray-500">2024/12/15 14:00</p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            初回面談を実施。南向きリビングと駐車場2台分のご要望確認。
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                          <Clock className="w-4 h-4 text-purple-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">イベント参加</p>
-                          <p className="text-sm text-gray-500">2024/12/10 10:00</p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            モデルハウス見学会に参加。LIFEシリーズに興味あり。
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                          <Clock className="w-4 h-4 text-green-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">反響登録</p>
-                          <p className="text-sm text-gray-500">2024/12/01 10:00</p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            HPからの資料請求。豊中市内での建築を検討中。
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
               <TabsContent value="notes">
                 <Card className="border-0 shadow-lg">
                   <CardContent className="p-6">
@@ -585,6 +643,22 @@ export default function CustomerDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* イベント追加ダイアログ */}
+      <JourneyEventDialog
+        open={showEventDialog}
+        onOpenChange={setShowEventDialog}
+        customerId={customer.id}
+        onSave={handleAddEvent}
+      />
+
+      {/* 土地状況変更ダイアログ */}
+      <LandStatusDialog
+        open={showLandStatusDialog}
+        onOpenChange={setShowLandStatusDialog}
+        currentStatus={landStatus}
+        onSave={handleUpdateLandStatus}
+      />
     </Layout>
   )
 }

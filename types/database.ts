@@ -146,8 +146,194 @@ export type DeliverableType = '手描きラフ' | 'プレゼン（パース外�
 // 施工エリア
 export type ConstructionArea = 'Gハウス施工' | 'ファブレス施工'
 
-// 土地の状況
+// 土地の状況（プラン依頼用）
 export type LandStatus = 'お客様所有' | '契約済（決済前）' | '買付提出済'
+
+// =============================================
+// カスタマージャーニー（顧客行動履歴）
+// =============================================
+
+// 顧客の土地状況
+export type CustomerLandStatus =
+  | '土地あり'         // 自己所有または親族所有
+  | '土地探し中'       // 土地を探している
+  | '土地契約済'       // 土地の売買契約済（決済前）
+  | '土地決済済'       // 土地の決済完了
+
+// カスタマージャーニーイベント種別
+export type JourneyEventType =
+  // === 初期接触 ===
+  | '資料請求'              // 資料請求
+  | 'HP問合せ'              // ホームページからの問合せ
+  | 'TEL問合せ'             // 電話での問合せ
+  | 'Instagram問合せ'       // Instagram経由
+  // === イベント参加 ===
+  | 'MH見学会予約'          // モデルハウス見学説明会予約
+  | 'MH見学会参加'          // モデルハウス見学説明会参加
+  | '構造見学会予約'        // 構造見学会予約
+  | '構造見学会参加'        // 構造見学会参加
+  | 'OB見学会予約'          // オーナーズハウス見学会予約
+  | 'OB見学会参加'          // オーナーズハウス見学会参加
+  | '完成見学会予約'        // 完成見学会予約
+  | '完成見学会参加'        // 完成見学会参加
+  // === 商談・面談 ===
+  | '初回面談'              // 初回の面談
+  | '面談'                  // 2回目以降の面談
+  | 'オンライン面談'        // オンラインでの面談
+  | '電話フォロー'          // 電話でのフォローアップ
+  // === 土地関連 ===
+  | '土地紹介'              // 土地情報の紹介
+  | '土地案内'              // 土地への案内・現地確認
+  | '土地決定'              // 土地の決定
+  // === 契約プロセス ===
+  | '限定会員登録'          // 限定会員への登録
+  | 'プラン提案'            // プラン提案
+  | '見積提示'              // 見積もりの提示
+  | '資金計画提示'          // 資金計画書の提示
+  | '建築申込'              // 建築申込書の受領
+  | '内定'                  // 契約内定
+  | '契約'                  // 請負契約締結
+  // === 着工後 ===
+  | '着工'                  // 着工
+  | '上棟'                  // 上棟
+  | '引渡'                  // 引渡完了
+  // === その他 ===
+  | '紹介受領'              // OB・業者からの紹介
+  | 'その他'                // その他のイベント
+
+// ジャーニーイベントのカテゴリ
+export type JourneyEventCategory =
+  | '初期接触'
+  | 'イベント'
+  | '商談'
+  | '土地'
+  | '契約プロセス'
+  | '着工後'
+  | 'その他'
+
+// イベント種別の設定
+export const JOURNEY_EVENT_CONFIG: Record<JourneyEventType, {
+  label: string
+  category: JourneyEventCategory
+  icon: string
+  color: string
+  bgColor: string
+  order: number  // 契約への近さ（大きいほど契約に近い）
+  isKeyMilestone: boolean  // 重要マイルストーン
+}> = {
+  // 初期接触
+  '資料請求': { label: '資料請求', category: '初期接触', icon: 'FileText', color: 'text-slate-600', bgColor: 'bg-slate-100', order: 10, isKeyMilestone: false },
+  'HP問合せ': { label: 'HP問合せ', category: '初期接触', icon: 'Globe', color: 'text-blue-600', bgColor: 'bg-blue-100', order: 10, isKeyMilestone: false },
+  'TEL問合せ': { label: 'TEL問合せ', category: '初期接触', icon: 'Phone', color: 'text-green-600', bgColor: 'bg-green-100', order: 10, isKeyMilestone: false },
+  'Instagram問合せ': { label: 'Instagram', category: '初期接触', icon: 'Instagram', color: 'text-pink-600', bgColor: 'bg-pink-100', order: 10, isKeyMilestone: false },
+  // イベント
+  'MH見学会予約': { label: 'MH予約', category: 'イベント', icon: 'CalendarCheck', color: 'text-purple-600', bgColor: 'bg-purple-100', order: 20, isKeyMilestone: false },
+  'MH見学会参加': { label: 'MH参加', category: 'イベント', icon: 'Home', color: 'text-purple-700', bgColor: 'bg-purple-200', order: 25, isKeyMilestone: true },
+  '構造見学会予約': { label: '構造予約', category: 'イベント', icon: 'CalendarCheck', color: 'text-amber-600', bgColor: 'bg-amber-100', order: 30, isKeyMilestone: false },
+  '構造見学会参加': { label: '構造参加', category: 'イベント', icon: 'Hammer', color: 'text-amber-700', bgColor: 'bg-amber-200', order: 35, isKeyMilestone: true },
+  'OB見学会予約': { label: 'OB予約', category: 'イベント', icon: 'CalendarCheck', color: 'text-teal-600', bgColor: 'bg-teal-100', order: 40, isKeyMilestone: false },
+  'OB見学会参加': { label: 'OB参加', category: 'イベント', icon: 'Users', color: 'text-teal-700', bgColor: 'bg-teal-200', order: 45, isKeyMilestone: true },
+  '完成見学会予約': { label: '完成予約', category: 'イベント', icon: 'CalendarCheck', color: 'text-cyan-600', bgColor: 'bg-cyan-100', order: 42, isKeyMilestone: false },
+  '完成見学会参加': { label: '完成参加', category: 'イベント', icon: 'Building', color: 'text-cyan-700', bgColor: 'bg-cyan-200', order: 47, isKeyMilestone: true },
+  // 商談
+  '初回面談': { label: '初回面談', category: '商談', icon: 'MessageSquare', color: 'text-indigo-600', bgColor: 'bg-indigo-100', order: 50, isKeyMilestone: true },
+  '面談': { label: '面談', category: '商談', icon: 'MessageCircle', color: 'text-indigo-500', bgColor: 'bg-indigo-50', order: 55, isKeyMilestone: false },
+  'オンライン面談': { label: 'オンライン', category: '商談', icon: 'Video', color: 'text-indigo-400', bgColor: 'bg-indigo-50', order: 53, isKeyMilestone: false },
+  '電話フォロー': { label: 'TELフォロー', category: '商談', icon: 'PhoneCall', color: 'text-gray-500', bgColor: 'bg-gray-100', order: 52, isKeyMilestone: false },
+  // 土地
+  '土地紹介': { label: '土地紹介', category: '土地', icon: 'MapPin', color: 'text-lime-600', bgColor: 'bg-lime-100', order: 60, isKeyMilestone: false },
+  '土地案内': { label: '土地案内', category: '土地', icon: 'Navigation', color: 'text-lime-700', bgColor: 'bg-lime-200', order: 65, isKeyMilestone: true },
+  '土地決定': { label: '土地決定', category: '土地', icon: 'MapPinned', color: 'text-green-700', bgColor: 'bg-green-200', order: 70, isKeyMilestone: true },
+  // 契約プロセス
+  '限定会員登録': { label: '会員登録', category: '契約プロセス', icon: 'UserPlus', color: 'text-sky-600', bgColor: 'bg-sky-100', order: 48, isKeyMilestone: true },
+  'プラン提案': { label: 'プラン提案', category: '契約プロセス', icon: 'FileImage', color: 'text-orange-600', bgColor: 'bg-orange-100', order: 75, isKeyMilestone: true },
+  '見積提示': { label: '見積提示', category: '契約プロセス', icon: 'Calculator', color: 'text-orange-700', bgColor: 'bg-orange-200', order: 78, isKeyMilestone: false },
+  '資金計画提示': { label: '資金計画', category: '契約プロセス', icon: 'Wallet', color: 'text-yellow-700', bgColor: 'bg-yellow-200', order: 80, isKeyMilestone: true },
+  '建築申込': { label: '建築申込', category: '契約プロセス', icon: 'FileSignature', color: 'text-red-600', bgColor: 'bg-red-100', order: 85, isKeyMilestone: true },
+  '内定': { label: '内定', category: '契約プロセス', icon: 'Award', color: 'text-red-700', bgColor: 'bg-red-200', order: 90, isKeyMilestone: true },
+  '契約': { label: '契約', category: '契約プロセス', icon: 'CheckCircle2', color: 'text-emerald-700', bgColor: 'bg-emerald-200', order: 100, isKeyMilestone: true },
+  // 着工後
+  '着工': { label: '着工', category: '着工後', icon: 'Hammer', color: 'text-blue-700', bgColor: 'bg-blue-200', order: 110, isKeyMilestone: true },
+  '上棟': { label: '上棟', category: '着工後', icon: 'Building2', color: 'text-blue-800', bgColor: 'bg-blue-300', order: 120, isKeyMilestone: true },
+  '引渡': { label: '引渡', category: '着工後', icon: 'Key', color: 'text-green-800', bgColor: 'bg-green-300', order: 130, isKeyMilestone: true },
+  // その他
+  '紹介受領': { label: '紹介', category: 'その他', icon: 'UserCheck', color: 'text-pink-600', bgColor: 'bg-pink-100', order: 5, isKeyMilestone: false },
+  'その他': { label: 'その他', category: 'その他', icon: 'MoreHorizontal', color: 'text-gray-500', bgColor: 'bg-gray-100', order: 0, isKeyMilestone: false },
+}
+
+// 土地状況の設定
+export const CUSTOMER_LAND_STATUS_CONFIG: Record<CustomerLandStatus, {
+  label: string
+  icon: string
+  color: string
+  bgColor: string
+  description: string
+}> = {
+  '土地あり': {
+    label: '土地あり',
+    icon: 'CheckCircle',
+    color: 'text-green-700',
+    bgColor: 'bg-green-100',
+    description: '自己所有または親族所有の土地がある',
+  },
+  '土地探し中': {
+    label: '土地探し中',
+    icon: 'Search',
+    color: 'text-orange-700',
+    bgColor: 'bg-orange-100',
+    description: '土地を探している',
+  },
+  '土地契約済': {
+    label: '土地契約済',
+    icon: 'FileCheck',
+    color: 'text-blue-700',
+    bgColor: 'bg-blue-100',
+    description: '土地の売買契約済（決済前）',
+  },
+  '土地決済済': {
+    label: '土地決済済',
+    icon: 'BadgeCheck',
+    color: 'text-emerald-700',
+    bgColor: 'bg-emerald-100',
+    description: '土地の決済完了',
+  },
+}
+
+// カスタマージャーニーイベント
+export interface CustomerJourneyEvent {
+  id: string
+  customer_id: string
+  event_type: JourneyEventType
+  event_date: string
+  event_time?: string  // 時刻（オプション）
+  location?: string    // 場所（MH名など）
+  staff_id?: string    // 対応スタッフ
+  staff_name?: string  // 対応スタッフ名
+  notes?: string       // メモ
+  outcome?: string     // 結果・感触（良好/普通/要フォロー）
+  next_action?: string // 次のアクション
+  next_action_date?: string // 次アクション予定日
+  created_at: string
+  updated_at: string
+}
+
+// 顧客ジャーニーサマリー（分析用）
+export interface CustomerJourneySummary {
+  customer_id: string
+  first_contact_date: string       // 初回接触日
+  first_contact_type: JourneyEventType  // 初回接触種別
+  land_status: CustomerLandStatus  // 土地状況
+  total_events: number             // 総イベント数
+  total_meetings: number           // 面談回数
+  total_site_visits: number        // 見学会参加回数
+  days_to_member?: number          // 初回接触→会員登録までの日数
+  days_to_application?: number     // 初回接触→申込までの日数
+  days_to_contract?: number        // 初回接触→契約までの日数
+  current_stage: PipelineStatus    // 現在のステージ
+  journey_path: JourneyEventType[] // 経路（イベント種別の配列）
+  conversion_probability?: number  // AI算出の契約確率
+  recommended_action?: string      // AI推奨アクション
+}
 
 // 設計事務所
 export type DesignOffice =
