@@ -9,10 +9,9 @@ import {
   FileSignature,
   ArrowRight,
   Clock,
-  AlertCircle,
   CheckCircle,
 } from 'lucide-react'
-import { useContractStore, type StoredContract, useAuthStore } from '@/store'
+import { useContractStore, useAuthStore } from '@/store'
 import {
   CONTRACT_STATUS_CONFIG,
   type ContractStatus,

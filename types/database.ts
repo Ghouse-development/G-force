@@ -2040,6 +2040,371 @@ export const ROLE_CONFIG: Record<UserRole, {
   },
 }
 
+// =============================================
+// 契約後チェックリスト（業務タスク管理）
+// =============================================
+
+// 契約後チェックリストのカテゴリ
+export type PostContractChecklistCategory =
+  | '契約関連'       // 契約書類・変更契約
+  | '設計関連'       // 設計確定・変更
+  | '申請関連'       // 建築確認申請等
+  | '着工準備'       // 地盤調査・着工準備
+  | '工事中'         // 着工〜上棟〜竣工
+  | '引渡準備'       // 引渡前の準備
+
+// チェックリスト項目のステータス
+export type ChecklistItemStatus =
+  | 'pending'      // 未着手
+  | 'in_progress'  // 進行中
+  | 'completed'    // 完了
+  | 'skipped'      // スキップ（不要）
+
+// チェックリスト項目の定義
+export interface PostContractChecklistItem {
+  id: string
+  code: string                           // 一意のコード
+  category: PostContractChecklistCategory
+  title: string                          // 項目名
+  description?: string                   // 説明
+  assignedDepartments: Department[]      // 担当部門
+  daysFromContract?: number              // 契約日から何日後が目安か
+  daysBeforeHandover?: number            // 引渡日から何日前が目安か
+  requiredDocuments?: string[]           // 必要書類
+  order: number                          // 表示順
+  isRequired: boolean                    // 必須かどうか
+}
+
+// 顧客ごとのチェックリスト進捗
+export interface CustomerChecklistProgress {
+  customerId: string
+  itemCode: string
+  status: ChecklistItemStatus
+  completedAt?: string
+  completedBy?: string
+  notes?: string
+  reminderDate?: string                  // リマインダー日
+  updatedAt: string
+}
+
+// 契約後チェックリストのマスタ定義
+export const POST_CONTRACT_CHECKLIST_ITEMS: PostContractChecklistItem[] = [
+  // === 契約関連 ===
+  {
+    id: 'pc-001',
+    code: 'contract_documents',
+    category: '契約関連',
+    title: '請負契約書類の確認・保管',
+    description: '契約書原本、重要事項説明書等の保管確認',
+    assignedDepartments: ['営業事務部'],
+    daysFromContract: 0,
+    order: 1,
+    isRequired: true,
+  },
+  {
+    id: 'pc-002',
+    code: 'contract_payment_schedule',
+    category: '契約関連',
+    title: '支払いスケジュール確認',
+    description: '契約金・着工金・上棟金・完了金の支払い予定',
+    assignedDepartments: ['営業部', '営業事務部'],
+    daysFromContract: 3,
+    order: 2,
+    isRequired: true,
+  },
+  {
+    id: 'pc-003',
+    code: 'handover_document',
+    category: '契約関連',
+    title: '引継書作成・提出',
+    description: '営業から設計・工事への引継書を作成',
+    assignedDepartments: ['営業部'],
+    daysFromContract: 7,
+    order: 3,
+    isRequired: true,
+  },
+
+  // === 設計関連 ===
+  {
+    id: 'pc-010',
+    code: 'final_plan_confirmation',
+    category: '設計関連',
+    title: '最終プラン確定',
+    description: '間取り・仕様の最終確定',
+    assignedDepartments: ['設計部'],
+    daysFromContract: 14,
+    order: 10,
+    isRequired: true,
+  },
+  {
+    id: 'pc-011',
+    code: 'ic_schedule',
+    category: '設計関連',
+    title: 'IC打合せスケジュール確定',
+    description: 'インテリアコーディネーター打合せ日程',
+    assignedDepartments: ['IC'],
+    daysFromContract: 7,
+    order: 11,
+    isRequired: true,
+  },
+  {
+    id: 'pc-012',
+    code: 'ic_selections',
+    category: '設計関連',
+    title: 'IC仕様選定完了',
+    description: '内装・設備仕様の選定完了',
+    assignedDepartments: ['IC'],
+    daysFromContract: 30,
+    order: 12,
+    isRequired: true,
+  },
+  {
+    id: 'pc-013',
+    code: 'exterior_plan',
+    category: '設計関連',
+    title: '外構プラン確定',
+    description: '外構設計プランの確定',
+    assignedDepartments: ['設計部'],
+    daysFromContract: 30,
+    order: 13,
+    isRequired: false,
+  },
+  {
+    id: 'pc-014',
+    code: 'change_contract',
+    category: '設計関連',
+    title: '変更契約締結',
+    description: '仕様変更に伴う変更契約',
+    assignedDepartments: ['営業部', '営業事務部'],
+    daysFromContract: 45,
+    order: 14,
+    isRequired: true,
+  },
+
+  // === 申請関連 ===
+  {
+    id: 'pc-020',
+    code: 'building_permit_application',
+    category: '申請関連',
+    title: '建築確認申請',
+    description: '建築確認申請書類の提出',
+    assignedDepartments: ['設計部'],
+    daysFromContract: 30,
+    order: 20,
+    isRequired: true,
+  },
+  {
+    id: 'pc-021',
+    code: 'building_permit_approval',
+    category: '申請関連',
+    title: '建築確認済証取得',
+    description: '建築確認申請の許可取得',
+    assignedDepartments: ['設計部'],
+    daysFromContract: 45,
+    order: 21,
+    isRequired: true,
+  },
+  {
+    id: 'pc-022',
+    code: 'loan_execution',
+    category: '申請関連',
+    title: '住宅ローン本審査・実行',
+    description: 'ローン本審査完了と融資実行',
+    assignedDepartments: ['営業部'],
+    daysFromContract: 60,
+    order: 22,
+    isRequired: true,
+  },
+
+  // === 着工準備 ===
+  {
+    id: 'pc-030',
+    code: 'ground_survey',
+    category: '着工準備',
+    title: '地盤調査',
+    description: '地盤調査の実施',
+    assignedDepartments: ['工事部'],
+    daysFromContract: 14,
+    order: 30,
+    isRequired: true,
+  },
+  {
+    id: 'pc-031',
+    code: 'ground_improvement',
+    category: '着工準備',
+    title: '地盤改良工事',
+    description: '必要に応じて地盤改良を実施',
+    assignedDepartments: ['工事部'],
+    daysFromContract: 30,
+    order: 31,
+    isRequired: false,
+  },
+  {
+    id: 'pc-032',
+    code: 'neighbor_greeting',
+    category: '着工準備',
+    title: '近隣挨拶',
+    description: '着工前の近隣へのご挨拶',
+    assignedDepartments: ['営業部', '工事部'],
+    daysFromContract: 55,
+    order: 32,
+    isRequired: true,
+  },
+  {
+    id: 'pc-033',
+    code: 'groundbreaking_ceremony',
+    category: '着工準備',
+    title: '地鎮祭',
+    description: '地鎮祭の実施',
+    assignedDepartments: ['工事部'],
+    daysFromContract: 60,
+    order: 33,
+    isRequired: false,
+  },
+
+  // === 工事中 ===
+  {
+    id: 'pc-040',
+    code: 'construction_start',
+    category: '工事中',
+    title: '着工',
+    description: '工事着工・基礎工事開始',
+    assignedDepartments: ['工事部'],
+    daysFromContract: 60,
+    order: 40,
+    isRequired: true,
+  },
+  {
+    id: 'pc-041',
+    code: 'foundation_inspection',
+    category: '工事中',
+    title: '基礎配筋検査',
+    description: '配筋検査の実施と合格',
+    assignedDepartments: ['工事部'],
+    daysFromContract: 75,
+    order: 41,
+    isRequired: true,
+  },
+  {
+    id: 'pc-042',
+    code: 'roof_raising',
+    category: '工事中',
+    title: '上棟',
+    description: '上棟・上棟式',
+    assignedDepartments: ['工事部'],
+    daysFromContract: 90,
+    order: 42,
+    isRequired: true,
+  },
+  {
+    id: 'pc-043',
+    code: 'interim_inspection',
+    category: '工事中',
+    title: '中間検査',
+    description: '中間検査の実施と合格',
+    assignedDepartments: ['工事部'],
+    daysFromContract: 105,
+    order: 43,
+    isRequired: true,
+  },
+  {
+    id: 'pc-044',
+    code: 'completion',
+    category: '工事中',
+    title: '竣工・完了検査',
+    description: '工事完了と完了検査',
+    assignedDepartments: ['工事部'],
+    daysBeforeHandover: 14,
+    order: 44,
+    isRequired: true,
+  },
+
+  // === 引渡準備 ===
+  {
+    id: 'pc-050',
+    code: 'final_walkthrough',
+    category: '引渡準備',
+    title: '施主検査（内覧会）',
+    description: 'お施主様による最終確認',
+    assignedDepartments: ['工事部'],
+    daysBeforeHandover: 10,
+    order: 50,
+    isRequired: true,
+  },
+  {
+    id: 'pc-051',
+    code: 'defect_correction',
+    category: '引渡準備',
+    title: '指摘事項補修',
+    description: '施主検査での指摘事項の補修',
+    assignedDepartments: ['工事部'],
+    daysBeforeHandover: 7,
+    order: 51,
+    isRequired: false,
+  },
+  {
+    id: 'pc-052',
+    code: 'final_payment',
+    category: '引渡準備',
+    title: '最終金精算',
+    description: '完了金の請求・入金確認',
+    assignedDepartments: ['営業事務部'],
+    daysBeforeHandover: 3,
+    order: 52,
+    isRequired: true,
+  },
+  {
+    id: 'pc-053',
+    code: 'handover_documents',
+    category: '引渡準備',
+    title: '引渡書類準備',
+    description: '取扱説明書、保証書等の準備',
+    assignedDepartments: ['工事部'],
+    daysBeforeHandover: 3,
+    order: 53,
+    isRequired: true,
+  },
+  {
+    id: 'pc-054',
+    code: 'handover_ceremony',
+    category: '引渡準備',
+    title: '引渡し',
+    description: 'お引渡し・鍵のお渡し',
+    assignedDepartments: ['工事部', '営業部'],
+    daysBeforeHandover: 0,
+    order: 54,
+    isRequired: true,
+  },
+]
+
+// カテゴリの設定
+export const POST_CONTRACT_CHECKLIST_CATEGORY_CONFIG: Record<PostContractChecklistCategory, {
+  label: string
+  color: string
+  bgColor: string
+  icon: string
+}> = {
+  '契約関連': { label: '契約関連', color: 'text-blue-700', bgColor: 'bg-blue-100', icon: 'FileSignature' },
+  '設計関連': { label: '設計関連', color: 'text-purple-700', bgColor: 'bg-purple-100', icon: 'Ruler' },
+  '申請関連': { label: '申請関連', color: 'text-orange-700', bgColor: 'bg-orange-100', icon: 'FileCheck' },
+  '着工準備': { label: '着工準備', color: 'text-teal-700', bgColor: 'bg-teal-100', icon: 'Hammer' },
+  '工事中': { label: '工事中', color: 'text-amber-700', bgColor: 'bg-amber-100', icon: 'Building' },
+  '引渡準備': { label: '引渡準備', color: 'text-green-700', bgColor: 'bg-green-100', icon: 'Key' },
+}
+
+// チェックリストステータスの設定
+export const CHECKLIST_STATUS_CONFIG: Record<ChecklistItemStatus, {
+  label: string
+  color: string
+  bgColor: string
+  icon: string
+}> = {
+  'pending': { label: '未着手', color: 'text-gray-600', bgColor: 'bg-gray-100', icon: 'Circle' },
+  'in_progress': { label: '進行中', color: 'text-blue-600', bgColor: 'bg-blue-100', icon: 'Clock' },
+  'completed': { label: '完了', color: 'text-green-600', bgColor: 'bg-green-100', icon: 'CheckCircle2' },
+  'skipped': { label: 'スキップ', color: 'text-gray-400', bgColor: 'bg-gray-50', icon: 'MinusCircle' },
+}
+
 // 権限チェック関数
 export function hasPermission(userRole: UserRole, requiredPermission: string): boolean {
   const roleConfig = ROLE_CONFIG[userRole]
@@ -2052,7 +2417,7 @@ export function hasPermission(userRole: UserRole, requiredPermission: string): b
   if (roleConfig.permissions.includes(requiredPermission)) return true
 
   // ワイルドカードチェック（例: customer:* は customer:read にマッチ）
-  const [resource, action] = requiredPermission.split(':')
+  const [resource] = requiredPermission.split(':')
   if (roleConfig.permissions.includes(`${resource}:*`)) return true
 
   return false

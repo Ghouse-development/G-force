@@ -218,7 +218,7 @@ export default function ContractRequestDetailPage() {
       setShowActionDialog(false)
       setActionType(null)
       setComment('')
-    } catch (error) {
+    } catch {
       toast.error('エラーが発生しました')
     } finally {
       setIsSubmitting(false)
@@ -532,7 +532,6 @@ export default function ContractRequestDetailPage() {
                   {APPROVAL_STEPS.map((step, index) => {
                     const isCompleted = index < currentStepIndex
                     const isCurrent = index === currentStepIndex
-                    const isPending = index > currentStepIndex
 
                     return (
                       <div key={step.id} className="flex gap-3">

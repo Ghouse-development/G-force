@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Layout } from '@/components/layout/layout'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -29,7 +29,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+// Tabs reserved for future use
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Landmark,
   Plus,
@@ -37,16 +38,10 @@ import {
   Filter,
   CheckCircle2,
   Clock,
-  AlertTriangle,
   XCircle,
-  Calendar,
   DollarSign,
-  Percent,
-  Building2,
-  FileText,
   Edit,
   Trash2,
-  ChevronRight,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLoanStore, type Loan, type LoanStatus } from '@/store/loan-store'

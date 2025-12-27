@@ -58,7 +58,7 @@ export interface GoogleSheetsConfig {
  */
 export function extractCustomerDataFromEmail(
   body: string,
-  source: EmailSource
+  _source: EmailSource
 ): ExtractedCustomerData {
   const result: ExtractedCustomerData = {
     name: null,
@@ -229,7 +229,7 @@ export function extractCustomerDataFromEmail(
 /**
  * メールソースを判定
  */
-export function detectEmailSource(senderEmail: string, subject: string, body: string): EmailSource {
+export function detectEmailSource(senderEmail: string, subject: string, _body: string): EmailSource {
   const senderLower = senderEmail.toLowerCase()
   const subjectLower = subject.toLowerCase()
 

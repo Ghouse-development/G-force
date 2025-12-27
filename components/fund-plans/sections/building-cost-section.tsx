@@ -2,9 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { CurrencyInput, NumberInput, DisplayValue, SectionTitle, SubSectionTitle } from '../fund-plan-input'
+import { CurrencyInput, NumberInput, DisplayValue, SubSectionTitle } from '../fund-plan-input'
 import type { FundPlanData, StorageBatteryType } from '@/types/fund-plan'
 import { storageBatteryTypes, storageBatteryPrices } from '@/lib/fund-plan/master-data'
 import { formatCurrency } from '@/lib/fund-plan/calculations'
@@ -200,7 +199,7 @@ export function BuildingCostSection({ data, onChange, subtotals }: BuildingCostS
               <NumberInput
                 label="出力"
                 value={data.incidentalCostB.solarPanelKw}
-                onChange={(v) => {}}
+                onChange={() => {}}
                 unit="kW"
                 disabled
               />

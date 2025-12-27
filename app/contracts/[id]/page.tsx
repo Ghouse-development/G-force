@@ -82,7 +82,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
   const [comment, setComment] = useState('')
   const [returnReason, setReturnReason] = useState('')
 
-  const { getContract, submitForApproval, approveContract, returnContract, updateContract } = useContractStore()
+  const { getContract, submitForApproval, approveContract, returnContract } = useContractStore()
   const { user } = useAuthStore()
   const { addContractNotification } = useNotificationStore()
 
@@ -129,7 +129,8 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
     icon: 'FileText',
   }
   const StatusIcon = STATUS_ICONS[contract.status] || FileText
-  const transitions = CONTRACT_STATUS_TRANSITIONS[contract.status]
+  // transitions available for future use
+  const _transitions = CONTRACT_STATUS_TRANSITIONS[contract.status]
 
   // 権限に基づく利用可能なアクションを取得
   const userRole = (user?.role || 'staff') as UserRole

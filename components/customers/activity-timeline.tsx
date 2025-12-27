@@ -18,7 +18,6 @@ import {
   Phone,
   Mail,
   MapPin,
-  Calendar,
   MessageSquare,
   FileText,
   Home,
@@ -77,7 +76,7 @@ interface ActivityTimelineProps {
 
 export function ActivityTimeline({
   activities,
-  customerId,
+  customerId: _customerId,
   onAddActivity,
   maxItems = 5,
   showAddForm = true,
@@ -233,7 +232,7 @@ export function ActivityTimeline({
             <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-200" />
 
             <div className="space-y-4">
-              {displayedActivities.map((activity, index) => {
+              {displayedActivities.map((activity) => {
                 const config = activityTypeConfig[activity.type]
                 const Icon = config.icon
 

@@ -4,7 +4,7 @@ import { useState, use, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Layout } from '@/components/layout/layout'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -52,10 +52,10 @@ import {
   Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useContractStore, type StoredContract } from '@/store'
-import { useAuthStore, useCustomerStore } from '@/store'
+import { useContractStore } from '@/store'
+import { useAuthStore } from '@/store'
 import { PRODUCT_LIST, IDENTITY_DOC_TYPES, LOAN_TYPES, CONTRACT_STATUS_CONFIG } from '@/types/database'
-import type { OwnershipType, ContractStatus } from '@/types/database'
+import type { OwnershipType } from '@/types/database'
 
 export default function EditContractPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
@@ -66,7 +66,6 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
 
   const { getContract, updateContract, deleteContract } = useContractStore()
   const { user } = useAuthStore()
-  const { customers } = useCustomerStore()
 
   const contract = mounted ? getContract(resolvedParams.id) : null
 

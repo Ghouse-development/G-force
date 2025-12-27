@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
   CheckCircle2,
-  Clock,
   UserPlus,
   FileEdit,
   FileSignature,
@@ -48,7 +47,7 @@ export function TodayTasksGuide({
   contracts,
   planRequests,
   userRole = 'sales',
-  userName,
+  userName: _userName,
 }: TodayTasksGuideProps) {
   const tasks = useMemo(() => {
     const taskList: TaskItem[] = []

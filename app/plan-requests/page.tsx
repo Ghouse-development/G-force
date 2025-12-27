@@ -24,7 +24,6 @@ import {
   Presentation,
   Eye,
   MapPin,
-  Building2,
   LayoutGrid,
   LayoutList,
   Download,
@@ -39,7 +38,7 @@ import { usePlanRequestStore } from '@/store'
 import { exportToCSV } from '@/lib/export'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { PlanRequestListSkeleton } from '@/components/ui/skeleton-loaders'
-import { HelpTooltip, PLAN_STATUS_HELP } from '@/components/ui/help-tooltip'
+import { HelpTooltip } from '@/components/ui/help-tooltip'
 
 // アイコンマッピング
 const ICON_MAP = {

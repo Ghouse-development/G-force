@@ -267,17 +267,6 @@ function extractLandConditions(text: string): ExtractedLandConditions {
   }
 
   // 価格抽出
-  const pricePatterns = [
-    // 「3000万円以下」「3000万以下」「3000万円まで」
-    /(\d{1,5})万円?(?:以下|まで|以内)/g,
-    // 「3000万〜4000万」
-    /(\d{1,5})万円?(?:〜|～|から)(\d{1,5})万円?/g,
-    // 「予算3000万」「予算は3000万円」
-    /予算[はが]?(\d{1,5})万円?/g,
-    // 「3000万円くらい」「3000万程度」
-    /(\d{1,5})万円?(?:くらい|程度|前後)/g,
-  ]
-
   // 「〜万円以下」パターン
   const maxPriceMatch = text.match(/(\d{1,5})万円?(?:以下|まで|以内)/)
   if (maxPriceMatch) {
@@ -377,7 +366,7 @@ function extractLandConditions(text: string): ExtractedLandConditions {
 }
 
 // 音声ファイルの文字起こし（将来の拡張用）
-export async function transcribeAudio(audioDataUrl: string): Promise<string> {
+export async function transcribeAudio(_audioDataUrl: string): Promise<string> {
   // 本番ではWhisper APIなどを使用
   // 現在はプレースホルダー
   return '（音声の文字起こしには外部APIの設定が必要です）'

@@ -31,7 +31,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { FieldDefinition, FormDefinition, Json } from '@/types/database'
+import type { FieldDefinition, FormDefinition } from '@/types/database'
 
 interface Column {
   key: string

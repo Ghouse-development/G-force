@@ -40,14 +40,14 @@ export const FundPlanA3PrintView = forwardRef<HTMLDivElement, FundPlanA3PrintVie
     const solarOnlyMonthlySale = solarOnlyDailySale * 365 / 12
     const solarOnlyMonthlyIncome4Years = solarOnlyMonthlySale * 24 // 24円/kWh
     const solarOnlyMonthlyIncome6Years = solarOnlyMonthlySale * 8.3 // 8.3円/kWh
-    const solarOnly10YearEffect = (solarOnlyMonthlyIncome4Years * 12 * 4) + (solarOnlyMonthlyIncome6Years * 12 * 6)
+    const _solarOnly10YearEffect = (solarOnlyMonthlyIncome4Years * 12 * 4) + (solarOnlyMonthlyIncome6Years * 12 * 6)
 
     // 太陽光+蓄電池の経済効果計算
     const solarBatteryDailySale = data.solarBatteryEffect.dailySale
     const solarBatteryMonthlySale = solarBatteryDailySale * 365 / 12
     const solarBatteryMonthlyIncome4Years = solarBatteryMonthlySale * 24
     const solarBatteryMonthlyIncome6Years = solarBatteryMonthlySale * 8.3
-    const solarBattery10YearEffect = (solarBatteryMonthlyIncome4Years * 12 * 4) + (solarBatteryMonthlyIncome6Years * 12 * 6)
+    const _solarBattery10YearEffect = (solarBatteryMonthlyIncome4Years * 12 * 4) + (solarBatteryMonthlyIncome6Years * 12 * 6)
 
     // 一般的な電気料金
     const averageElectricityCost = 16533

@@ -16,12 +16,9 @@ import {
   Clock,
   Download,
   Trash2,
-  Mic,
   Play,
   Pause,
-  Square,
   MessageSquare,
-  Plus,
   Save,
   X,
   Volume2,
@@ -90,7 +87,7 @@ function fileToDataUrl(file: File): Promise<string> {
 }
 
 // 音声プレーヤーコンポーネント
-function AudioPlayer({ dataUrl, name }: { dataUrl: string; name: string }) {
+function AudioPlayer({ dataUrl, name: _name }: { dataUrl: string; name: string }) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -273,7 +270,7 @@ export function MeetingRecordDropzone({ customerId, customerName = '顧客' }: M
   const [isRegisteringAlert, setIsRegisteringAlert] = useState(false)
   const [alertRegistered, setAlertRegistered] = useState(false)
 
-  const { files, addFile, addMemo, updateMemo, deleteFile, getFilesByCustomer } = useFileStore()
+  const { addFile, addMemo, updateMemo, deleteFile, getFilesByCustomer } = useFileStore()
   const { user } = useAuthStore()
 
   // 顧客に紐づくファイルを取得
@@ -322,7 +319,7 @@ export function MeetingRecordDropzone({ customerId, customerName = '顧客' }: M
         }
 
         toast.success(`${droppedFiles.length}件の商談記録をアップロードしました`)
-      } catch (error) {
+      } catch {
         toast.error('アップロードに失敗しました')
       } finally {
         setUploading(false)
@@ -354,7 +351,7 @@ export function MeetingRecordDropzone({ customerId, customerName = '顧客' }: M
         }
 
         toast.success(`${selectedFiles.length}件の商談記録をアップロードしました`)
-      } catch (error) {
+      } catch {
         toast.error('アップロードに失敗しました')
       } finally {
         setUploading(false)
@@ -428,7 +425,7 @@ export function MeetingRecordDropzone({ customerId, customerName = '顧客' }: M
       setAnalysisResult(result)
       setShowAnalysis(true)
       toast.success('AI分析が完了しました')
-    } catch (error) {
+    } catch {
       toast.error('AI分析に失敗しました')
     } finally {
       setIsAnalyzing(false)
@@ -462,7 +459,7 @@ export function MeetingRecordDropzone({ customerId, customerName = '顧客' }: M
 
       setAlertRegistered(true)
       toast.success('土地アラートを登録しました！条件に合う物件が見つかると通知されます。')
-    } catch (error) {
+    } catch {
       toast.error('アラート登録に失敗しました')
     } finally {
       setIsRegisteringAlert(false)

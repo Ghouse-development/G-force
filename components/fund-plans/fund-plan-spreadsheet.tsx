@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
-import { HotTable, HotColumn } from '@handsontable/react'
+import { useState, useCallback, useMemo } from 'react'
 import { registerAllModules } from 'handsontable/registry'
 import 'handsontable/dist/handsontable.full.min.css'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Save, Download, Lock, Unlock, FileSpreadsheet } from 'lucide-react'
+import { Save, Download, Lock, FileSpreadsheet } from 'lucide-react'
 import { toast } from 'sonner'
 import type { FundPlanData, FundPlanCalculation, ProductType } from '@/types/fund-plan'
 import { createDefaultFundPlanData } from '@/types/fund-plan'
@@ -44,12 +43,6 @@ interface FundPlanSpreadsheetProps {
   onExportExcel?: (data: FundPlanData) => void
 }
 
-// セル参照用のヘルパー
-function cellRef(row: number, col: number): string {
-  const colLetter = String.fromCharCode(65 + col)
-  return `${colLetter}${row + 1}`
-}
-
 // 金額フォーマット
 function formatCurrency(value: number): string {
   if (!value && value !== 0) return ''
@@ -57,7 +50,7 @@ function formatCurrency(value: number): string {
 }
 
 // 日付フォーマット（Excel形式の数値から日付へ）
-function formatDate(excelDate: number | string): string {
+function formatDate(excelDate: number | string | undefined): string {
   if (!excelDate) return ''
   if (typeof excelDate === 'string') return excelDate
 
@@ -76,7 +69,6 @@ export function FundPlanSpreadsheet({
 }: FundPlanSpreadsheetProps) {
   const [data, setData] = useState<FundPlanData>(initialData || createDefaultFundPlanData())
   const [activeSheet, setActiveSheet] = useState('main')
-  const hotRef = useRef<HotTable>(null)
 
   // 計算結果
   const calculation = useMemo((): FundPlanCalculation => {
@@ -200,7 +192,7 @@ export function FundPlanSpreadsheet({
   // メインシートのデータを生成
   const mainSheetData = useMemo(() => {
     const d = data
-    const c = calculation
+    const _c = calculation
 
     // Excel風のグリッドデータを生成
     // 各行は配列で、セル結合はHandsontableのmergeCellsで制御

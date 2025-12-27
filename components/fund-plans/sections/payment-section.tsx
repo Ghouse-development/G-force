@@ -3,7 +3,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CurrencyInput, DateInput, DisplayValue, SubSectionTitle } from '../fund-plan-input'
 import type { FundPlanData, PaymentPlanItem } from '@/types/fund-plan'
-import { formatDateJP } from '@/lib/fund-plan/calculations'
 import { scheduleItems } from '@/lib/fund-plan/master-data'
 
 interface PaymentSectionProps {

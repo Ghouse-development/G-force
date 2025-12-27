@@ -1,6 +1,6 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -14,7 +14,7 @@ import {
   CheckCircle,
   AlertTriangle,
 } from 'lucide-react'
-import type { LandMatchResult, LandProperty } from '@/lib/land/land-conditions'
+import type { LandProperty } from '@/lib/land/land-conditions'
 import { useLandStore } from '@/store/land-store'
 
 interface LandMatchListProps {

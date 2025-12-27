@@ -590,7 +590,7 @@ export const usePlanRequestStore = create<PlanRequestState>()(
 )
 
 // Contract Store - 契約書管理（承認フロー対応）
-import type { ContractStatus, ContractAction, ContractHistoryEntry, OwnershipType } from '@/types/database'
+import type { ContractStatus, ContractHistoryEntry, OwnershipType } from '@/types/database'
 import { CONTRACT_STATUS_TRANSITIONS } from '@/types/database'
 
 // StoredContract - ストア用の契約型（historyを明示的に型指定）

@@ -204,10 +204,10 @@ const NEXT_ACTIONS: Record<string, {
 export function NextActionGuide({
   customerId,
   pipelineStatus,
-  landStatus,
-  hasFundPlan,
-  hasPlanRequest,
-  hasContract,
+  landStatus: _landStatus,
+  hasFundPlan: _hasFundPlan,
+  hasPlanRequest: _hasPlanRequest,
+  hasContract: _hasContract,
   lastContactDate,
 }: NextActionGuideProps) {
   const actionConfig = useMemo(() => {

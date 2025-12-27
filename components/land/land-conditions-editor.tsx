@@ -27,7 +27,6 @@ import {
   Layers,
   Star,
   Save,
-  RefreshCw,
   X,
   Plus,
 } from 'lucide-react'

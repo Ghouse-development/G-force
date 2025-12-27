@@ -7,8 +7,9 @@ import {
   DEMO_PLAN_REQUESTS,
   DEMO_USER,
 } from '@/store/demo-store'
-import type { Customer, PlanRequest } from '@/types/database'
-import type { StoredContract } from '@/store'
+// Types imported for reference, actual inference from demo data
+// import type { Customer, PlanRequest } from '@/types/database'
+// import type { StoredContract } from '@/store'
 
 // デモモードに応じてデータを返すフック
 export function useDemoCustomers() {

@@ -49,11 +49,11 @@ const KEY_MILESTONES: JourneyEventType[] = [
 ]
 
 export function JourneyMap({
-  customerId,
-  customerName,
+  customerId: _customerId,
+  customerName: _customerName,
   landStatus,
   events,
-  pipelineStatus,
+  pipelineStatus: _pipelineStatus,
   onAddEvent,
   onEditLandStatus,
 }: JourneyMapProps) {
@@ -265,7 +265,7 @@ export function JourneyMap({
           ) : (
             <>
               <div className="space-y-3">
-                {displayEvents.map((event, index) => {
+                {displayEvents.map((event) => {
                   const config = JOURNEY_EVENT_CONFIG[event.event_type as JourneyEventType] || JOURNEY_EVENT_CONFIG['その他']
                   return (
                     <div

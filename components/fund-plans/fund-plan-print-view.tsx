@@ -3,7 +3,7 @@
 import { forwardRef } from 'react'
 import type { FundPlanData, FundPlanCalculation } from '@/types/fund-plan'
 import { formatCurrency } from '@/lib/fund-plan/calculations'
-import { companyInfo, standardSpecifications, specificationNotes, defaultRemarks } from '@/lib/fund-plan/master-data'
+import { companyInfo, standardSpecifications, defaultRemarks } from '@/lib/fund-plan/master-data'
 
 interface FundPlanPrintViewProps {
   data: FundPlanData
@@ -12,8 +12,6 @@ interface FundPlanPrintViewProps {
 
 export const FundPlanPrintView = forwardRef<HTMLDivElement, FundPlanPrintViewProps>(
   function FundPlanPrintView({ data, calculation }, ref) {
-    const hasBattery = data.incidentalCostB.storageBatteryType !== 'なし'
-
     return (
       <div
         ref={ref}

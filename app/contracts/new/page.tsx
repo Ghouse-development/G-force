@@ -217,7 +217,7 @@ function NewContractForm() {
     setIsLoading(true)
 
     try {
-      const { subtotal, tax, total } = calculateTotal()
+      const { tax, total } = calculateTotal()
 
       const id = addContract({
         customer_id: formData.customer_id || `temp-${Date.now()}`,

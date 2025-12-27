@@ -155,21 +155,15 @@ export async function syncToDatabase(): Promise<void> {
   try {
     const customerStore = useCustomerStore.getState()
     const planRequestStore = usePlanRequestStore.getState()
-    const contractStore = useContractStore.getState()
-    const fundPlanStore = useFundPlanStore.getState()
 
     // ローカルデータを取得
     const localCustomers = customerStore.customers
     const localPlanRequests = planRequestStore.planRequests
-    const localContracts = contractStore.contracts
-    const localFundPlans = fundPlanStore.fundPlans
 
     // データベースのデータを取得
-    const [dbCustomers, dbPlanRequests, dbContracts, dbFundPlans] = await Promise.all([
+    const [dbCustomers, dbPlanRequests] = await Promise.all([
       customerDb.getAll().catch(() => [] as Customer[]),
       planRequestDb.getAll().catch(() => [] as PlanRequest[]),
-      contractDb.getAll().catch(() => []),
-      fundPlanDb.getAll().catch(() => [])
     ])
 
     // 差分を計算してアップロード

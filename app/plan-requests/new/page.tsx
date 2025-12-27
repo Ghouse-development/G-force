@@ -17,10 +17,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { SelectionCard } from '@/components/contracts/selection-card'
+import { SmartSelection } from '@/components/ui/smart-selection'
 import {
   ArrowLeft,
   Save,
-  FileEdit,
   MapPin,
   User,
   Calendar as CalendarIcon,
@@ -64,7 +64,7 @@ import {
   FLOOR_LIST,
   HOUSEHOLD_TYPE_LIST,
 } from '@/types/database'
-import type { Customer, OwnershipType, DeliverableType, ConstructionArea, LandStatus, InvestigationType } from '@/types/database'
+import type { OwnershipType, DeliverableType, ConstructionArea, LandStatus, InvestigationType } from '@/types/database'
 
 // モックの営業担当データ
 const mockSalesPersons = [
@@ -631,44 +631,18 @@ function NewPlanRequestForm() {
           </CardHeader>
           <CardContent>
             {fundPlanProductName ? (
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  <SelectionCard
-                    value="current"
-                    label={fundPlanProductName}
-                    description="資金計画書の商品を使用"
-                    selected={formData.productType === 'current'}
-                    onClick={() => setFormData(prev => ({
-                      ...prev,
-                      productType: 'current',
-                      productName: fundPlanProductName
-                    }))}
-                    icon={<Package className="w-6 h-6" />}
-                  />
-                  <SelectionCard
-                    value="other"
-                    label={`${fundPlanProductName}以外`}
-                    description="別の商品を選択"
-                    selected={formData.productType === 'other'}
-                    onClick={() => setFormData(prev => ({ ...prev, productType: 'other' }))}
-                    icon={<Package className="w-6 h-6" />}
-                  />
-                </div>
-                {formData.productType === 'other' && (
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-                    {PRODUCT_LIST.filter(p => p.value !== fundPlanProductName).map((product) => (
-                      <SelectionCard
-                        key={product.value}
-                        value={product.value}
-                        label={product.label}
-                        selected={formData.productName === product.value}
-                        onClick={() => setFormData(prev => ({ ...prev, productName: product.value }))}
-                        icon={<Package className="w-6 h-6" />}
-                      />
-                    ))}
-                  </div>
-                )}
-              </>
+              <SmartSelection
+                currentValue={fundPlanProductName}
+                currentLabel={fundPlanProductName}
+                currentDescription="資金計画書の商品をそのまま使用"
+                currentIcon={<Package className="w-6 h-6" />}
+                options={PRODUCT_LIST.filter(p => p.value !== fundPlanProductName).map(p => ({
+                  value: p.value,
+                  label: p.label,
+                  icon: <Package className="w-5 h-5" />
+                }))}
+                onSelect={(value) => setFormData(prev => ({ ...prev, productName: value, productType: value === fundPlanProductName ? 'current' : 'other' }))}
+              />
             ) : (
               <div className="grid grid-cols-2 gap-4">
                 {PRODUCT_LIST.map((product) => (

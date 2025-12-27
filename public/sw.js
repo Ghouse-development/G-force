@@ -1,6 +1,7 @@
 // G-force Service Worker
 const CACHE_NAME = 'gforce-v1'
-const OFFLINE_URL = '/offline.html'
+// Reserved for future offline support
+// const OFFLINE_URL = '/offline.html'
 
 // キャッシュするファイル
 const STATIC_CACHE = [

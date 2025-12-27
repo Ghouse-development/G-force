@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Progress } from '@/components/ui/progress'
 import { toast } from 'sonner'
@@ -12,7 +11,6 @@ import {
   ChevronRight,
   Loader2,
   CheckCircle2,
-  Circle,
   Star,
 } from 'lucide-react'
 import { PIPELINE_CONFIG, type PipelineStatus } from '@/types/database'
@@ -212,12 +210,10 @@ export function CustomerChecklist({ customerId, currentStatus }: CustomerCheckli
       </Card>
 
       {/* ステージ別チェックリスト */}
-      {PIPELINE_ORDER.map((stage, stageIndex) => {
+      {PIPELINE_ORDER.map((stage) => {
         const stageItems = groupedItems[stage] || []
         const stageProgress = calculateProgress(stageItems)
         const isCurrentStage = stage === currentStatus
-        const isPastStage = stageIndex < currentStageIndex
-        const isFutureStage = stageIndex > currentStageIndex
         const colors = STAGE_COLORS[stage] || { bg: 'bg-gray-50', border: 'border-gray-300', text: 'text-gray-700' }
 
         if (stageItems.length === 0) return null
@@ -265,7 +261,7 @@ export function CustomerChecklist({ customerId, currentStatus }: CustomerCheckli
             {expandedStages[stage] && (
               <CardContent className="p-4">
                 <div className="space-y-2">
-                  {stageItems.map((item, index) => (
+                  {stageItems.map((item) => (
                     <div
                       key={item.id}
                       className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${

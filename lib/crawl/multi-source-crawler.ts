@@ -265,7 +265,7 @@ export async function crawlLifull(
   return result
 }
 
-function parseLifullHtml(html: string, baseUrl: string): CrawledProperty[] {
+function parseLifullHtml(html: string, _baseUrl: string): CrawledProperty[] {
   const properties: CrawledProperty[] = []
 
   // LIFULL HOME'Sの物件パターン（簡略版）

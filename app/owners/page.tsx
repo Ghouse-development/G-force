@@ -21,7 +21,6 @@ import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { CustomerListSkeleton } from '@/components/ui/skeleton-loaders'
 import { exportToCSV, customerExportColumns } from '@/lib/export'
 import {
-  type Customer,
   type OwnerStatus,
   PIPELINE_CONFIG,
   OWNER_STATUS,

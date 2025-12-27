@@ -33,7 +33,7 @@ const publicPaths = ['/login', '/api']
 export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const { user, isAuthenticated, setUser, setLoading } = useAuthStore()
+  const { isAuthenticated, setUser, setLoading } = useAuthStore()
 
   useEffect(() => {
     const supabase = getSupabaseClient()

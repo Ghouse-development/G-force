@@ -3,7 +3,6 @@ import type {
   WorkflowDefinition,
   WorkflowStep,
   WorkflowInstance,
-  WorkflowInstanceStatus,
   ApprovalHistory,
   UserRole,
   Json,

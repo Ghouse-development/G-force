@@ -4,8 +4,8 @@
  */
 
 import { getKintoneConfig, type KintoneRecord } from './kintone'
-import { customerDb, planRequestDb, contractDb } from './db'
-import type { Customer, PlanRequest, Contract } from '@/types/database'
+import { customerDb } from './db'
+import type { Customer } from '@/types/database'
 
 // 同期ログをローカルに保存
 const SYNC_LOG_KEY = 'ghouse-kintone-sync-log'

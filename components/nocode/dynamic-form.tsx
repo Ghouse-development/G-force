@@ -19,7 +19,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -27,7 +26,7 @@ import {
 } from '@/components/ui/form'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
-import type { FieldDefinition, FormDefinition, FieldType, Json } from '@/types/database'
+import type { FieldDefinition, FormDefinition } from '@/types/database'
 
 interface DynamicFormProps {
   formDefinition: FormDefinition

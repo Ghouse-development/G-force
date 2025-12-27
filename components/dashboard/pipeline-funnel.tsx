@@ -155,7 +155,7 @@ export function MiniFunnel({ stages }: MiniFunnelProps) {
 
   return (
     <div className="space-y-2">
-      {stages.map((stage, index) => (
+      {stages.map((stage) => (
         <div key={stage.label} className="flex items-center gap-2">
           <span className="text-xs text-gray-500 w-16 truncate">{stage.label}</span>
           <div className="flex-1 h-4 bg-gray-100 rounded overflow-hidden">

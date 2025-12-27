@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { dashboardDb, customerDb, planRequestDb } from '@/lib/db'
+import { dashboardDb, customerDb } from '@/lib/db'
 import { getCurrentFiscalYear, getFiscalYearRange } from '@/types/database'
 
 export async function GET() {

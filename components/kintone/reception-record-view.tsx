@@ -19,7 +19,6 @@ import {
   Calendar,
   Megaphone,
   FileText,
-  ExternalLink,
   RefreshCw,
 } from 'lucide-react'
 import type { ReceptionRecord } from '@/lib/kintone/kintone-client'

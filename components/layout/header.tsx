@@ -22,6 +22,7 @@ import {
   TrendingUp,
   RefreshCw,
   FlaskConical,
+  Target,
 } from 'lucide-react'
 import { GlobalSearch, useGlobalSearch } from '@/components/search/global-search'
 import { Button } from '@/components/ui/button'
@@ -57,6 +58,7 @@ const documentNavigation = [
 const infoNavigation = [
   { name: '土地情報アラート', href: '/property-alerts', icon: MapPin, description: '物件通知・アラート設定' },
   { name: '住宅ローン金利', href: '/loan-rates', icon: TrendingUp, description: '銀行別金利一覧' },
+  { name: '営業ツール', href: '/sales-tools', icon: Target, description: '競合対策・トークスクリプト' },
   { name: 'クロール設定', href: '/crawl-settings', icon: RefreshCw, description: '自動取得の管理' },
 ]
 

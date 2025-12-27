@@ -385,7 +385,7 @@ export function extractConditionsFromHearingSheet(
     landRequirements?: string
     familyStructure?: string
   },
-  existingConditions?: LandSearchConditions
+  _existingConditions?: LandSearchConditions
 ): Partial<LandSearchConditions> {
   const conditions: Partial<LandSearchConditions> = {}
 

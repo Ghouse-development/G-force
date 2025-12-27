@@ -8,9 +8,7 @@ import {
   Users,
   FileText,
   Target,
-  Zap,
   DollarSign,
-  Award,
 } from 'lucide-react'
 
 interface KPICardProps {
@@ -207,7 +205,7 @@ export function DashboardKPIGrid({
   contractsAmount,
   targetContracts,
   targetAmount,
-  conversionRate,
+  conversionRate: _conversionRate,
   prevMonthChange = 0,
 }: DashboardKPIGridProps) {
   return (

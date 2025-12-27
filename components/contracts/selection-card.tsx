@@ -15,7 +15,7 @@ interface SelectionCardProps {
 }
 
 export function SelectionCard({
-  value,
+  value: _value,
   label,
   description,
   icon,
@@ -86,7 +86,7 @@ interface MultiSelectCardProps {
 }
 
 export function MultiSelectCard({
-  value,
+  value: _value,
   label,
   description,
   icon,

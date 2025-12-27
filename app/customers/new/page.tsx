@@ -69,7 +69,7 @@ export default function NewCustomerPage() {
 
       toast.success('反響を登録しました')
       router.push('/customers')
-    } catch (error) {
+    } catch {
       toast.error('登録に失敗しました')
     } finally {
       setIsLoading(false)

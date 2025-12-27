@@ -21,6 +21,19 @@ const eslintConfig = [
       "scripts/**",
     ],
   },
+  {
+    rules: {
+      // Allow underscore-prefixed variables (intentionally unused)
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
 ];
 
 export default eslintConfig;

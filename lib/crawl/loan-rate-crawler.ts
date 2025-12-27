@@ -49,7 +49,6 @@ async function fetchFlat35Rate(): Promise<RateFetchResult> {
     // 公式APIがあればそれを使用する
 
     // デモ用のモック金利（実際は取得ロジックを実装）
-    const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
 
     return {
       bankName: config.bankName,

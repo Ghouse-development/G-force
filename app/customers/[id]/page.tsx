@@ -33,6 +33,7 @@ import {
   Map,
   ClipboardList,
   FileQuestion,
+  Brain,
 } from 'lucide-react'
 import { CustomerChecklist } from '@/components/customers/customer-checklist'
 import { JourneyMap } from '@/components/customers/journey-map'
@@ -44,6 +45,8 @@ import { ReceptionRecordView } from '@/components/kintone/reception-record-view'
 import { HearingSheetView } from '@/components/kintone/hearing-sheet-view'
 import { DocumentManager } from '@/components/customers/document-manager'
 import { NextActionGuide } from '@/components/customers/next-action-guide'
+import { AISalesAssistant } from '@/components/customers/ai-sales-assistant'
+import { CommunicationLog } from '@/components/customers/communication-log'
 import { useKintoneStore } from '@/store/kintone-store'
 import { toast } from 'sonner'
 import {
@@ -164,12 +167,9 @@ const mockJourneyEvents: CustomerJourneyEvent[] = [
   },
 ]
 
-// アクティブステータス（ボツ・他決以外）
-const activeStatuses: PipelineStatus[] = [...PIPELINE_ORDER]
-
 export default function CustomerDetailPage() {
-  const router = useRouter()
   const params = useParams()
+  const router = useRouter()
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [fundPlans, setFundPlans] = useState<Partial<FundPlan>[]>([])
   const [journeyEvents, setJourneyEvents] = useState<CustomerJourneyEvent[]>([])
@@ -226,7 +226,7 @@ export default function CustomerDetailPage() {
     try {
       setCustomer({ ...customer, pipeline_status: newStatus })
       toast.success(`ステータスを「${PIPELINE_CONFIG[newStatus].label}」に変更しました`)
-    } catch (error) {
+    } catch {
       toast.error('ステータスの変更に失敗しました')
     }
   }
@@ -265,65 +265,43 @@ export default function CustomerDetailPage() {
     <Layout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div className="flex items-center space-x-3">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => router.push('/customers')}
+              className="shrink-0"
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <div>
-              <div className="flex items-center space-x-3">
-                <h1 className="text-2xl font-bold text-gray-900">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900 truncate">
                   {customer.tei_name}
                 </h1>
-                <Badge className={`${statusConfig.bgColor} ${statusConfig.color} border-0`}>
+                <Badge className={`${statusConfig.bgColor} ${statusConfig.color} border-0 shrink-0`}>
                   {statusConfig.label}
                 </Badge>
               </div>
-              <p className="text-gray-500 mt-1">
+              <p className="text-gray-500 mt-0.5 text-sm truncate">
                 {customer.name}
                 {customer.partner_name && ` / ${customer.partner_name}`}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {/* クイックアクション */}
-            <div className="hidden md:flex gap-2">
-              <Link href={`/fund-plans/new?customer=${customer.id}`}>
-                <Button variant="outline" size="sm">
-                  <FileText className="w-4 h-4 mr-1.5 text-blue-500" />
-                  資金計画
-                </Button>
-              </Link>
-              {fundPlans.length > 0 && (
-                <>
-                  <Link href={`/plan-requests/new?customer=${customer.id}`}>
-                    <Button variant="outline" size="sm">
-                      <FileEdit className="w-4 h-4 mr-1.5 text-orange-500" />
-                      プラン依頼
-                    </Button>
-                  </Link>
-                  <Link href={`/contract-requests/new?customer=${customer.id}`}>
-                    <Button variant="outline" size="sm">
-                      <FileSignature className="w-4 h-4 mr-1.5 text-purple-500" />
-                      契約書
-                    </Button>
-                  </Link>
-                </>
-              )}
-            </div>
+
+          {/* ステータス変更 */}
+          <div className="flex items-center gap-2 ml-11 md:ml-0">
             <Select
               value={customer.pipeline_status}
               onValueChange={(value) => handleStatusChange(value as PipelineStatus)}
             >
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[130px] md:w-[140px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {activeStatuses.map((status) => (
+                {PIPELINE_ORDER.map((status) => (
                   <SelectItem key={status} value={status}>
                     {PIPELINE_CONFIG[status].label}
                   </SelectItem>
@@ -337,6 +315,32 @@ export default function CustomerDetailPage() {
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        {/* クイックアクション - モバイル対応 */}
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-none">
+          <Link href={`/fund-plans/new?customer=${customer.id}`}>
+            <Button variant="outline" size="sm" className="whitespace-nowrap">
+              <FileText className="w-4 h-4 mr-1.5 text-blue-500" />
+              資金計画
+            </Button>
+          </Link>
+          {fundPlans.length > 0 && (
+            <>
+              <Link href={`/plan-requests/new?customer=${customer.id}`}>
+                <Button variant="outline" size="sm" className="whitespace-nowrap">
+                  <FileEdit className="w-4 h-4 mr-1.5 text-orange-500" />
+                  プラン依頼
+                </Button>
+              </Link>
+              <Link href={`/contract-requests/new?customer=${customer.id}`}>
+                <Button variant="outline" size="sm" className="whitespace-nowrap">
+                  <FileSignature className="w-4 h-4 mr-1.5 text-purple-500" />
+                  契約書
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* 次のアクションガイド */}
@@ -504,37 +508,51 @@ export default function CustomerDetailPage() {
                 )}
               </CardContent>
             </Card>
+
+            {/* コミュニケーションログ */}
+            <CommunicationLog
+              customerId={customer.id}
+              events={journeyEvents}
+              onAddEvent={handleAddEvent}
+            />
           </div>
 
           {/* Tabs Section */}
           <div className="lg:col-span-2">
             <Tabs defaultValue="journey" className="w-full">
-              <TabsList className="mb-4 flex-wrap">
-                <TabsTrigger value="journey" className="flex items-center gap-1">
+              <TabsList className="mb-4 w-full justify-start overflow-x-auto scrollbar-none">
+                <TabsTrigger value="journey" className="flex items-center gap-1 px-2 md:px-3">
                   <TrendingUp className="w-4 h-4" />
-                  ジャーニー
+                  <span className="hidden sm:inline">ジャーニー</span>
                 </TabsTrigger>
-                <TabsTrigger value="checklist" className="flex items-center gap-1">
+                <TabsTrigger value="checklist" className="flex items-center gap-1 px-2 md:px-3">
                   <ClipboardCheck className="w-4 h-4" />
-                  チェックリスト
+                  <span className="hidden sm:inline">チェック</span>
                 </TabsTrigger>
-                <TabsTrigger value="reception" className="flex items-center gap-1">
+                <TabsTrigger value="reception" className="flex items-center gap-1 px-2 md:px-3">
                   <ClipboardList className="w-4 h-4" />
-                  受付台帳
+                  <span className="hidden sm:inline">受付</span>
                 </TabsTrigger>
-                <TabsTrigger value="hearing" className="flex items-center gap-1">
+                <TabsTrigger value="hearing" className="flex items-center gap-1 px-2 md:px-3">
                   <FileQuestion className="w-4 h-4" />
-                  ヒアリング
+                  <span className="hidden sm:inline">ヒアリング</span>
                 </TabsTrigger>
-                <TabsTrigger value="documents" className="flex items-center gap-1">
+                <TabsTrigger value="documents" className="flex items-center gap-1 px-2 md:px-3">
                   <FileText className="w-4 h-4" />
-                  書類
+                  <span className="hidden sm:inline">書類</span>
                 </TabsTrigger>
-                <TabsTrigger value="land" className="flex items-center gap-1">
+                <TabsTrigger value="land" className="flex items-center gap-1 px-2 md:px-3">
                   <Map className="w-4 h-4" />
-                  土地条件
+                  <span className="hidden sm:inline">土地</span>
                 </TabsTrigger>
-                <TabsTrigger value="notes">メモ</TabsTrigger>
+                <TabsTrigger value="notes" className="flex items-center gap-1 px-2 md:px-3">
+                  <FileEdit className="w-4 h-4" />
+                  <span className="hidden sm:inline">メモ</span>
+                </TabsTrigger>
+                <TabsTrigger value="ai" className="flex items-center gap-1 px-2 md:px-3">
+                  <Brain className="w-4 h-4" />
+                  <span className="hidden sm:inline">AI</span>
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="journey">
@@ -601,6 +619,13 @@ export default function CustomerDetailPage() {
                     </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="ai">
+                <AISalesAssistant
+                  customer={customer}
+                  journeyEvents={journeyEvents}
+                />
               </TabsContent>
             </Tabs>
           </div>

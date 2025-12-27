@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, use, useMemo } from 'react'
+import { useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -18,16 +18,12 @@ import {
   ArrowLeft,
   FileText,
   MapPin,
-  Home,
-  Wallet,
   User,
-  Calendar,
   Clock,
   CheckCircle,
   AlertCircle,
   Send,
   MessageSquare,
-  Building2,
   Package,
   Users,
   Search,
@@ -65,21 +61,13 @@ const ICON_MAP = {
   Clock,
 }
 
-const styleLabels: Record<string, string> = {
-  modern: 'モダン',
-  natural: 'ナチュラル',
-  japanese: '和モダン',
-  minimal: 'シンプル・ミニマル',
-  industrial: 'インダストリアル',
-}
-
 export default function PlanRequestDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
   const router = useRouter()
   const [isUpdating, setIsUpdating] = useState(false)
   const [newComment, setNewComment] = useState('')
 
-  const { getPlanRequest, updatePlanRequest, updatePlanRequestStatus, assignDesignOffice } = usePlanRequestStore()
+  const { getPlanRequest, updatePlanRequestStatus, assignDesignOffice } = usePlanRequestStore()
 
   const planRequest = getPlanRequest(resolvedParams.id)
 

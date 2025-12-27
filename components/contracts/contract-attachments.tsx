@@ -54,7 +54,7 @@ export function ContractAttachments({ contractId, editable = true }: ContractAtt
   const [deleteFile, setDeleteFile] = useState<StoredFile | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const { files, addFile, deleteFile: removeFile, getFilesByCustomer } = useFileStore()
+  const { files, addFile, deleteFile: removeFile } = useFileStore()
   const { user } = useAuthStore()
 
   useEffect(() => {
