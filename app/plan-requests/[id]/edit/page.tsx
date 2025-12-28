@@ -142,7 +142,7 @@ export default function EditPlanRequestPage({ params }: { params: Promise<{ id: 
                   <Label>ステータス</Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value) => setFormData({ ...formData, status: value })}
+                    onValueChange={(value) => setFormData({ ...formData, status: value as PlanRequestStatus })}
                   >
                     <SelectTrigger>
                       <SelectValue />
