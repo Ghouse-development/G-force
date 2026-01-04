@@ -98,7 +98,7 @@ export default function ProductsPage() {
             </div>
           </div>
           <Button
-            className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600"
+            className="bg-orange-500 hover:bg-orange-600"
             disabled
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -227,7 +227,7 @@ export default function ProductsPage() {
                               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                                 キャンセル
                               </Button>
-                              <Button onClick={handleSave} className="bg-gradient-to-r from-orange-500 to-yellow-500">
+                              <Button onClick={handleSave} className="bg-orange-500 hover:bg-orange-600">
                                 <Save className="w-4 h-4 mr-2" />
                                 保存
                               </Button>

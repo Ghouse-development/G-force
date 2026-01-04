@@ -239,7 +239,7 @@ export default function LoansPage() {
             <p className="text-gray-600 mt-1">住宅ローンの審査状況を一元管理</p>
           </div>
           <Button
-            className="bg-gradient-to-r from-orange-500 to-yellow-500"
+            className="bg-orange-500 hover:bg-orange-600"
             onClick={() => setShowAddDialog(true)}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -584,7 +584,7 @@ export default function LoansPage() {
                 キャンセル
               </Button>
               <Button
-                className="bg-gradient-to-r from-orange-500 to-yellow-500"
+                className="bg-orange-500 hover:bg-orange-600"
                 onClick={handleSubmit}
               >
                 {editingLoan ? '更新' : '登録'}

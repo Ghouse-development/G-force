@@ -507,7 +507,7 @@ export default function ContractRequestDetailPage() {
                 ) : (
                   <Link href={`/handovers/new?customer_id=${detail.customer_id}&contract_id=${detail.id}`}>
                     <Button
-                      className="w-full justify-start bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white"
+                      className="w-full justify-start bg-orange-500 hover:bg-orange-600 text-white"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       引継書を作成

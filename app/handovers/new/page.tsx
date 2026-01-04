@@ -391,7 +391,7 @@ function NewHandoverForm() {
           <Button
             type="submit"
             disabled={isLoading}
-            className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600"
+            className="bg-orange-500 hover:bg-orange-600"
           >
             {isLoading ? (
               <>
