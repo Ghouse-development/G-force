@@ -146,7 +146,10 @@ export default function EventsPage() {
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">イベント管理</h1>
             <p className="text-gray-600 mt-1">見学会・セミナーの予約管理</p>
           </div>
-          <Button className="bg-orange-500 hover:bg-orange-600">
+          <Button
+            className="bg-orange-500 hover:bg-orange-600"
+            onClick={() => router.push('/events/new')}
+          >
             <Plus className="w-4 h-4 mr-2" />
             イベント作成
           </Button>

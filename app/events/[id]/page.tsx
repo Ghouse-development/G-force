@@ -48,6 +48,7 @@ import {
   UserCheck,
   UserX,
   PhoneCall,
+  Pencil,
 } from 'lucide-react'
 import { useEventStore } from '@/store/event-store'
 import {
@@ -224,14 +225,23 @@ export default function EventDetailPage() {
               </div>
             </div>
           </div>
-          <Button
-            className="bg-orange-500 hover:bg-orange-600"
-            onClick={() => setShowAddBookingDialog(true)}
-            disabled={summary.total >= event.slots}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            予約追加
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/events/${eventId}/edit`)}
+            >
+              <Pencil className="w-4 h-4 mr-2" />
+              編集
+            </Button>
+            <Button
+              className="bg-orange-500 hover:bg-orange-600"
+              onClick={() => setShowAddBookingDialog(true)}
+              disabled={summary.total >= event.slots}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              予約追加
+            </Button>
+          </div>
         </div>
 
         {/* サマリー */}
