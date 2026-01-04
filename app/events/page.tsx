@@ -3,18 +3,11 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/layout'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import {
   ChevronLeft,
   ChevronRight,
-  Users,
-  UserCheck,
-  XCircle,
-  TrendingUp,
-  Calendar,
   Plus,
 } from 'lucide-react'
 import { useEventStore } from '@/store/event-store'
@@ -60,7 +53,7 @@ export default function EventsPage() {
 
   // 統計データ計算
   const stats = useMemo(() => {
-    if (!mounted) return { totalSlots: 0, booked: 0, attended: 0, cancelled: 0, occupancyRate: 0, cancelRate: 0, attendRate: 0 }
+    if (!mounted) return { totalSlots: 0, booked: 0, occupancyRate: 0, cancelRate: 0 }
 
     const eventIds = new Set(monthEvents.map(e => e.id))
     const monthBookings = bookings.filter(b => eventIds.has(b.event_id))
@@ -68,17 +61,13 @@ export default function EventsPage() {
     const totalSlots = monthEvents.length * SLOT_CAPACITY
     const booked = monthBookings.filter(b => b.status !== 'キャンセル').length
     const cancelled = monthBookings.filter(b => b.status === 'キャンセル').length
-    const attended = monthBookings.filter(b => b.status === '参加').length
-    const totalBookingsWithCancelled = monthBookings.length
+    const total = monthBookings.length
 
     return {
       totalSlots,
       booked,
-      attended,
-      cancelled,
       occupancyRate: totalSlots > 0 ? Math.round((booked / totalSlots) * 100) : 0,
-      cancelRate: totalBookingsWithCancelled > 0 ? Math.round((cancelled / totalBookingsWithCancelled) * 100) : 0,
-      attendRate: booked > 0 ? Math.round((attended / booked) * 100) : 0,
+      cancelRate: total > 0 ? Math.round((cancelled / total) * 100) : 0,
     }
   }, [mounted, monthEvents, bookings])
 
@@ -91,12 +80,10 @@ export default function EventsPage() {
 
     const eventBookings = bookings.filter(b => b.event_id === event.id)
     const activeBookings = eventBookings.filter(b => b.status !== 'キャンセル')
-    const confirmedBookings = eventBookings.filter(b => b.status === '確認済' || b.status === '参加')
 
     return {
       event,
       booked: activeBookings.length,
-      confirmed: confirmedBookings.length,
       capacity: event.slots,
       isFull: activeBookings.length >= event.slots,
     }
@@ -111,16 +98,6 @@ export default function EventsPage() {
     })
   }
 
-  // 日付フォーマット
-  const formatDate = (date: Date) => {
-    const days = ['日', '月', '火', '水', '木', '金', '土']
-    return {
-      day: date.getDate(),
-      dayOfWeek: days[date.getDay()],
-      isSunday: date.getDay() === 0,
-    }
-  }
-
   if (!mounted) {
     return (
       <Layout>
@@ -133,197 +110,136 @@ export default function EventsPage() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Breadcrumb items={[{ label: 'イベント管理' }]} />
 
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">イベント管理</h1>
-            <p className="text-gray-600 mt-1">土日 × 4会場 × 3部制（10:00〜 / 12:30〜 / 15:00〜）各4組</p>
+            <h1 className="text-2xl font-bold text-gray-900">イベント管理</h1>
+            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+              <span>予約率 <strong className="text-gray-900">{stats.occupancyRate}%</strong></span>
+              <span>キャンセル率 <strong className="text-gray-900">{stats.cancelRate}%</strong></span>
+              <span>予約 <strong className="text-gray-900">{stats.booked}</strong>/{stats.totalSlots}組</span>
+            </div>
           </div>
           <Button
+            size="sm"
             className="bg-orange-500 hover:bg-orange-600"
             onClick={() => router.push('/events/new')}
           >
-            <Plus className="w-4 h-4 mr-2" />
-            イベント作成
+            <Plus className="w-4 h-4 mr-1" />
+            追加
           </Button>
-        </div>
-
-        {/* 月間統計 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="border-0 shadow-sm bg-blue-50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-blue-700">満席率</p>
-                  <p className="text-2xl font-bold text-blue-900">{stats.occupancyRate}%</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-sm bg-green-50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center">
-                  <UserCheck className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-green-700">参加率</p>
-                  <p className="text-2xl font-bold text-green-900">{stats.attendRate}%</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-sm bg-red-50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-red-500 flex items-center justify-center">
-                  <XCircle className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-red-700">キャンセル率</p>
-                  <p className="text-2xl font-bold text-red-900">{stats.cancelRate}%</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-sm bg-orange-50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-orange-700">予約組数</p>
-                  <p className="text-2xl font-bold text-orange-900">{stats.booked}<span className="text-sm font-normal text-gray-500">/{stats.totalSlots}</span></p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* 月選択 */}
-        <div className="flex items-center justify-between">
-          <Button variant="outline" size="icon" onClick={() => changeMonth(-1)}>
-            <ChevronLeft className="w-5 h-5" />
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeMonth(-1)}>
+            <ChevronLeft className="w-4 h-4" />
           </Button>
-          <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-gray-500" />
-            <h2 className="text-xl font-bold">
-              {currentMonth.getFullYear()}年{currentMonth.getMonth() + 1}月
-            </h2>
-          </div>
-          <Button variant="outline" size="icon" onClick={() => changeMonth(1)}>
-            <ChevronRight className="w-5 h-5" />
+          <span className="text-lg font-bold min-w-[120px] text-center">
+            {currentMonth.getFullYear()}年{currentMonth.getMonth() + 1}月
+          </span>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeMonth(1)}>
+            <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
 
         {/* イベント表 */}
-        <Card className="overflow-hidden">
+        <div className="border rounded-lg overflow-hidden bg-white">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-xs">
               <thead>
-                <tr className="bg-gray-100">
-                  <th className="px-3 py-3 text-left font-semibold text-gray-700 border-b sticky left-0 bg-gray-100 z-10 min-w-[80px]">
+                <tr className="bg-gray-50 border-b">
+                  <th rowSpan={2} className="px-2 py-2 text-left font-medium text-gray-500 border-r w-16 sticky left-0 bg-gray-50 z-10">
                     日付
                   </th>
-                  {MODEL_HOUSES.map(mh => (
+                  {MODEL_HOUSES.map((mh, idx) => (
                     <th
                       key={mh.id}
-                      colSpan={TIME_SLOTS.length}
-                      className="px-2 py-2 text-center font-semibold text-gray-700 border-b border-l"
+                      colSpan={3}
+                      className={`px-1 py-1.5 text-center font-bold text-gray-700 ${idx < MODEL_HOUSES.length - 1 ? 'border-r' : ''}`}
                     >
                       {mh.name}
                     </th>
                   ))}
                 </tr>
-                <tr className="bg-gray-50">
-                  <th className="px-3 py-2 border-b sticky left-0 bg-gray-50 z-10"></th>
-                  {MODEL_HOUSES.map(mh => (
-                    TIME_SLOTS.map(slot => (
+                <tr className="bg-gray-50 border-b text-[10px]">
+                  {MODEL_HOUSES.map((mh, mhIdx) => (
+                    TIME_SLOTS.map((slot, slotIdx) => (
                       <th
                         key={`${mh.id}-${slot.id}`}
-                        className="px-2 py-2 text-center text-xs font-medium text-gray-500 border-b border-l min-w-[70px]"
+                        className={`px-1 py-1 text-center font-normal text-gray-400 ${slotIdx === 2 && mhIdx < MODEL_HOUSES.length - 1 ? 'border-r' : ''}`}
                       >
-                        {slot.label}
+                        {slot.start.replace(':00', '')}
                       </th>
                     ))
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {weekendDates.map(date => {
+                {weekendDates.map((date, rowIdx) => {
                   const dateStr = date.toISOString().split('T')[0]
-                  const { day, dayOfWeek, isSunday } = formatDate(date)
+                  const day = date.getDate()
+                  const isSunday = date.getDay() === 0
                   const isToday = date.toDateString() === new Date().toDateString()
 
                   return (
                     <tr
                       key={dateStr}
-                      className={`hover:bg-gray-50 ${isToday ? 'bg-orange-50' : ''}`}
+                      className={`${rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} ${isToday ? '!bg-orange-50' : ''} hover:bg-blue-50/50`}
                     >
-                      <td className={`px-3 py-3 font-medium border-b sticky left-0 z-10 ${isToday ? 'bg-orange-50' : 'bg-white'}`}>
-                        <div className="flex items-center gap-1">
-                          <span className={`text-lg ${isSunday ? 'text-red-500' : 'text-blue-500'}`}>
-                            {day}
-                          </span>
-                          <span className={`text-xs ${isSunday ? 'text-red-400' : 'text-blue-400'}`}>
-                            ({dayOfWeek})
-                          </span>
-                          {isToday && (
-                            <Badge className="ml-1 bg-orange-500 text-[10px] px-1 py-0">今日</Badge>
-                          )}
-                        </div>
+                      <td className={`px-2 py-1.5 font-medium border-r sticky left-0 z-10 ${rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} ${isToday ? '!bg-orange-50' : ''}`}>
+                        <span className={isSunday ? 'text-red-500' : 'text-blue-600'}>
+                          {day}
+                        </span>
+                        <span className={`ml-0.5 text-[10px] ${isSunday ? 'text-red-400' : 'text-blue-400'}`}>
+                          {isSunday ? '日' : '土'}
+                        </span>
                       </td>
-                      {MODEL_HOUSES.map(mh => (
-                        TIME_SLOTS.map(slot => {
+                      {MODEL_HOUSES.map((mh, mhIdx) => (
+                        TIME_SLOTS.map((slot, slotIdx) => {
                           const info = getEventBookingInfo(dateStr, mh.id, slot.start)
 
                           if (!info) {
                             return (
-                              <td key={`${mh.id}-${slot.id}`} className="px-2 py-2 text-center border-b border-l bg-gray-100">
-                                <span className="text-gray-400 text-xs">-</span>
+                              <td
+                                key={`${mh.id}-${slot.id}`}
+                                className={`px-1 py-1.5 text-center text-gray-300 ${slotIdx === 2 && mhIdx < MODEL_HOUSES.length - 1 ? 'border-r' : ''}`}
+                              >
+                                -
                               </td>
                             )
                           }
 
                           const ratio = info.booked / info.capacity
-                          let bgColor = 'bg-gray-50'
-                          let textColor = 'text-gray-600'
+                          let cellClass = 'text-gray-400'
+                          let bgClass = ''
 
                           if (info.isFull) {
-                            bgColor = 'bg-red-100'
-                            textColor = 'text-red-700'
+                            cellClass = 'text-red-600 font-bold'
+                            bgClass = 'bg-red-100'
                           } else if (ratio >= 0.75) {
-                            bgColor = 'bg-orange-100'
-                            textColor = 'text-orange-700'
+                            cellClass = 'text-orange-600 font-semibold'
+                            bgClass = 'bg-orange-50'
                           } else if (ratio >= 0.5) {
-                            bgColor = 'bg-yellow-100'
-                            textColor = 'text-yellow-700'
+                            cellClass = 'text-yellow-600'
+                            bgClass = 'bg-yellow-50'
                           } else if (ratio > 0) {
-                            bgColor = 'bg-green-100'
-                            textColor = 'text-green-700'
+                            cellClass = 'text-green-600'
+                            bgClass = 'bg-green-50'
                           }
 
                           return (
                             <td
                               key={`${mh.id}-${slot.id}`}
-                              className={`px-2 py-2 text-center border-b border-l cursor-pointer transition-all hover:shadow-inner ${bgColor}`}
+                              className={`px-1 py-1.5 text-center cursor-pointer hover:!bg-blue-100 transition-colors ${bgClass} ${slotIdx === 2 && mhIdx < MODEL_HOUSES.length - 1 ? 'border-r' : ''}`}
                               onClick={() => router.push(`/events/${info.event.id}`)}
                             >
-                              <div className={`font-bold ${textColor}`}>
-                                {info.booked}/{info.capacity}
-                              </div>
-                              {info.confirmed > 0 && (
-                                <div className="text-[10px] text-gray-500">
-                                  確認済{info.confirmed}
-                                </div>
-                              )}
+                              <span className={cellClass}>
+                                {info.booked}
+                              </span>
                             </td>
                           )
                         })
@@ -334,31 +250,16 @@ export default function EventsPage() {
               </tbody>
             </table>
           </div>
-        </Card>
+        </div>
 
         {/* 凡例 */}
-        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-          <span className="font-medium">凡例:</span>
-          <div className="flex items-center gap-1">
-            <div className="w-4 h-4 rounded bg-gray-50 border"></div>
-            <span>空き</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-4 h-4 rounded bg-green-100"></div>
-            <span>〜50%</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-4 h-4 rounded bg-yellow-100"></div>
-            <span>50〜75%</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-4 h-4 rounded bg-orange-100"></div>
-            <span>75〜99%</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-4 h-4 rounded bg-red-100"></div>
-            <span>満席</span>
-          </div>
+        <div className="flex items-center gap-3 text-xs text-gray-500">
+          <span>凡例:</span>
+          <span className="text-gray-400">0 空き</span>
+          <span className="text-green-600">1-2</span>
+          <span className="text-yellow-600">3</span>
+          <span className="text-orange-600 font-semibold">残1</span>
+          <span className="text-red-600 font-bold">満席</span>
         </div>
       </div>
     </Layout>
