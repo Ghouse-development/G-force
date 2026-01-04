@@ -1,5 +1,60 @@
 # G-force 開発記録
 
+## 2026年1月4日 - UI全画面シンプル化（第2弾）
+
+### 概要
+
+スクリーンショット評価に基づき、全画面のUI簡素化を完了。グラデーションとカラフルなカードをインラインテキスト表示に統一。
+
+### 修正した画面
+
+| 画面 | 主な変更 |
+|------|----------|
+| 限定会員前お客様 | ステータスカード → インラインテキスト、グラデーションボタン削除 |
+| 契約後お客様管理 | サマリーカード → インラインテキスト、デモバナー簡素化 |
+| オーナー | 3枚のグラデーションカード → インラインテキスト、アイコングラデーション削除 |
+| プラン依頼 | 5枚の統計カード → インラインテキスト、グラデーションボタン削除 |
+| 管理画面 | 4枚の統計カード → インラインテキスト、メニューアイコングラデーション削除 |
+| 顧客詳細 | 次アクションガイドのグラデーション枠 → シンプル枠線、情報カードの背景色統一 |
+
+### 変更パターン
+
+**Before:**
+```tsx
+<Card className="bg-gradient-to-r from-orange-50 to-amber-50">
+  <CardContent className="p-6">
+    <p className="text-sm text-gray-600">ラベル</p>
+    <p className="text-2xl font-bold text-orange-600">値</p>
+  </CardContent>
+</Card>
+```
+
+**After:**
+```tsx
+<div className="flex items-center gap-2">
+  <span className="text-sm text-gray-500">ラベル</span>
+  <span className="text-xl font-bold text-gray-900">値</span>
+</div>
+```
+
+### 削除したグラデーション
+
+- `bg-gradient-to-r from-purple-600 to-indigo-600` → `bg-gray-700`（デモバナー）
+- `bg-gradient-to-r from-orange-500 to-yellow-500` → `bg-orange-500`（ボタン）
+- `bg-gradient-to-r from-orange-50 to-amber-50` → `bg-gray-50`（カード背景）
+- `bg-gradient-to-br ${menu.color}` → `bg-gray-100`（管理画面アイコン）
+
+### 変更ファイル
+
+- `app/pre-members/page.tsx` - デモバナー、ボタン、ステータスサマリー
+- `app/post-contract/page.tsx` - デモバナー、サマリーカード
+- `app/owners/page.tsx` - デモバナー、サマリーカード、オーナーカードアイコン
+- `app/plan-requests/page.tsx` - 統計カード、グラデーションボタン2箇所
+- `app/admin/page.tsx` - 統計カード、メニューアイコン
+- `app/customers/[id]/page.tsx` - 次アクションガイド枠、情報カード背景
+
+---
+
 ## 2026年1月4日 - UI/UX全体シンプル化・Excel完全一致ビュー
 
 ### 概要

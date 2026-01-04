@@ -82,8 +82,7 @@ export default function PreMembersPage() {
       <div className="space-y-6">
         {/* Demo Mode Banner */}
         {isDemoMode && (
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 shadow-lg">
-            <span className="text-lg">🧪</span>
+          <div className="bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2">
             <span className="font-medium">デモモード：サンプルデータを表示中</span>
           </div>
         )}
@@ -110,7 +109,7 @@ export default function PreMembersPage() {
               CSV出力
             </Button>
             <Link href="/customers/new">
-              <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
+              <Button className="bg-orange-500 hover:bg-orange-600">
                 <Plus className="w-4 h-4 mr-2" />
                 新規登録
               </Button>
@@ -119,20 +118,14 @@ export default function PreMembersPage() {
         </div>
 
         {/* ステータスサマリー */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="flex flex-wrap items-center gap-6 py-2 border-b">
           {PRE_MEMBER_STATUS_ORDER.map((status) => {
             const config = PIPELINE_CONFIG[status]
             return (
-              <Card key={status} className={`${config.bgColor} border-0`}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <span className={`font-medium ${config.color}`}>{config.label}</span>
-                    <Badge variant="secondary" className="text-lg font-bold">
-                      {statusCounts[status]}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
+              <div key={status} className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">{config.label}</span>
+                <span className="text-xl font-bold text-gray-900">{statusCounts[status]}</span>
+              </div>
             )
           })}
         </div>

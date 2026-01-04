@@ -145,8 +145,7 @@ export default function PostContractPage() {
       <div className="space-y-6">
         {/* Demo Mode Banner */}
         {isDemoMode && (
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 shadow-lg">
-            <span className="text-lg">🧪</span>
+          <div className="bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2">
             <span className="font-medium">デモモード：サンプルデータを表示中</span>
           </div>
         )}
@@ -175,40 +174,19 @@ export default function PostContractPage() {
           </div>
         </div>
 
-        {/* サマリーカード */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* 合計契約金額 */}
-          <Card className="border-0 shadow-lg bg-gradient-to-r from-orange-50 to-amber-50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">契約金額合計</p>
-                  <p className="text-2xl font-bold text-orange-600 mt-1">
-                    ¥{totalContractAmount.toLocaleString()}
-                  </p>
-                </div>
-                <FileCheck className="w-10 h-10 text-orange-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* ステータス別 */}
+        {/* サマリー */}
+        <div className="flex flex-wrap items-center gap-6 py-2 border-b">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">契約金額合計</span>
+            <span className="text-xl font-bold text-gray-900">¥{totalContractAmount.toLocaleString()}</span>
+          </div>
           {POST_CONTRACT_STATUS_ORDER.map((status) => {
             const config = PIPELINE_CONFIG[status]
             return (
-              <Card key={status} className={`${config.bgColor} border-0 shadow-lg`}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className={`text-sm ${config.color}`}>{config.label}</p>
-                      <p className="text-2xl font-bold mt-1">{statusCounts[status]}</p>
-                    </div>
-                    <Badge variant="secondary" className="text-lg">
-                      {statusCounts[status]}件
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
+              <div key={status} className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">{config.label}</span>
+                <span className="text-xl font-bold text-gray-900">{statusCounts[status]}</span>
+              </div>
             )
           })}
         </div>

@@ -15,7 +15,6 @@ import {
   Phone,
   Calendar,
   ChevronRight,
-  Award,
 } from 'lucide-react'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { CustomerListSkeleton } from '@/components/ui/skeleton-loaders'
@@ -90,8 +89,7 @@ export default function OwnersPage() {
       <div className="space-y-6">
         {/* Demo Mode Banner */}
         {isDemoMode && (
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 shadow-lg">
-            <span className="text-lg">🧪</span>
+          <div className="bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2">
             <span className="font-medium">デモモード：サンプルデータを表示中</span>
           </div>
         )}
@@ -120,52 +118,20 @@ export default function OwnersPage() {
           </div>
         </div>
 
-        {/* サマリーカード */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* オーナー数 */}
-          <Card className="border-0 shadow-lg bg-gradient-to-r from-green-50 to-emerald-50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">オーナー数</p>
-                  <p className="text-2xl font-bold text-green-600 mt-1">
-                    {owners.length}件
-                  </p>
-                </div>
-                <Award className="w-10 h-10 text-green-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 契約金額合計 */}
-          <Card className="border-0 shadow-lg bg-gradient-to-r from-orange-50 to-amber-50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">契約金額合計</p>
-                  <p className="text-2xl font-bold text-orange-600 mt-1">
-                    ¥{totalContractAmount.toLocaleString()}
-                  </p>
-                </div>
-                <Home className="w-10 h-10 text-orange-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 今期引渡 */}
-          <Card className="border-0 shadow-lg bg-gradient-to-r from-blue-50 to-indigo-50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">{fiscalYear}期引渡</p>
-                  <p className="text-2xl font-bold text-blue-600 mt-1">
-                    {ownersByYear[fiscalYear] || 0}件
-                  </p>
-                </div>
-                <Calendar className="w-10 h-10 text-blue-400" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* サマリー */}
+        <div className="flex flex-wrap items-center gap-6 py-2 border-b">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">オーナー数</span>
+            <span className="text-xl font-bold text-gray-900">{owners.length}件</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">契約金額合計</span>
+            <span className="text-xl font-bold text-gray-900">¥{totalContractAmount.toLocaleString()}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">{fiscalYear}期引渡</span>
+            <span className="text-xl font-bold text-gray-900">{ownersByYear[fiscalYear] || 0}件</span>
+          </div>
         </div>
 
         {/* 検索 */}
@@ -198,8 +164,8 @@ export default function OwnersPage() {
                     <CardContent className="p-5">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl flex items-center justify-center shrink-0">
-                            <Home className="w-6 h-6 text-green-600" />
+                          <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
+                            <Home className="w-6 h-6 text-gray-600" />
                           </div>
                           <div>
                             <div className="flex items-center space-x-3 mb-1">

@@ -333,16 +333,14 @@ export default function CustomerDetailPage() {
 
         {/* 次のアクションガイド（限定会員前は非表示） */}
         {!isPreMember && (
-          <div className="bg-gradient-to-r from-orange-500 to-yellow-500 rounded-xl p-1 shadow-lg">
-            <div className="bg-white rounded-lg">
-              <NextActionGuide
-                customerId={customer.id}
-                pipelineStatus={customer.pipeline_status}
-                landStatus={landStatus}
-                hasFundPlan={fundPlans.length > 0}
-                lastContactDate={customer.updated_at}
-              />
-            </div>
+          <div className="border-2 border-orange-200 rounded-xl">
+            <NextActionGuide
+              customerId={customer.id}
+              pipelineStatus={customer.pipeline_status}
+              landStatus={landStatus}
+              hasFundPlan={fundPlans.length > 0}
+              lastContactDate={customer.updated_at}
+            />
           </div>
         )}
 
@@ -411,9 +409,9 @@ export default function CustomerDetailPage() {
                       </div>
                     </div>
                     {customer.estimated_amount && (
-                      <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg p-3">
+                      <div className="bg-gray-50 rounded-lg p-3">
                         <p className="text-xs text-gray-500">見込金額</p>
-                        <p className="font-bold text-lg text-orange-600">
+                        <p className="font-bold text-lg text-gray-900">
                           ¥{customer.estimated_amount.toLocaleString()}
                         </p>
                       </div>
@@ -439,8 +437,8 @@ export default function CustomerDetailPage() {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <CardContent className="space-y-4">
-                    <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl">
-                      <Home className="w-5 h-5 text-orange-500" />
+                    <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl">
+                      <Home className="w-5 h-5 text-gray-500" />
                       <div>
                         <p className="text-sm text-gray-500">邸名</p>
                         <p className="font-semibold">{customer.tei_name}</p>

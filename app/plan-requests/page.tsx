@@ -300,7 +300,7 @@ export default function PlanRequestsPage() {
               CSV出力
             </Button>
             <Link href="/plan-requests/new">
-              <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
+              <Button className="bg-orange-500 hover:bg-orange-600">
                 <Plus className="w-4 h-4 mr-2" />
                 新規依頼
               </Button>
@@ -308,77 +308,32 @@ export default function PlanRequestsPage() {
           </div>
         </div>
 
-        {/* 統計ダッシュボード */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">進行中</p>
-                  <p className="text-2xl font-bold">{planRequests.filter(r => r.status !== '完了').length}</p>
-                </div>
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">完了</p>
-                  <p className="text-2xl font-bold">{planRequests.filter(r => r.status === '完了').length}</p>
-                </div>
-                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">競合あり</p>
-                  <p className="text-2xl font-bold">{planRequests.filter(r => r.has_competitor).length}</p>
-                </div>
-                <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-orange-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-md bg-green-50">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-green-700">競合勝ち</p>
-                  <p className="text-2xl font-bold text-green-700">
-                    {planRequests.filter(r => (r as PlanRequest & { competitor_result?: string }).competitor_result === 'won').length || 3}
-                  </p>
-                </div>
-                <div className="w-10 h-10 rounded-lg bg-green-200 flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-green-700" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-md bg-red-50">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-red-700">競合負け</p>
-                  <p className="text-2xl font-bold text-red-700">
-                    {planRequests.filter(r => (r as PlanRequest & { competitor_result?: string }).competitor_result === 'lost').length || 1}
-                  </p>
-                </div>
-                <div className="w-10 h-10 rounded-lg bg-red-200 flex items-center justify-center">
-                  <AlertCircle className="w-5 h-5 text-red-700" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* 統計サマリー */}
+        <div className="flex flex-wrap items-center gap-6 py-2 border-b">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">進行中</span>
+            <span className="text-xl font-bold text-gray-900">{planRequests.filter(r => r.status !== '完了').length}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">完了</span>
+            <span className="text-xl font-bold text-gray-900">{planRequests.filter(r => r.status === '完了').length}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">競合あり</span>
+            <span className="text-xl font-bold text-gray-900">{planRequests.filter(r => r.has_competitor).length}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">競合勝ち</span>
+            <span className="text-xl font-bold text-gray-900">
+              {planRequests.filter(r => (r as PlanRequest & { competitor_result?: string }).competitor_result === 'won').length || 3}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">競合負け</span>
+            <span className="text-xl font-bold text-gray-900">
+              {planRequests.filter(r => (r as PlanRequest & { competitor_result?: string }).competitor_result === 'lost').length || 1}
+            </span>
+          </div>
         </div>
 
         {/* アラートサマリ */}
@@ -476,7 +431,7 @@ export default function PlanRequestsPage() {
                   </p>
                   {!searchQuery && statusFilter === 'all' && (
                     <Link href="/plan-requests/new">
-                      <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
+                      <Button className="bg-orange-500 hover:bg-orange-600">
                         <Plus className="w-4 h-4 mr-2" />
                         プラン依頼を作成する
                       </Button>

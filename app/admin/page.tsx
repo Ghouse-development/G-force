@@ -27,70 +27,60 @@ const adminMenus = [
     description: '商品と坪単価を管理',
     icon: Package,
     href: '/admin/products',
-    color: 'from-orange-500 to-yellow-500',
   },
   {
     title: 'マスターデータ管理',
     description: '選択肢やマスターデータを管理',
     icon: Database,
     href: '/admin/master-data',
-    color: 'from-teal-500 to-cyan-500',
   },
   {
     title: 'ユーザー管理',
     description: 'ユーザーと権限を管理',
     icon: Users,
     href: '/admin/users',
-    color: 'from-blue-500 to-blue-600',
   },
   {
     title: 'セキュリティ設定',
     description: 'アクセス権限とセキュリティ',
     icon: Shield,
     href: '/admin/security',
-    color: 'from-red-500 to-rose-500',
   },
   {
     title: 'バックアップ・エクスポート',
     description: 'データのバックアップと出力',
     icon: Download,
     href: '/admin/backup',
-    color: 'from-violet-500 to-purple-500',
   },
   {
     title: 'FC（フランチャイズ）管理',
     description: '加盟店・テナント管理',
     icon: Building,
     href: '/admin/franchise',
-    color: 'from-amber-500 to-orange-500',
   },
   {
     title: '外部連携',
     description: 'kintone・Formbridge・スプレッドシート',
     icon: Link2,
     href: '/admin/integrations',
-    color: 'from-cyan-500 to-blue-500',
   },
   {
     title: 'パイプラインチェックリスト',
     description: '各ステージでやるべきことを設定',
     icon: ClipboardCheck,
     href: '/admin/checklists',
-    color: 'from-emerald-500 to-green-500',
   },
   {
     title: 'ノーコード設定',
     description: 'パイプライン・ジャーニー・土地条件',
     icon: Sliders,
     href: '/admin/nocode-settings',
-    color: 'from-purple-500 to-indigo-500',
   },
   {
     title: '営業目標設定',
     description: '月次目標を設定',
     icon: Target,
     href: '/admin/targets',
-    color: 'from-green-500 to-emerald-500',
     disabled: true,
   },
   {
@@ -98,7 +88,6 @@ const adminMenus = [
     description: '通知タイミングを設定',
     icon: Bell,
     href: '/admin/notifications',
-    color: 'from-indigo-500 to-blue-500',
     disabled: true,
   },
 ]
@@ -134,62 +123,23 @@ export default function AdminPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="border-0 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">商品数</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">14</p>
-                </div>
-                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                  <Package className="w-6 h-6 text-orange-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">ユーザー数</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">24</p>
-                </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <Users className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">テナント</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">1</p>
-                </div>
-                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                  <Building2 className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">システム状態</p>
-                  <p className="text-lg font-bold text-green-600 mt-1">正常稼働中</p>
-                </div>
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-                  <Settings className="w-6 h-6 text-gray-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="flex flex-wrap items-center gap-6 py-2 border-b">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">商品数</span>
+            <span className="text-xl font-bold text-gray-900">14</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">ユーザー数</span>
+            <span className="text-xl font-bold text-gray-900">24</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">テナント</span>
+            <span className="text-xl font-bold text-gray-900">1</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">システム状態</span>
+            <span className="text-lg font-bold text-green-600">正常稼働中</span>
+          </div>
         </div>
 
         {/* Menu Grid */}
@@ -207,10 +157,8 @@ export default function AdminPage() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <div
-                        className={`w-14 h-14 bg-gradient-to-br ${menu.color} rounded-xl flex items-center justify-center shadow-lg`}
-                      >
-                        <Icon className="w-7 h-7 text-white" />
+                      <div className="w-14 h-14 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <Icon className="w-7 h-7 text-gray-600" />
                       </div>
                       <div>
                         <h3 className="text-lg font-bold text-gray-900">
