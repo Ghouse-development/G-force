@@ -134,7 +134,7 @@ export function ActivityTimeline({
             size="sm"
             variant={isAddingNew ? 'outline' : 'default'}
             onClick={() => setIsAddingNew(!isAddingNew)}
-            className={!isAddingNew ? 'bg-gradient-to-r from-orange-500 to-yellow-500' : ''}
+            className={!isAddingNew ? 'bg-orange-500 hover:bg-orange-600' : ''}
           >
             <Plus className="w-4 h-4 mr-1" />
             {isAddingNew ? 'キャンセル' : '活動記録'}
@@ -211,7 +211,7 @@ export function ActivityTimeline({
                 size="sm"
                 onClick={handleSubmit}
                 disabled={!newActivity.title.trim()}
-                className="bg-gradient-to-r from-orange-500 to-yellow-500"
+                className="bg-orange-500 hover:bg-orange-600"
               >
                 記録する
               </Button>

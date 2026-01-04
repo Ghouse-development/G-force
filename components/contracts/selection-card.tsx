@@ -185,7 +185,7 @@ export function ConfirmationCard({
         <button
           type="button"
           onClick={onConfirm}
-          className="flex-1 px-4 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 text-white font-semibold rounded-lg hover:from-orange-600 hover:to-yellow-600 transition-all"
+          className="flex-1 px-4 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-all"
         >
           このままでOK
         </button>

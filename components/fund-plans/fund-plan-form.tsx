@@ -137,7 +137,7 @@ export function FundPlanForm({ initialData, onSave, onExportPDF }: FundPlanFormP
                   variant={viewMode === 'full' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('full')}
-                  className={`h-7 ${viewMode === 'full' ? 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white' : ''}`}
+                  className={`h-7 ${viewMode === 'full' ? 'bg-orange-500 text-white' : ''}`}
                 >
                   <FileSpreadsheet className="w-4 h-4 mr-1" />
                   Excel表示

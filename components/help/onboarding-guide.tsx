@@ -106,7 +106,7 @@ export function OnboardingGuide() {
       <Card className="w-full max-w-lg border-0 shadow-2xl">
         <CardContent className="p-0">
           {/* Header */}
-          <div className="bg-gradient-to-r from-orange-500 to-yellow-500 p-6 rounded-t-lg">
+          <div className="bg-orange-500 p-6 rounded-t-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="text-4xl">{step.icon}</span>
@@ -185,7 +185,7 @@ export function OnboardingGuide() {
             </Button>
             <Button
               onClick={handleNext}
-              className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600"
+              className="bg-orange-500 hover:bg-orange-600"
             >
               {currentStep === GUIDE_STEPS.length - 1 ? '完了' : '次へ'}
               {currentStep < GUIDE_STEPS.length - 1 && <ChevronRight className="w-4 h-4 ml-1" />}

@@ -389,7 +389,7 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
                       キャンセル
                     </Button>
                     <Button
-                      className="bg-gradient-to-r from-orange-500 to-yellow-500"
+                      className="bg-orange-500 hover:bg-orange-600"
                       onClick={() => {
                         setSelections(prev => ({
                           ...prev,
@@ -491,7 +491,7 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
             )}
 
             <div className="flex justify-end pt-4">
-              <Button onClick={nextStep} className="bg-gradient-to-r from-orange-500 to-yellow-500">
+              <Button onClick={nextStep} className="bg-orange-500 hover:bg-orange-600">
                 次へ進む
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -663,7 +663,7 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
               <div className="flex justify-center pt-4">
                 <Button
                   size="lg"
-                  className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600"
+                  className="bg-orange-500 hover:bg-orange-600"
                   onClick={() => {
                     // データを取り込む
                     setSelections(prev => ({
@@ -731,7 +731,7 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
                       </div>
                       <Button
                         size="lg"
-                        className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600"
+                        className="bg-orange-500 hover:bg-orange-600"
                         onClick={() => {
                           // 引継書作成ページに遷移（クエリパラメータで必要な情報を渡す）
                           const params = new URLSearchParams({
@@ -1074,7 +1074,7 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
           <Button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600"
+            className="bg-orange-500 hover:bg-orange-600"
           >
             {isLoading ? (
               <>
@@ -1091,7 +1091,7 @@ export function ContractWizard({ customerId, fundPlanId }: ContractWizardProps) 
         ) : currentStep !== 'campaign' ? (
           <Button
             onClick={nextStep}
-            className="bg-gradient-to-r from-orange-500 to-yellow-500"
+            className="bg-orange-500 hover:bg-orange-600"
           >
             次へ
             <ArrowRight className="w-4 h-4 ml-2" />

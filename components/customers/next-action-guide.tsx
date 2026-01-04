@@ -261,7 +261,7 @@ export function NextActionGuide({
                 >
                   <Button
                     variant={action.variant || 'default'}
-                    className={action.variant === 'default' ? 'bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600' : ''}
+                    className={action.variant === 'default' ? 'bg-orange-500 hover:bg-orange-600' : ''}
                   >
                     {action.icon}
                     <span className="ml-1.5">{action.label}</span>

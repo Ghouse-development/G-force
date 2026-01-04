@@ -190,7 +190,7 @@ function MemoEditor({
         </Button>
         <Button
           size="sm"
-          className="bg-gradient-to-r from-orange-500 to-yellow-500"
+          className="bg-orange-500 hover:bg-orange-600"
           onClick={() => onSave(content)}
           disabled={!content.trim()}
         >

@@ -203,7 +203,7 @@ export function Header() {
                 className={cn(
                   'flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200',
                   isCustomerActive
-                    ? 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white shadow-md'
+                    ? 'bg-orange-500 text-white shadow-md'
                     : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600'
                 )}
               >
@@ -251,7 +251,7 @@ export function Header() {
                 className={cn(
                   'flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200',
                   isDocumentActive
-                    ? 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white shadow-md'
+                    ? 'bg-orange-500 text-white shadow-md'
                     : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600'
                 )}
               >
@@ -299,7 +299,7 @@ export function Header() {
                 className={cn(
                   'flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200',
                   isInfoActive
-                    ? 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white shadow-md'
+                    ? 'bg-orange-500 text-white shadow-md'
                     : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600'
                 )}
               >
