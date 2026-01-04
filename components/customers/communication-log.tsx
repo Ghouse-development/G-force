@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -33,6 +34,7 @@ interface CommunicationLogProps {
   customerId: string
   events?: CustomerJourneyEvent[]
   onAddEvent?: (event: Omit<CustomerJourneyEvent, 'id' | 'created_at' | 'updated_at'>) => void
+  defaultOpen?: boolean
 }
 
 // コミュニケーション種別
@@ -117,7 +119,7 @@ const outcomeConfig: Record<OutcomeType, {
   },
 }
 
-export function CommunicationLog({ customerId, events = [], onAddEvent }: CommunicationLogProps) {
+export function CommunicationLog({ customerId, events = [], onAddEvent, defaultOpen = true }: CommunicationLogProps) {
   const [showDialog, setShowDialog] = useState(false)
   const [showAll, setShowAll] = useState(false)
   const [selectedType, setSelectedType] = useState<CommunicationType>('phone')
@@ -188,17 +190,24 @@ export function CommunicationLog({ customerId, events = [], onAddEvent }: Commun
 
   return (
     <>
-      <Card className="border-0 shadow-lg">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center justify-between text-base">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-blue-600" />
-              コミュニケーション
-            </div>
-            <Badge variant="secondary">{communicationEvents.length}件</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <Collapsible defaultOpen={defaultOpen}>
+        <Card className="border-0 shadow-lg">
+          <CollapsibleTrigger asChild>
+            <CardHeader className="pb-2 cursor-pointer hover:bg-gray-50 transition-colors">
+              <CardTitle className="flex items-center justify-between text-base">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-blue-600" />
+                  コミュニケーション
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">{communicationEvents.length}件</Badge>
+                  <ChevronDown className="w-5 h-5 text-gray-400 transition-transform [&[data-state=open]]:rotate-180" />
+                </div>
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="space-y-4">
           {/* クイックアクションボタン */}
           <div className="grid grid-cols-5 gap-2">
             {(Object.keys(communicationConfig) as CommunicationType[]).map((type) => {
@@ -250,8 +259,10 @@ export function CommunicationLog({ customerId, events = [], onAddEvent }: Commun
               </>
             )}
           </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* 記録追加ダイアログ */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>

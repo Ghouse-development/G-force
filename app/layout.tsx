@@ -4,6 +4,7 @@ import { Toaster } from 'sonner'
 import { AuthProvider } from '@/components/providers/auth-provider'
 import { SyncProvider } from '@/components/providers/sync-provider'
 import { PWAProvider } from '@/components/providers/pwa-provider'
+import { ErrorBoundary } from '@/components/error-boundary'
 import './globals.css'
 
 const notoSansJP = Noto_Sans_JP({
@@ -46,13 +47,15 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className={`${notoSansJP.variable} font-sans antialiased bg-gray-50`}>
-        <PWAProvider>
-          <AuthProvider>
-            <SyncProvider>
-              {children}
-            </SyncProvider>
-          </AuthProvider>
-        </PWAProvider>
+        <ErrorBoundary>
+          <PWAProvider>
+            <AuthProvider>
+              <SyncProvider>
+                {children}
+              </SyncProvider>
+            </AuthProvider>
+          </PWAProvider>
+        </ErrorBoundary>
         <Toaster
           position="top-right"
           richColors

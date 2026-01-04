@@ -49,6 +49,7 @@ import {
 } from 'lucide-react'
 import { useFundPlanStore } from '@/store'
 import { formatCurrency, calculateFundPlan } from '@/lib/fund-plan/calculations'
+import { downloadSampleFundPlan } from '@/lib/sample-excel-export'
 import { toast } from 'sonner'
 
 const statusConfig = {
@@ -111,12 +112,29 @@ export default function FundPlansPage() {
             </div>
             <p className="text-gray-600 mt-1">資金計画書の作成・管理</p>
           </div>
-          <Link href="/fund-plans/new">
-            <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
-              <Plus className="w-4 h-4 mr-2" />
-              新規作成
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  toast.info('サンプルExcelを生成中...')
+                  await downloadSampleFundPlan()
+                  toast.success('サンプルをダウンロードしました')
+                } catch {
+                  toast.error('ダウンロードに失敗しました')
+                }
+              }}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              サンプル
             </Button>
-          </Link>
+            <Link href="/customers">
+              <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
+                <Plus className="w-4 h-4 mr-2" />
+                新規作成
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}

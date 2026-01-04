@@ -1,15 +1,43 @@
 'use client'
 
-import { Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { Suspense, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Layout } from '@/components/layout/layout'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { ContractWizard } from '@/components/contracts/contract-wizard'
+import { useCustomerStore } from '@/store'
+import { toast } from 'sonner'
 
 function NewContractRequestContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
-  const customerId = searchParams.get('customer_id') || undefined
+  const { customers } = useCustomerStore()
+
+  // customer または customer_id パラメータに対応
+  const customerId = searchParams.get('customer') || searchParams.get('customer_id') || undefined
   const fundPlanId = searchParams.get('fund_plan_id') || undefined
+
+  // 顧客情報を取得
+  const customer = customerId ? customers.find(c => c.id === customerId) : undefined
+
+  // 顧客IDがない場合はリダイレクト
+  useEffect(() => {
+    if (!customerId) {
+      toast.error('お客様ページから書類を作成してください')
+      router.push('/customers')
+    }
+  }, [customerId, router])
+
+  // 建築申込以降のステータスでのみ作成可能
+  const allowedStatuses = ['建築申込', 'プラン提出', '内定', '変更契約前', '変更契約後']
+  const canCreateDocuments = customer && allowedStatuses.includes(customer.pipeline_status)
+
+  useEffect(() => {
+    if (customer && !canCreateDocuments) {
+      toast.error('契約依頼は建築申込以降のお客様のみ作成可能です')
+      router.push(`/customers/${customerId}`)
+    }
+  }, [customer, canCreateDocuments, customerId, router])
 
   return (
     <div className="space-y-6">

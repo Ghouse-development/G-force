@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, Suspense } from 'react'
+import { useCallback, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Layout } from '@/components/layout/layout'
 import { Button } from '@/components/ui/button'
@@ -15,13 +15,22 @@ import { useFundPlanStore, useAuthStore, useCustomerStore } from '@/store'
 function NewFundPlanContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const customerId = searchParams.get('customerId')
+  // customer または customerId パラメータに対応
+  const customerId = searchParams.get('customer') || searchParams.get('customerId')
 
   const { addFundPlan } = useFundPlanStore()
   const { user } = useAuthStore()
   const { getCustomer } = useCustomerStore()
 
   const customer = customerId ? getCustomer(customerId) : null
+
+  // 顧客IDがない場合はリダイレクト
+  useEffect(() => {
+    if (!customerId) {
+      toast.error('お客様ページから書類を作成してください')
+      router.push('/customers')
+    }
+  }, [customerId, router])
 
   const handleSave = async (data: FundPlanData) => {
     try {

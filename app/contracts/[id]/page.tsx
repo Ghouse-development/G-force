@@ -62,7 +62,7 @@ import {
   checkContractPermission,
 } from '@/types/database'
 import { generateContractPDF } from '@/lib/contract/pdf-generator'
-import { exportContractToExcel, type ContractData } from '@/lib/excel-export'
+import { exportContractToExcel, type LegacyContractData } from '@/lib/excel-export'
 import { RelatedDocuments } from '@/components/documents/related-documents'
 
 // アイコンマッピング
@@ -313,7 +313,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
     if (!contract) return
     try {
       const totalAmount = contract.total_amount || 0
-      const contractData: ContractData = {
+      const contractData: LegacyContractData = {
         contractNumber: contract.contract_number || '',
         contractDate: contract.contract_date || new Date().toISOString(),
         customerName: contract.customer_name || '',

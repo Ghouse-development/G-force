@@ -27,7 +27,6 @@ import {
   PIPELINE_CONFIG,
   POST_CONTRACT_STATUS_ORDER,
   POST_CONTRACT_CHECKLIST_ITEMS,
-  getCurrentFiscalYear,
 } from '@/types/database'
 import { PipelineKanban } from '@/components/customers/pipeline-kanban'
 import { PostContractChecklist } from '@/components/post-contract/post-contract-checklist'
@@ -39,7 +38,6 @@ export default function PostContractPage() {
   const [mounted, setMounted] = useState(false)
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null)
   const [checklistProgress, setChecklistProgress] = useState<Record<string, CustomerChecklistProgress[]>>({})
-  const fiscalYear = getCurrentFiscalYear()
 
   useEffect(() => {
     setMounted(true)
@@ -159,7 +157,7 @@ export default function PostContractPage() {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">契約後お客様管理</h1>
             <p className="text-gray-600 mt-1">
-              {fiscalYear}期 | 全{postContractCustomers.length}件
+              引渡し前顧客 | 全{postContractCustomers.length}件
             </p>
           </div>
           <div className="flex items-center space-x-3">

@@ -1,6 +1,6 @@
 // 請負契約書の型定義（Excelテンプレート完全準拠）
 
-import type { ProductType, FloorCount, BuildingStructure } from './fund-plan'
+import type { ProductType, FloorCount, BuildingStructure, FundPlanData } from './fund-plan'
 
 // 建築士の種類
 export type ArchitectType = '一級' | '二級'
@@ -258,68 +258,218 @@ export const createDefaultContractData = (): ContractData => {
   }
 }
 
-// 資金計画書データから請負契約書データを生成
+// 資金計画書データから請負契約書データを完全生成
+
+/**
+ * 資金計画書から工事価格を計算
+ */
+export function calculateConstructionPriceFromFundPlan(fundPlan: FundPlanData): number {
+  // 建物本体工事
+  const buildingMainCost = fundPlan.constructionArea * fundPlan.pricePerTsubo
+
+  // 付帯工事A
+  const incidentalA = Object.values(fundPlan.incidentalCostA).reduce(
+    (sum, v) => sum + (typeof v === 'number' ? v : 0),
+    0
+  )
+
+  // 付帯工事B（数値フィールドのみ）
+  const incidentalB =
+    (fundPlan.incidentalCostB.solarPanelCost || 0) +
+    (fundPlan.incidentalCostB.storageBatteryCost || 0) +
+    (fundPlan.incidentalCostB.eaveOverhangCost || 0) +
+    (fundPlan.incidentalCostB.lowerRoofCost || 0) +
+    (fundPlan.incidentalCostB.balconyVoidCost || 0) +
+    (fundPlan.incidentalCostB.threeStoryDifference || 0) +
+    (fundPlan.incidentalCostB.roofLengthExtra || 0) +
+    (fundPlan.incidentalCostB.narrowRoadExtra || 0) +
+    (fundPlan.incidentalCostB.areaSizeExtra || 0) +
+    (fundPlan.incidentalCostB.lightingCost || 0) +
+    (fundPlan.incidentalCostB.optionCost || 0)
+
+  // 付帯工事C（数値フィールドのみ）
+  const incidentalC =
+    (fundPlan.incidentalCostC.fireProtectionCost || 0) +
+    (fundPlan.incidentalCostC.demolitionCost || 0) +
+    (fundPlan.incidentalCostC.applicationManagementFee || 0) +
+    (fundPlan.incidentalCostC.waterDrainageFee || 0) +
+    (fundPlan.incidentalCostC.groundImprovementFee || 0) +
+    (fundPlan.incidentalCostC.soilDisposalFee || 0) +
+    (fundPlan.incidentalCostC.electricProtectionPipe || 0) +
+    (fundPlan.incidentalCostC.narrowRoadCubicExtra || 0) +
+    (fundPlan.incidentalCostC.deepFoundationExtra || 0) +
+    (fundPlan.incidentalCostC.elevationExtra || 0) +
+    (fundPlan.incidentalCostC.flagLotExtra || 0) +
+    (fundPlan.incidentalCostC.skyFactorExtra || 0) +
+    (fundPlan.incidentalCostC.quasiFireproofExtra || 0) +
+    (fundPlan.incidentalCostC.roadTimeRestrictionExtra || 0)
+
+  return buildingMainCost + incidentalA + incidentalB + incidentalC
+}
+
+/**
+ * 日付文字列から年月日を抽出
+ */
+function parseDateToYMD(dateStr: string): { year: number; month: number; day: number } {
+  if (!dateStr) {
+    const now = new Date()
+    return { year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() }
+  }
+  const date = new Date(dateStr)
+  return {
+    year: date.getFullYear(),
+    month: date.getMonth() + 1,
+    day: date.getDate(),
+  }
+}
+
+/**
+ * 資金計画書データから請負契約書データを生成（完全版）
+ *
+ * マッピング項目数: 約50項目
+ */
 export const createContractDataFromFundPlan = (
-  fundPlan: {
-    customerName: string
-    teiName: string
-    constructionAddress: string
-    buildingStructure: string
-    floorCount: number
-    constructionArea: number
-    fireProtectionZone: string
-    productType: string
-    salesRep: string
-    schedule: {
-      buildingContract: string
-      constructionStart: string
-      completion: string
-    }
-    paymentPlanConstruction: {
-      applicationFee: { customerAmount: number; paymentDate: string }
-      contractFee: { customerAmount: number; paymentDate: string }
-      interimPayment1: { customerAmount: number; paymentDate: string }
-      interimPayment2: { customerAmount: number; paymentDate: string }
-    }
+  fundPlan: FundPlanData,
+  options?: {
+    customerAddress?: string
+    customerName2?: string
+    customerAddress2?: string
+    ownershipType?: OwnershipType
   }
 ): Partial<ContractData> => {
-  // 建物契約日から年月日を抽出
-  let contractYear = new Date().getFullYear()
-  let contractMonth = new Date().getMonth() + 1
-  let contractDay = new Date().getDate()
+  // 契約日を年月日に分解
+  const contractDateParts = parseDateToYMD(fundPlan.schedule.buildingContract)
 
-  if (fundPlan.schedule.buildingContract) {
-    const date = new Date(fundPlan.schedule.buildingContract)
-    contractYear = date.getFullYear()
-    contractMonth = date.getMonth() + 1
-    contractDay = date.getDate()
-  }
+  // 工事価格を計算
+  const constructionPrice = calculateConstructionPriceFromFundPlan(fundPlan)
+  const totalWithTax = Math.floor(constructionPrice * 1.1)
+
+  // 支払計画を計算（標準比率から）
+  const applicationFee = fundPlan.paymentPlanConstruction.applicationFee.customerAmount || 30000
+  const contractFee = fundPlan.paymentPlanConstruction.contractFee.customerAmount ||
+    Math.floor(totalWithTax * (fundPlan.paymentPlanConstruction.contractFee.standardRate || 0.1))
+  const interimPayment1 = fundPlan.paymentPlanConstruction.interimPayment1.customerAmount ||
+    Math.floor(totalWithTax * (fundPlan.paymentPlanConstruction.interimPayment1.standardRate || 0.3))
+  const interimPayment2 = fundPlan.paymentPlanConstruction.interimPayment2.customerAmount ||
+    Math.floor(totalWithTax * (fundPlan.paymentPlanConstruction.interimPayment2.standardRate || 0.3))
+
+  // 床面積を計算（坪→㎡変換: 1坪 = 3.30579㎡）
+  const tsuboToSqm = 3.30579
+  const totalSqm = fundPlan.constructionArea * tsuboToSqm
+  const floor1Ratio = fundPlan.floorCount === 1 ? 1.0 : 0.55 // 2階建ての場合1階は約55%
+  const floor2Ratio = fundPlan.floorCount >= 2 ? 0.45 : 0
+  const floor3Ratio = fundPlan.floorCount >= 3 ? 0.15 : 0
+
+  // 太陽光パネルがある場合、太陽光契約情報を設定
+  const hasSolar = fundPlan.incidentalCostB.solarPanelKw > 0
+  const solarContractParts = parseDateToYMD(fundPlan.schedule.buildingContract)
 
   return {
-    constructionName: `${fundPlan.teiName}新築工事`,
+    // 基本情報
+    constructionName: fundPlan.constructionName || `${fundPlan.teiName}新築工事`,
     customerName: fundPlan.customerName,
+    customerAddress: options?.customerAddress || fundPlan.constructionAddress,
+    customerName2: options?.customerName2 || '',
+    customerAddress2: options?.customerAddress2 || '',
+
+    // 担当者情報
+    ownershipType: options?.ownershipType || '単独',
+    salesRep: fundPlan.salesRep,
+
+    // 契約日
+    contractYear: contractDateParts.year,
+    contractMonth: contractDateParts.month,
+    contractDay: contractDateParts.day,
+    contractDate: fundPlan.schedule.buildingContract,
+
+    // 建物情報
     constructionSite: fundPlan.constructionAddress,
     structure: fundPlan.buildingStructure,
     floorCount: fundPlan.floorCount as FloorCount,
+    buildingCount: 1,
+    floor1Area: Math.round(totalSqm * floor1Ratio * 100) / 100,
+    floor1Included: true,
+    floor2Area: Math.round(totalSqm * floor2Ratio * 100) / 100,
+    floor2Included: fundPlan.floorCount >= 2,
+    floor3Area: Math.round(totalSqm * floor3Ratio * 100) / 100,
+    floor3Included: fundPlan.floorCount >= 3,
     constructionArea: fundPlan.constructionArea,
-    salesRep: fundPlan.salesRep,
-    productType: fundPlan.productType as ProductType,
+    constructionAreaIncluded: true,
 
-    contractYear,
-    contractMonth,
-    contractDay,
-    contractDate: fundPlan.schedule.buildingContract,
-
+    // 工期
     startDate: fundPlan.schedule.constructionStart,
     completionDate: fundPlan.schedule.completion,
+    deliveryDate: fundPlan.schedule.finalPaymentDate || '',
 
-    payment1Amount: fundPlan.paymentPlanConstruction.applicationFee.customerAmount,
+    // 金額
+    constructionPrice,
+
+    // 支払計画
+    payment1Amount: applicationFee,
     payment1Date: fundPlan.paymentPlanConstruction.applicationFee.paymentDate,
-    payment2Amount: fundPlan.paymentPlanConstruction.contractFee.customerAmount,
+    payment2Amount: contractFee,
     payment2Date: fundPlan.paymentPlanConstruction.contractFee.paymentDate,
-    payment3Amount: fundPlan.paymentPlanConstruction.interimPayment1.customerAmount,
+    payment3Amount: interimPayment1,
     payment3Date: fundPlan.paymentPlanConstruction.interimPayment1.paymentDate,
-    payment4Amount: fundPlan.paymentPlanConstruction.interimPayment2.customerAmount,
+    payment4Amount: interimPayment2,
     payment4Date: fundPlan.paymentPlanConstruction.interimPayment2.paymentDate,
+
+    // 商品タイプ
+    productType: fundPlan.productType as ProductType,
+
+    // その他（デフォルト値）
+    contractNumber: '', // 自動生成される
+    noWorkDays: '日曜日・祝祭日',
+    noWorkHours: '7:00-8:00, 18:00-21:00',
+    defectInsuranceCompany: '株式会社　日本住宅保証検査機構',
+
+    // 重要事項説明者（システム設定から取得すべき - ここではデフォルト）
+    importantMatterExplainer: {
+      name: '',
+      architectType: '一級',
+      registrationNumber: '',
+      registrationAuthority: '大臣',
+    },
+
+    // 太陽光契約（太陽光パネルがある場合）
+    solarContract: hasSolar ? {
+      contractYear: solarContractParts.year,
+      contractMonth: solarContractParts.month,
+      contractDay: solarContractParts.day,
+      payment1: Math.floor(fundPlan.incidentalCostB.solarPanelCost * 0.5),
+      payment1Date: fundPlan.schedule.buildingContract,
+      payment2: Math.ceil(fundPlan.incidentalCostB.solarPanelCost * 0.5),
+      payment2Date: fundPlan.schedule.completion,
+    } : undefined,
+
+    // 変更契約（初期値は空）
+    changeContract: {
+      changeContractYear: 0,
+      changeContractMonth: 0,
+      changeContractDay: 0,
+      floorCount: fundPlan.floorCount as FloorCount,
+      buildingCount: 1,
+      floor1Area: Math.round(totalSqm * floor1Ratio * 100) / 100,
+      floor1Included: true,
+      floor2Area: Math.round(totalSqm * floor2Ratio * 100) / 100,
+      floor2Included: fundPlan.floorCount >= 2,
+      floor3Area: Math.round(totalSqm * floor3Ratio * 100) / 100,
+      floor3Included: fundPlan.floorCount >= 3,
+      constructionArea: fundPlan.constructionArea,
+      constructionAreaIncluded: true,
+      startDate: '',
+      completionDate: '',
+      deliveryDate: '',
+      contractDate: '',
+      constructionPrice: 0,
+      payment1: 0,
+      payment1Date: '',
+      payment2: 0,
+      payment2Date: '',
+      payment3: 0,
+      payment3Date: '',
+      payment4: 0,
+      payment4Date: '',
+    },
   }
 }

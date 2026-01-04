@@ -46,6 +46,7 @@ import { NextActionGuide } from '@/components/customers/next-action-guide'
 import { AISalesAssistant } from '@/components/customers/ai-sales-assistant'
 import { CommunicationLog } from '@/components/customers/communication-log'
 import { DocumentWorkflowProgress } from '@/components/customers/document-workflow-progress'
+import { SalesRepDropdown } from '@/components/customers/sales-rep-dropdown'
 import { useKintoneStore } from '@/store/kintone-store'
 import { toast } from 'sonner'
 import {
@@ -59,7 +60,12 @@ import {
   PIPELINE_ORDER,
   PIPELINE_LOST,
   LEAD_SOURCE_CONFIG,
+  PRE_MEMBER_STATUS_ORDER,
+  PRE_CONTRACT_STATUS_ORDER,
+  POST_CONTRACT_STATUS_ORDER,
 } from '@/types/database'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { ChevronDown } from 'lucide-react'
 
 // Mock data
 const mockCustomer: Customer = {
@@ -253,6 +259,22 @@ export default function CustomerDetailPage() {
     )
   }
 
+  // 建築申込以降のステータスでのみ書類作成可能
+  const canCreateDocuments = ['建築申込', 'プラン提出', '内定', '変更契約前', '変更契約後'].includes(
+    customer.pipeline_status
+  )
+
+  // 限定会員前の顧客かどうか（タブ制限用）
+  const isPreMember = PRE_MEMBER_STATUS_ORDER.includes(customer.pipeline_status as typeof PRE_MEMBER_STATUS_ORDER[number])
+
+  // 進捗率を計算
+  const progressPercent = (() => {
+    const allStatuses = [...PRE_MEMBER_STATUS_ORDER, ...PRE_CONTRACT_STATUS_ORDER, ...POST_CONTRACT_STATUS_ORDER, 'オーナー']
+    const currentIndex = allStatuses.indexOf(customer.pipeline_status)
+    if (currentIndex === -1) return 0
+    return Math.round(((currentIndex + 1) / allStatuses.length) * 100)
+  })()
+
   const statusConfig = PIPELINE_CONFIG[customer.pipeline_status] || {
     label: customer.pipeline_status || '未設定',
     color: 'text-gray-600',
@@ -290,8 +312,13 @@ export default function CustomerDetailPage() {
             </div>
           </div>
 
-          {/* ステータス変更 */}
+          {/* ステータス変更・営業割り振り */}
           <div className="flex items-center gap-2 ml-11 md:ml-0">
+            {/* 営業割り振り（限定会員前は特に重要） */}
+            <SalesRepDropdown
+              customerId={customer.id}
+              currentAssignee={customer.assigned_to}
+            />
             <Select
               value={customer.pipeline_status}
               onValueChange={(value) => handleStatusChange(value as PipelineStatus)}
@@ -316,239 +343,280 @@ export default function CustomerDetailPage() {
           </div>
         </div>
 
-        {/* 書類ワークフロー進捗 */}
-        <DocumentWorkflowProgress customerId={customer.id} />
-
-        {/* 次のステップカード */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <Link href={`/fund-plans/new?customer=${customer.id}`}>
-            <Card className={`border-2 hover:shadow-lg transition-all cursor-pointer h-full ${
-              fundPlans.length === 0
-                ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-200'
-                : 'border-gray-200 hover:border-blue-300'
-            }`}>
-              <CardContent className="p-4 text-center">
-                <div className={`w-12 h-12 mx-auto rounded-xl flex items-center justify-center mb-2 ${
-                  fundPlans.length === 0 ? 'bg-blue-500' : 'bg-blue-100'
-                }`}>
-                  <FileText className={`w-6 h-6 ${fundPlans.length === 0 ? 'text-white' : 'text-blue-600'}`} />
-                </div>
-                <p className="font-bold text-sm text-gray-900">資金計画書</p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {fundPlans.length === 0 ? '作成する' : `${fundPlans.length}件作成済`}
-                </p>
-                {fundPlans.length === 0 && (
-                  <Badge className="mt-2 bg-blue-500 text-white text-[10px]">まずはこちら</Badge>
-                )}
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href={`/plan-requests/new?customer=${customer.id}`}>
-            <Card className={`border-2 hover:shadow-lg transition-all cursor-pointer h-full ${
-              fundPlans.length > 0
-                ? 'border-orange-300 bg-orange-50 ring-2 ring-orange-200'
-                : 'border-gray-200 opacity-60'
-            }`}>
-              <CardContent className="p-4 text-center">
-                <div className={`w-12 h-12 mx-auto rounded-xl flex items-center justify-center mb-2 ${
-                  fundPlans.length > 0 ? 'bg-orange-500' : 'bg-gray-100'
-                }`}>
-                  <FileEdit className={`w-6 h-6 ${fundPlans.length > 0 ? 'text-white' : 'text-gray-400'}`} />
-                </div>
-                <p className="font-bold text-sm text-gray-900">プラン依頼</p>
-                <p className="text-xs text-gray-500 mt-0.5">設計依頼</p>
-                {fundPlans.length > 0 && (
-                  <Badge className="mt-2 bg-orange-500 text-white text-[10px]">次のステップ</Badge>
-                )}
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href={`/contract-requests/new?customer=${customer.id}`}>
-            <Card className="border-2 border-gray-200 hover:border-green-300 hover:shadow-lg transition-all cursor-pointer h-full">
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 mx-auto bg-green-100 rounded-xl flex items-center justify-center mb-2">
-                  <FileSignature className="w-6 h-6 text-green-600" />
-                </div>
-                <p className="font-bold text-sm text-gray-900">契約依頼</p>
-                <p className="text-xs text-gray-500 mt-0.5">契約書作成</p>
-              </CardContent>
-            </Card>
-          </Link>
+        {/* 進捗バー */}
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">進捗状況</span>
+            <span className="text-sm text-gray-500">{progressPercent}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-gradient-to-r from-orange-400 to-orange-500 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          <div className="flex justify-between mt-2 text-xs text-gray-400">
+            <span>反響</span>
+            <span>契約</span>
+            <span>引渡し</span>
+          </div>
         </div>
 
-        {/* 次のアクションガイド */}
-        <NextActionGuide
-          customerId={customer.id}
-          pipelineStatus={customer.pipeline_status}
-          landStatus={landStatus}
-          hasFundPlan={fundPlans.length > 0}
-          lastContactDate={customer.updated_at}
-        />
+        {/* 次のアクションガイド（限定会員前は非表示） - 最上部で目立たせる */}
+        {!isPreMember && (
+          <div className="bg-gradient-to-r from-orange-500 to-yellow-500 rounded-xl p-1 shadow-lg">
+            <div className="bg-white rounded-lg">
+              <NextActionGuide
+                customerId={customer.id}
+                pipelineStatus={customer.pipeline_status}
+                landStatus={landStatus}
+                hasFundPlan={fundPlans.length > 0}
+                lastContactDate={customer.updated_at}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* 書類ワークフロー進捗（限定会員前は非表示） */}
+        {!isPreMember && <DocumentWorkflowProgress customerId={customer.id} />}
+
+        {/* 統合された書類作成セクション（限定会員前は非表示） */}
+        {!isPreMember && (
+          <Card className="border-0 shadow-md">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-orange-100 to-yellow-100 rounded-lg flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">書類作成</p>
+                    <p className="text-xs text-gray-500">
+                      {fundPlans.length === 0 ? 'まずは資金計画書を作成' : `資金計画書 ${fundPlans.length}件作成済`}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link href={`/fund-plans/new?customer=${customer.id}`}>
+                    <Button size="sm" variant={fundPlans.length === 0 ? "default" : "outline"} className={fundPlans.length === 0 ? "bg-gradient-to-r from-orange-500 to-yellow-500" : ""}>
+                      <FileText className="w-4 h-4 mr-1" />
+                      資金計画
+                    </Button>
+                  </Link>
+                  {canCreateDocuments ? (
+                    <>
+                      <Link href={`/plan-requests/new?customer=${customer.id}`}>
+                        <Button size="sm" variant="outline">
+                          <FileEdit className="w-4 h-4 mr-1" />
+                          プラン
+                        </Button>
+                      </Link>
+                      <Link href={`/contract-requests/new?customer=${customer.id}`}>
+                        <Button size="sm" variant="outline">
+                          <FileSignature className="w-4 h-4 mr-1" />
+                          契約
+                        </Button>
+                      </Link>
+                    </>
+                  ) : (
+                    <span className="text-xs text-gray-400">建築申込以降でプラン・契約作成可</span>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Customer Info */}
           <div className="lg:col-span-1 space-y-6">
-            {/* お問い合わせ情報 */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <Megaphone className="w-5 h-5 mr-2 text-orange-500" />
-                  お問い合わせ情報
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-500">反響経路</p>
-                    <p className="font-medium">
-                      {leadSourceConfig?.label || '未設定'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">反響日</p>
-                    <p className="font-medium">
-                      {customer.lead_date
-                        ? new Date(customer.lead_date).toLocaleDateString('ja-JP')
-                        : '未設定'}
-                    </p>
-                  </div>
-                </div>
-                {customer.estimated_amount && (
-                  <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg p-3">
-                    <p className="text-xs text-gray-500">見込金額</p>
-                    <p className="font-bold text-lg text-orange-600">
-                      ¥{customer.estimated_amount.toLocaleString()}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* 顧客情報 */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <User className="w-5 h-5 mr-2 text-orange-500" />
-                  顧客情報
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl">
-                  <Home className="w-5 h-5 text-orange-500" />
-                  <div>
-                    <p className="text-sm text-gray-500">邸名</p>
-                    <p className="font-semibold">{customer.tei_name}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <UsersIcon className="w-5 h-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-500">名義</p>
-                      <p className="font-medium">
-                        {customer.ownership_type === '共有' ? '共有名義' : '単独名義'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {customer.phone && (
-                    <div className="flex items-center space-x-3">
-                      <Phone className="w-5 h-5 text-gray-400" />
+            {/* お問い合わせ情報（折りたたみ可能） */}
+            <Collapsible defaultOpen={false}>
+              <Card className="border-0 shadow-lg">
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
+                    <CardTitle className="flex items-center justify-between text-lg">
+                      <div className="flex items-center">
+                        <Megaphone className="w-5 h-5 mr-2 text-orange-500" />
+                        お問い合わせ情報
+                      </div>
+                      <ChevronDown className="w-5 h-5 text-gray-400 transition-transform [&[data-state=open]]:rotate-180" />
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-gray-500">電話番号</p>
-                        <a href={`tel:${customer.phone}`} className="font-medium text-blue-600">
-                          {customer.phone}
-                        </a>
+                        <p className="text-xs text-gray-500">反響経路</p>
+                        <p className="font-medium">
+                          {leadSourceConfig?.label || '未設定'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">反響日</p>
+                        <p className="font-medium">
+                          {customer.lead_date
+                            ? new Date(customer.lead_date).toLocaleDateString('ja-JP')
+                            : '未設定'}
+                        </p>
                       </div>
                     </div>
-                  )}
+                    {customer.estimated_amount && (
+                      <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg p-3">
+                        <p className="text-xs text-gray-500">見込金額</p>
+                        <p className="font-bold text-lg text-orange-600">
+                          ¥{customer.estimated_amount.toLocaleString()}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
 
-                  {customer.email && (
-                    <div className="flex items-center space-x-3">
-                      <Mail className="w-5 h-5 text-gray-400" />
+            {/* 顧客情報（折りたたみ可能） */}
+            <Collapsible defaultOpen={false}>
+              <Card className="border-0 shadow-lg">
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
+                    <CardTitle className="flex items-center justify-between text-lg">
+                      <div className="flex items-center">
+                        <User className="w-5 h-5 mr-2 text-orange-500" />
+                        顧客情報
+                      </div>
+                      <ChevronDown className="w-5 h-5 text-gray-400 transition-transform [&[data-state=open]]:rotate-180" />
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl">
+                      <Home className="w-5 h-5 text-orange-500" />
                       <div>
-                        <p className="text-sm text-gray-500">メール</p>
-                        <a href={`mailto:${customer.email}`} className="font-medium text-blue-600">
-                          {customer.email}
-                        </a>
+                        <p className="text-sm text-gray-500">邸名</p>
+                        <p className="font-semibold">{customer.tei_name}</p>
                       </div>
                     </div>
-                  )}
 
-                  {customer.address && (
-                    <div className="flex items-center space-x-3">
-                      <MapPin className="w-5 h-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-500">住所</p>
-                        <p className="font-medium">{customer.address}</p>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <UsersIcon className="w-5 h-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm text-gray-500">名義</p>
+                          <p className="font-medium">
+                            {customer.ownership_type === '共有' ? '共有名義' : '単独名義'}
+                          </p>
+                        </div>
                       </div>
+
+                      {customer.phone && (
+                        <div className="flex items-center space-x-3">
+                          <Phone className="w-5 h-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm text-gray-500">電話番号</p>
+                            <a href={`tel:${customer.phone}`} className="font-medium text-blue-600">
+                              {customer.phone}
+                            </a>
+                          </div>
+                        </div>
+                      )}
+
+                      {customer.email && (
+                        <div className="flex items-center space-x-3">
+                          <Mail className="w-5 h-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm text-gray-500">メール</p>
+                            <a href={`mailto:${customer.email}`} className="font-medium text-blue-600">
+                              {customer.email}
+                            </a>
+                          </div>
+                        </div>
+                      )}
+
+                      {customer.address && (
+                        <div className="flex items-center space-x-3">
+                          <MapPin className="w-5 h-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm text-gray-500">住所</p>
+                            <p className="font-medium">{customer.address}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
 
-            {/* 進捗タイムライン */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <TrendingUp className="w-5 h-5 mr-2 text-orange-500" />
-                  進捗タイムライン
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {customer.lead_date && (
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm">
-                      反響: {new Date(customer.lead_date).toLocaleDateString('ja-JP')}
-                    </span>
-                  </div>
-                )}
-                {customer.event_date && (
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="w-4 h-4 text-purple-500" />
-                    <span className="text-sm">
-                      イベント参加: {new Date(customer.event_date).toLocaleDateString('ja-JP')}
-                    </span>
-                  </div>
-                )}
-                {customer.meeting_date && (
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="w-4 h-4 text-orange-500" />
-                    <span className="text-sm">
-                      面談: {new Date(customer.meeting_date).toLocaleDateString('ja-JP')}
-                    </span>
-                  </div>
-                )}
-                {customer.application_date && (
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="w-4 h-4 text-indigo-500" />
-                    <span className="text-sm">
-                      建築申込: {new Date(customer.application_date).toLocaleDateString('ja-JP')}
-                    </span>
-                  </div>
-                )}
-                {customer.contract_date && (
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">
-                      契約: {new Date(customer.contract_date).toLocaleDateString('ja-JP')}
-                    </span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* 進捗タイムライン（折りたたみ可能） */}
+            <Collapsible defaultOpen={false}>
+              <Card className="border-0 shadow-lg">
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
+                    <CardTitle className="flex items-center justify-between text-lg">
+                      <div className="flex items-center">
+                        <TrendingUp className="w-5 h-5 mr-2 text-orange-500" />
+                        進捗タイムライン
+                      </div>
+                      <ChevronDown className="w-5 h-5 text-gray-400 transition-transform [&[data-state=open]]:rotate-180" />
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-3">
+                    {customer.lead_date && (
+                      <div className="flex items-center space-x-3">
+                        <Calendar className="w-4 h-4 text-blue-500" />
+                        <span className="text-sm">
+                          反響: {new Date(customer.lead_date).toLocaleDateString('ja-JP')}
+                        </span>
+                      </div>
+                    )}
+                    {customer.event_date && (
+                      <div className="flex items-center space-x-3">
+                        <Calendar className="w-4 h-4 text-purple-500" />
+                        <span className="text-sm">
+                          イベント参加: {new Date(customer.event_date).toLocaleDateString('ja-JP')}
+                        </span>
+                      </div>
+                    )}
+                    {customer.meeting_date && (
+                      <div className="flex items-center space-x-3">
+                        <Calendar className="w-4 h-4 text-orange-500" />
+                        <span className="text-sm">
+                          面談: {new Date(customer.meeting_date).toLocaleDateString('ja-JP')}
+                        </span>
+                      </div>
+                    )}
+                    {customer.application_date && (
+                      <div className="flex items-center space-x-3">
+                        <Calendar className="w-4 h-4 text-indigo-500" />
+                        <span className="text-sm">
+                          建築申込: {new Date(customer.application_date).toLocaleDateString('ja-JP')}
+                        </span>
+                      </div>
+                    )}
+                    {customer.contract_date && (
+                      <div className="flex items-center space-x-3">
+                        <Calendar className="w-4 h-4 text-green-500" />
+                        <span className="text-sm">
+                          契約: {new Date(customer.contract_date).toLocaleDateString('ja-JP')}
+                        </span>
+                      </div>
+                    )}
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
 
-            {/* コミュニケーションログ */}
+            {/* コミュニケーションログ（折りたたみ可能） */}
             <CommunicationLog
               customerId={customer.id}
               events={journeyEvents}
               onAddEvent={handleAddEvent}
+              defaultOpen={false}
             />
           </div>
 
@@ -560,30 +628,36 @@ export default function CustomerDetailPage() {
                   <TrendingUp className="w-4 h-4" />
                   <span className="hidden sm:inline">ジャーニー</span>
                 </TabsTrigger>
-                <TabsTrigger value="documents" className="flex items-center gap-1 px-2 md:px-3">
-                  <FileText className="w-4 h-4" />
-                  <span className="hidden sm:inline">書類</span>
-                </TabsTrigger>
+                {!isPreMember && (
+                  <TabsTrigger value="documents" className="flex items-center gap-1 px-2 md:px-3">
+                    <FileText className="w-4 h-4" />
+                    <span className="hidden sm:inline">書類</span>
+                  </TabsTrigger>
+                )}
                 <TabsTrigger value="reception" className="flex items-center gap-1 px-2 md:px-3">
                   <ClipboardList className="w-4 h-4" />
                   <span className="hidden sm:inline">受付</span>
                 </TabsTrigger>
-                <TabsTrigger value="hearing" className="flex items-center gap-1 px-2 md:px-3">
-                  <FileQuestion className="w-4 h-4" />
-                  <span className="hidden sm:inline">ヒアリング</span>
-                </TabsTrigger>
-                <TabsTrigger value="land" className="flex items-center gap-1 px-2 md:px-3">
-                  <Map className="w-4 h-4" />
-                  <span className="hidden sm:inline">土地</span>
-                </TabsTrigger>
-                <TabsTrigger value="notes" className="flex items-center gap-1 px-2 md:px-3">
-                  <FileEdit className="w-4 h-4" />
-                  <span className="hidden sm:inline">メモ</span>
-                </TabsTrigger>
-                <TabsTrigger value="ai" className="flex items-center gap-1 px-2 md:px-3">
-                  <Brain className="w-4 h-4" />
-                  <span className="hidden sm:inline">AI</span>
-                </TabsTrigger>
+                {!isPreMember && (
+                  <>
+                    <TabsTrigger value="hearing" className="flex items-center gap-1 px-2 md:px-3">
+                      <FileQuestion className="w-4 h-4" />
+                      <span className="hidden sm:inline">ヒアリング</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="land" className="flex items-center gap-1 px-2 md:px-3">
+                      <Map className="w-4 h-4" />
+                      <span className="hidden sm:inline">土地</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="notes" className="flex items-center gap-1 px-2 md:px-3">
+                      <FileEdit className="w-4 h-4" />
+                      <span className="hidden sm:inline">メモ</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="ai" className="flex items-center gap-1 px-2 md:px-3">
+                      <Brain className="w-4 h-4" />
+                      <span className="hidden sm:inline">AI</span>
+                    </TabsTrigger>
+                  </>
+                )}
               </TabsList>
 
               <TabsContent value="journey">
@@ -602,56 +676,60 @@ export default function CustomerDetailPage() {
                 <ReceptionRecordSection customerId={customer.id} />
               </TabsContent>
 
-              <TabsContent value="hearing" className="space-y-4">
-                <HearingSheetSection customerId={customer.id} />
-              </TabsContent>
+              {!isPreMember && (
+                <>
+                  <TabsContent value="hearing" className="space-y-4">
+                    <HearingSheetSection customerId={customer.id} />
+                  </TabsContent>
 
-              <TabsContent value="documents" className="space-y-4">
-                <DocumentManager
-                  customerId={customer.id}
-                  landStatus={landStatus}
-                  pipelineStatus={customer.pipeline_status}
-                />
-              </TabsContent>
+                  <TabsContent value="documents" className="space-y-4">
+                    <DocumentManager
+                      customerId={customer.id}
+                      landStatus={landStatus}
+                      pipelineStatus={customer.pipeline_status}
+                    />
+                  </TabsContent>
 
-              <TabsContent value="land" className="space-y-4">
-                {/* 土地条件エディタ */}
-                <LandConditionsEditor
-                  customerId={customer.id}
-                  customerName={customer.name}
-                  onSave={() => toast.success('土地条件を保存しました')}
-                />
+                  <TabsContent value="land" className="space-y-4">
+                    {/* 土地条件エディタ */}
+                    <LandConditionsEditor
+                      customerId={customer.id}
+                      customerName={customer.name}
+                      onSave={() => toast.success('土地条件を保存しました')}
+                    />
 
-                {/* マッチング物件一覧 */}
-                <Card className="border-0 shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-lg">
-                      <MapPin className="w-5 h-5 mr-2 text-green-500" />
-                      マッチング物件
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <LandMatchList customerId={customer.id} />
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                    {/* マッチング物件一覧 */}
+                    <Card className="border-0 shadow-lg">
+                      <CardHeader>
+                        <CardTitle className="flex items-center text-lg">
+                          <MapPin className="w-5 h-5 mr-2 text-green-500" />
+                          マッチング物件
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <LandMatchList customerId={customer.id} />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
 
-              <TabsContent value="notes">
-                <Card className="border-0 shadow-lg">
-                  <CardContent className="p-6">
-                    <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap">
-                      {customer.notes || 'メモがありません'}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                  <TabsContent value="notes">
+                    <Card className="border-0 shadow-lg">
+                      <CardContent className="p-6">
+                        <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap">
+                          {customer.notes || 'メモがありません'}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
 
-              <TabsContent value="ai">
-                <AISalesAssistant
-                  customer={customer}
-                  journeyEvents={journeyEvents}
-                />
-              </TabsContent>
+                  <TabsContent value="ai">
+                    <AISalesAssistant
+                      customer={customer}
+                      journeyEvents={journeyEvents}
+                    />
+                  </TabsContent>
+                </>
+              )}
             </Tabs>
           </div>
         </div>

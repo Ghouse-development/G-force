@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, Suspense } from 'react'
+import { useState, useMemo, useCallback, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Layout } from '@/components/layout/layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -96,6 +96,25 @@ function NewPlanRequestForm() {
   const customer = useMemo(() => {
     return customers.find(c => c.id === customerId)
   }, [customers, customerId])
+
+  // 顧客IDがない場合はリダイレクト
+  useEffect(() => {
+    if (!customerId) {
+      toast.error('お客様ページから書類を作成してください')
+      router.push('/customers')
+    }
+  }, [customerId, router])
+
+  // 建築申込以降のステータスでのみ作成可能
+  const allowedStatuses = ['建築申込', 'プラン提出', '内定', '変更契約前', '変更契約後']
+  const canCreateDocuments = customer && allowedStatuses.includes(customer.pipeline_status)
+
+  useEffect(() => {
+    if (customer && !canCreateDocuments) {
+      toast.error('プラン依頼は建築申込以降のお客様のみ作成可能です')
+      router.push(`/customers/${customerId}`)
+    }
+  }, [customer, canCreateDocuments, customerId, router])
 
   // 最新の資金計画書を取得
   const latestFundPlan = useMemo(() => {

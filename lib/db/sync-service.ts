@@ -3,10 +3,17 @@
  * LocalStorage (Zustand) とSupabaseデータベースの同期を管理
  */
 
-import { customerDb, planRequestDb, contractDb, fundPlanDb } from './index'
-import { useCustomerStore, usePlanRequestStore, useContractStore, useFundPlanStore } from '@/store'
+import { customerDb, planRequestDb, contractDb, fundPlanDb, handoverDb, fileDb } from './index'
+import {
+  useCustomerStore,
+  usePlanRequestStore,
+  useContractStore,
+  useFundPlanStore,
+  useHandoverStore,
+  useFileStore,
+} from '@/store'
 import type { Customer, PlanRequest } from '@/types/database'
-import type { StoredContract, StoredFundPlan } from '@/store'
+import type { StoredContract, StoredFundPlan, StoredHandover, StoredFile } from '@/store'
 
 // 同期状態
 export interface SyncState {
@@ -22,7 +29,7 @@ const PENDING_CHANGES_KEY = 'ghouse-pending-changes'
 
 interface PendingChange {
   id: string
-  entity: 'customer' | 'planRequest' | 'contract' | 'fundPlan'
+  entity: 'customer' | 'planRequest' | 'contract' | 'fundPlan' | 'handover' | 'file'
   action: 'create' | 'update' | 'delete'
   data: unknown
   timestamp: string
@@ -96,11 +103,13 @@ export async function syncFromDatabase(): Promise<void> {
 
   try {
     // 並列でデータを取得
-    const [customers, planRequests, contracts, fundPlans] = await Promise.all([
+    const [customers, planRequests, contracts, fundPlans, handovers, files] = await Promise.all([
       customerDb.getAll().catch(() => [] as Customer[]),
       planRequestDb.getAll().catch(() => [] as PlanRequest[]),
       contractDb.getAll().catch(() => []),
-      fundPlanDb.getAll().catch(() => [])
+      fundPlanDb.getAll().catch(() => []),
+      handoverDb.getAll().catch(() => []),
+      fileDb.getAll().catch(() => []),
     ])
 
     // ストアを更新
@@ -108,6 +117,8 @@ export async function syncFromDatabase(): Promise<void> {
     const planRequestStore = usePlanRequestStore.getState()
     const contractStore = useContractStore.getState()
     const fundPlanStore = useFundPlanStore.getState()
+    const handoverStore = useHandoverStore.getState()
+    const fileStore = useFileStore.getState()
 
     if (customers.length > 0) {
       customerStore.setCustomers(customers)
@@ -125,6 +136,18 @@ export async function syncFromDatabase(): Promise<void> {
       fundPlanStore.fundPlans = fundPlans as StoredFundPlan[]
     }
 
+    if (handovers.length > 0) {
+      handoverStore.setHandovers(handovers as StoredHandover[])
+    }
+
+    // ファイルはdataUrlが大きいためDBからの全量取得は行わない
+    // （メタデータのみ同期、実データはオンデマンド取得）
+    if (files.length > 0) {
+      // ファイルストアには直接setFilesがないため、個別に追加処理が必要
+      // 現時点ではスキップ（ファイルはローカル優先）
+      console.log(`[Sync] ${files.length} files found in database (local-first mode)`)
+    }
+
     setSyncState({
       isSyncing: false,
       lastSyncAt: new Date().toISOString(),
@@ -135,7 +158,9 @@ export async function syncFromDatabase(): Promise<void> {
       customers: customers.length,
       planRequests: planRequests.length,
       contracts: contracts.length,
-      fundPlans: fundPlans.length
+      fundPlans: fundPlans.length,
+      handovers: handovers.length,
+      files: files.length,
     })
   } catch (error) {
     console.error('Sync from database failed:', error)
@@ -395,6 +420,26 @@ export function subscribeToStoreChanges(): () => void {
     }
   )
   unsubscribers.push(unsubContract)
+
+  // Fund plan store subscription
+  const unsubFundPlan = useFundPlanStore.subscribe(
+    (state, prevState) => {
+      if (state.fundPlans !== prevState.fundPlans) {
+        debouncedSync()
+      }
+    }
+  )
+  unsubscribers.push(unsubFundPlan)
+
+  // Handover store subscription
+  const unsubHandover = useHandoverStore.subscribe(
+    (state, prevState) => {
+      if (state.handovers !== prevState.handovers) {
+        debouncedSync()
+      }
+    }
+  )
+  unsubscribers.push(unsubHandover)
 
   return () => {
     unsubscribers.forEach(unsub => unsub())

@@ -38,6 +38,8 @@ import { CONTRACT_STATUS_CONFIG, CONTRACT_STATUS_ORDER } from '@/types/database'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { TableSkeleton } from '@/components/ui/skeleton-loaders'
 import { HelpTooltip } from '@/components/ui/help-tooltip'
+import { downloadSampleContract } from '@/lib/sample-excel-export'
+import { toast } from 'sonner'
 
 // アイコンマッピング
 const STATUS_ICONS: Record<ContractStatus, typeof FileEdit> = {
@@ -417,7 +419,22 @@ export default function ContractsPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Link href="/contracts/new">
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  toast.info('サンプルExcelを生成中...')
+                  await downloadSampleContract()
+                  toast.success('サンプルをダウンロードしました')
+                } catch {
+                  toast.error('ダウンロードに失敗しました')
+                }
+              }}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              サンプル
+            </Button>
+            <Link href="/customers">
               <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
                 <Plus className="w-4 h-4 mr-2" />
                 新規作成
