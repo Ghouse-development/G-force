@@ -7,7 +7,6 @@ import { Layout } from '@/components/layout/layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select,
   SelectContent,
@@ -45,7 +44,6 @@ import { DocumentManager } from '@/components/customers/document-manager'
 import { NextActionGuide } from '@/components/customers/next-action-guide'
 import { AISalesAssistant } from '@/components/customers/ai-sales-assistant'
 import { CommunicationLog } from '@/components/customers/communication-log'
-import { DocumentWorkflowProgress } from '@/components/customers/document-workflow-progress'
 import { SalesRepDropdown } from '@/components/customers/sales-rep-dropdown'
 import { useKintoneStore } from '@/store/kintone-store'
 import { toast } from 'sonner'
@@ -61,8 +59,6 @@ import {
   PIPELINE_LOST,
   LEAD_SOURCE_CONFIG,
   PRE_MEMBER_STATUS_ORDER,
-  PRE_CONTRACT_STATUS_ORDER,
-  POST_CONTRACT_STATUS_ORDER,
 } from '@/types/database'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { ChevronDown } from 'lucide-react'
@@ -267,14 +263,6 @@ export default function CustomerDetailPage() {
   // 限定会員前の顧客かどうか（タブ制限用）
   const isPreMember = PRE_MEMBER_STATUS_ORDER.includes(customer.pipeline_status as typeof PRE_MEMBER_STATUS_ORDER[number])
 
-  // 進捗率を計算
-  const progressPercent = (() => {
-    const allStatuses = [...PRE_MEMBER_STATUS_ORDER, ...PRE_CONTRACT_STATUS_ORDER, ...POST_CONTRACT_STATUS_ORDER, 'オーナー']
-    const currentIndex = allStatuses.indexOf(customer.pipeline_status)
-    if (currentIndex === -1) return 0
-    return Math.round(((currentIndex + 1) / allStatuses.length) * 100)
-  })()
-
   const statusConfig = PIPELINE_CONFIG[customer.pipeline_status] || {
     label: customer.pipeline_status || '未設定',
     color: 'text-gray-600',
@@ -343,26 +331,7 @@ export default function CustomerDetailPage() {
           </div>
         </div>
 
-        {/* 進捗バー */}
-        <div className="bg-white rounded-lg shadow-sm p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">進捗状況</span>
-            <span className="text-sm text-gray-500">{progressPercent}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-gradient-to-r from-orange-400 to-orange-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          <div className="flex justify-between mt-2 text-xs text-gray-400">
-            <span>反響</span>
-            <span>契約</span>
-            <span>引渡し</span>
-          </div>
-        </div>
-
-        {/* 次のアクションガイド（限定会員前は非表示） - 最上部で目立たせる */}
+        {/* 次のアクションガイド（限定会員前は非表示） */}
         {!isPreMember && (
           <div className="bg-gradient-to-r from-orange-500 to-yellow-500 rounded-xl p-1 shadow-lg">
             <div className="bg-white rounded-lg">
@@ -377,54 +346,32 @@ export default function CustomerDetailPage() {
           </div>
         )}
 
-        {/* 書類ワークフロー進捗（限定会員前は非表示） */}
-        {!isPreMember && <DocumentWorkflowProgress customerId={customer.id} />}
-
-        {/* 統合された書類作成セクション（限定会員前は非表示） */}
+        {/* 書類作成（限定会員前は非表示） */}
         {!isPreMember && (
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-orange-100 to-yellow-100 rounded-lg flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">書類作成</p>
-                    <p className="text-xs text-gray-500">
-                      {fundPlans.length === 0 ? 'まずは資金計画書を作成' : `資金計画書 ${fundPlans.length}件作成済`}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Link href={`/fund-plans/new?customer=${customer.id}`}>
-                    <Button size="sm" variant={fundPlans.length === 0 ? "default" : "outline"} className={fundPlans.length === 0 ? "bg-gradient-to-r from-orange-500 to-yellow-500" : ""}>
-                      <FileText className="w-4 h-4 mr-1" />
-                      資金計画
-                    </Button>
-                  </Link>
-                  {canCreateDocuments ? (
-                    <>
-                      <Link href={`/plan-requests/new?customer=${customer.id}`}>
-                        <Button size="sm" variant="outline">
-                          <FileEdit className="w-4 h-4 mr-1" />
-                          プラン
-                        </Button>
-                      </Link>
-                      <Link href={`/contract-requests/new?customer=${customer.id}`}>
-                        <Button size="sm" variant="outline">
-                          <FileSignature className="w-4 h-4 mr-1" />
-                          契約
-                        </Button>
-                      </Link>
-                    </>
-                  ) : (
-                    <span className="text-xs text-gray-400">建築申込以降でプラン・契約作成可</span>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex items-center gap-2">
+            <Link href={`/fund-plans/new?customer=${customer.id}`}>
+              <Button size="sm" variant={fundPlans.length === 0 ? "default" : "outline"} className={fundPlans.length === 0 ? "bg-orange-500 hover:bg-orange-600" : ""}>
+                <FileText className="w-4 h-4 mr-1" />
+                資金計画
+              </Button>
+            </Link>
+            {canCreateDocuments && (
+              <>
+                <Link href={`/plan-requests/new?customer=${customer.id}`}>
+                  <Button size="sm" variant="outline">
+                    <FileEdit className="w-4 h-4 mr-1" />
+                    プラン
+                  </Button>
+                </Link>
+                <Link href={`/contract-requests/new?customer=${customer.id}`}>
+                  <Button size="sm" variant="outline">
+                    <FileSignature className="w-4 h-4 mr-1" />
+                    契約
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
         )}
 
         {/* Main Content */}
@@ -620,117 +567,189 @@ export default function CustomerDetailPage() {
             />
           </div>
 
-          {/* Tabs Section */}
-          <div className="lg:col-span-2">
-            <Tabs defaultValue="journey" className="w-full">
-              <TabsList className="mb-4 w-full justify-start overflow-x-auto scrollbar-none">
-                <TabsTrigger value="journey" className="flex items-center gap-1 px-2 md:px-3">
-                  <TrendingUp className="w-4 h-4" />
-                  <span className="hidden sm:inline">ジャーニー</span>
-                </TabsTrigger>
-                {!isPreMember && (
-                  <TabsTrigger value="documents" className="flex items-center gap-1 px-2 md:px-3">
-                    <FileText className="w-4 h-4" />
-                    <span className="hidden sm:inline">書類</span>
-                  </TabsTrigger>
-                )}
-                <TabsTrigger value="reception" className="flex items-center gap-1 px-2 md:px-3">
-                  <ClipboardList className="w-4 h-4" />
-                  <span className="hidden sm:inline">受付</span>
-                </TabsTrigger>
-                {!isPreMember && (
-                  <>
-                    <TabsTrigger value="hearing" className="flex items-center gap-1 px-2 md:px-3">
-                      <FileQuestion className="w-4 h-4" />
-                      <span className="hidden sm:inline">ヒアリング</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="land" className="flex items-center gap-1 px-2 md:px-3">
-                      <Map className="w-4 h-4" />
-                      <span className="hidden sm:inline">土地</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="notes" className="flex items-center gap-1 px-2 md:px-3">
-                      <FileEdit className="w-4 h-4" />
-                      <span className="hidden sm:inline">メモ</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="ai" className="flex items-center gap-1 px-2 md:px-3">
-                      <Brain className="w-4 h-4" />
-                      <span className="hidden sm:inline">AI</span>
-                    </TabsTrigger>
-                  </>
-                )}
-              </TabsList>
-
-              <TabsContent value="journey">
-                <JourneyMap
-                  customerId={customer.id}
-                  customerName={customer.name}
-                  landStatus={landStatus}
-                  events={journeyEvents}
-                  pipelineStatus={customer.pipeline_status}
-                  onAddEvent={() => setShowEventDialog(true)}
-                  onEditLandStatus={() => setShowLandStatusDialog(true)}
-                />
-              </TabsContent>
-
-              <TabsContent value="reception" className="space-y-4">
-                <ReceptionRecordSection customerId={customer.id} />
-              </TabsContent>
-
-              {!isPreMember && (
-                <>
-                  <TabsContent value="hearing" className="space-y-4">
-                    <HearingSheetSection customerId={customer.id} />
-                  </TabsContent>
-
-                  <TabsContent value="documents" className="space-y-4">
-                    <DocumentManager
-                      customerId={customer.id}
-                      landStatus={landStatus}
-                      pipelineStatus={customer.pipeline_status}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="land" className="space-y-4">
-                    {/* 土地条件エディタ */}
-                    <LandConditionsEditor
+          {/* カード形式セクション */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* ジャーニー */}
+            <Collapsible defaultOpen={true}>
+              <Card className="border-0 shadow-lg">
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
+                    <CardTitle className="flex items-center justify-between text-base">
+                      <div className="flex items-center">
+                        <TrendingUp className="w-5 h-5 mr-2 text-orange-500" />
+                        ジャーニー
+                      </div>
+                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <JourneyMap
                       customerId={customer.id}
                       customerName={customer.name}
-                      onSave={() => toast.success('土地条件を保存しました')}
+                      landStatus={landStatus}
+                      events={journeyEvents}
+                      pipelineStatus={customer.pipeline_status}
+                      onAddEvent={() => setShowEventDialog(true)}
+                      onEditLandStatus={() => setShowLandStatusDialog(true)}
                     />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
 
-                    {/* マッチング物件一覧 */}
-                    <Card className="border-0 shadow-lg">
-                      <CardHeader>
-                        <CardTitle className="flex items-center text-lg">
-                          <MapPin className="w-5 h-5 mr-2 text-green-500" />
-                          マッチング物件
+            {/* 受付 */}
+            <Collapsible defaultOpen={false}>
+              <Card className="border-0 shadow-lg">
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
+                    <CardTitle className="flex items-center justify-between text-base">
+                      <div className="flex items-center">
+                        <ClipboardList className="w-5 h-5 mr-2 text-blue-500" />
+                        受付
+                      </div>
+                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <ReceptionRecordSection customerId={customer.id} />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+
+            {!isPreMember && (
+              <>
+                {/* ヒアリング */}
+                <Collapsible defaultOpen={false}>
+                  <Card className="border-0 shadow-lg">
+                    <CollapsibleTrigger asChild>
+                      <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
+                        <CardTitle className="flex items-center justify-between text-base">
+                          <div className="flex items-center">
+                            <FileQuestion className="w-5 h-5 mr-2 text-purple-500" />
+                            ヒアリング
+                          </div>
+                          <ChevronDown className="w-5 h-5 text-gray-400" />
                         </CardTitle>
                       </CardHeader>
-                      <CardContent>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <CardContent className="pt-0">
+                        <HearingSheetSection customerId={customer.id} />
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
+
+                {/* 書類 */}
+                <Collapsible defaultOpen={false}>
+                  <Card className="border-0 shadow-lg">
+                    <CollapsibleTrigger asChild>
+                      <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
+                        <CardTitle className="flex items-center justify-between text-base">
+                          <div className="flex items-center">
+                            <FileText className="w-5 h-5 mr-2 text-green-500" />
+                            書類
+                          </div>
+                          <ChevronDown className="w-5 h-5 text-gray-400" />
+                        </CardTitle>
+                      </CardHeader>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <CardContent className="pt-0">
+                        <DocumentManager
+                          customerId={customer.id}
+                          landStatus={landStatus}
+                          pipelineStatus={customer.pipeline_status}
+                        />
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
+
+                {/* 土地 */}
+                <Collapsible defaultOpen={false}>
+                  <Card className="border-0 shadow-lg">
+                    <CollapsibleTrigger asChild>
+                      <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
+                        <CardTitle className="flex items-center justify-between text-base">
+                          <div className="flex items-center">
+                            <Map className="w-5 h-5 mr-2 text-emerald-500" />
+                            土地
+                          </div>
+                          <ChevronDown className="w-5 h-5 text-gray-400" />
+                        </CardTitle>
+                      </CardHeader>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <CardContent className="pt-0 space-y-4">
+                        <LandConditionsEditor
+                          customerId={customer.id}
+                          customerName={customer.name}
+                          onSave={() => toast.success('保存しました')}
+                        />
                         <LandMatchList customerId={customer.id} />
                       </CardContent>
-                    </Card>
-                  </TabsContent>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
 
-                  <TabsContent value="notes">
+                {/* メモ */}
+                {customer.notes && (
+                  <Collapsible defaultOpen={false}>
                     <Card className="border-0 shadow-lg">
-                      <CardContent className="p-6">
-                        <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap">
-                          {customer.notes || 'メモがありません'}
-                        </div>
-                      </CardContent>
+                      <CollapsibleTrigger asChild>
+                        <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
+                          <CardTitle className="flex items-center justify-between text-base">
+                            <div className="flex items-center">
+                              <FileEdit className="w-5 h-5 mr-2 text-gray-500" />
+                              メモ
+                            </div>
+                            <ChevronDown className="w-5 h-5 text-gray-400" />
+                          </CardTitle>
+                        </CardHeader>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <CardContent className="pt-0">
+                          <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap">
+                            {customer.notes}
+                          </div>
+                        </CardContent>
+                      </CollapsibleContent>
                     </Card>
-                  </TabsContent>
+                  </Collapsible>
+                )}
 
-                  <TabsContent value="ai">
-                    <AISalesAssistant
-                      customer={customer}
-                      journeyEvents={journeyEvents}
-                    />
-                  </TabsContent>
-                </>
-              )}
-            </Tabs>
+                {/* AI */}
+                <Collapsible defaultOpen={false}>
+                  <Card className="border-0 shadow-lg">
+                    <CollapsibleTrigger asChild>
+                      <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
+                        <CardTitle className="flex items-center justify-between text-base">
+                          <div className="flex items-center">
+                            <Brain className="w-5 h-5 mr-2 text-indigo-500" />
+                            AI
+                          </div>
+                          <ChevronDown className="w-5 h-5 text-gray-400" />
+                        </CardTitle>
+                      </CardHeader>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <CardContent className="pt-0">
+                        <AISalesAssistant
+                          customer={customer}
+                          journeyEvents={journeyEvents}
+                        />
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
+              </>
+            )}
           </div>
         </div>
       </div>
