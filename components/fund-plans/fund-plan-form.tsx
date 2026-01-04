@@ -4,8 +4,8 @@ import { useState, useMemo, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
-import { Save, FileText, LayoutGrid, List, Building2, Wallet, CreditCard, Calendar, Calculator, Sun, Home, ClipboardList, FileSpreadsheet } from 'lucide-react'
-import { exportFundPlanFromTemplate } from '@/lib/excel-export'
+import { Save, FileText, LayoutGrid, List, Building2, Wallet, CreditCard, Calendar, Calculator, Sun, Home, ClipboardList, FileSpreadsheet, FileCheck } from 'lucide-react'
+import { exportFundPlanFromTemplate, exportContractFromFundPlan } from '@/lib/excel-export'
 import { BasicInfoSection } from './sections/basic-info-section'
 import { BuildingCostSection } from './sections/building-cost-section'
 import { LandMiscSection } from './sections/land-misc-section'
@@ -145,7 +145,11 @@ export function FundPlanForm({ initialData, onSave, onExportPDF }: FundPlanFormP
 
               <Button variant="outline" size="sm" onClick={() => exportFundPlanFromTemplate(data)}>
                 <FileSpreadsheet className="w-4 h-4 mr-1" />
-                Excel出力
+                資金計画書
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => exportContractFromFundPlan(data)}>
+                <FileCheck className="w-4 h-4 mr-1" />
+                請負契約書
               </Button>
               <Button variant="outline" size="sm" onClick={() => onExportPDF(data, calculation)}>
                 <FileText className="w-4 h-4 mr-1" />

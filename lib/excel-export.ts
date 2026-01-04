@@ -7,9 +7,15 @@
 
 import * as XLSX from 'xlsx'
 import type { FundPlanData } from '@/types/fund-plan'
+import type { ContractData as ContractDataType } from '@/types/contract'
+import { createContractDataFromFundPlan } from '@/types/contract'
 
 // ExcelJS版をエクスポート（完全コピー版として使用）
 export { exportFundPlanWithExcelJS } from './excel-export-exceljs'
+export { exportContractWithExcelJS } from './excel-export-contract'
+
+// 型のエクスポート
+export type { ContractData as ContractDataNew } from '@/types/contract'
 
 // ============================================
 // テンプレートベースExcel出力（完全一致版）
@@ -26,6 +32,54 @@ export async function exportFundPlanFromTemplate(
   // ExcelJS版を使用（書式・数式・印刷設定を完全保持）
   const { exportFundPlanWithExcelJS } = await import('./excel-export-exceljs')
   await exportFundPlanWithExcelJS(data, filename)
+}
+
+/**
+ * テンプレートを使用して請負契約書をExcel出力
+ * ExcelJS版を使用して書式・数式・印刷設定を完全に保持
+ */
+export async function exportContractFromTemplate(
+  data: ContractDataType,
+  filename?: string
+): Promise<void> {
+  const { exportContractWithExcelJS } = await import('./excel-export-contract')
+  await exportContractWithExcelJS(data, filename)
+}
+
+/**
+ * 資金計画書データから請負契約書をExcel出力
+ * データ連携: 資金計画書 → 請負契約書への自動変換
+ */
+export async function exportContractFromFundPlan(
+  fundPlanData: FundPlanData,
+  additionalContractData?: Partial<ContractDataType>,
+  filename?: string
+): Promise<void> {
+  // 資金計画書から請負契約書データを生成
+  const contractData = createContractDataFromFundPlan(fundPlanData)
+
+  // 追加データをマージ
+  const mergedData = {
+    ...contractData,
+    ...additionalContractData,
+  } as ContractDataType
+
+  // 請負契約書を出力
+  await exportContractFromTemplate(mergedData, filename)
+}
+
+/**
+ * 資金計画書と請負契約書を両方出力
+ */
+export async function exportBothDocuments(
+  fundPlanData: FundPlanData,
+  additionalContractData?: Partial<ContractDataType>
+): Promise<void> {
+  // 資金計画書を出力
+  await exportFundPlanFromTemplate(fundPlanData)
+
+  // 請負契約書を出力
+  await exportContractFromFundPlan(fundPlanData, additionalContractData)
 }
 
 /**
