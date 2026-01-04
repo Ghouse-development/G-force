@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
-import { Save, FileText, LayoutGrid, List, Building2, Wallet, CreditCard, Calendar, Calculator, Sun, Home, ClipboardList, FileSpreadsheet, FileCheck } from 'lucide-react'
+import { Save, FileText, List, Building2, Wallet, CreditCard, Calendar, Calculator, Sun, Home, ClipboardList, FileSpreadsheet, FileCheck } from 'lucide-react'
 import { exportFundPlanFromTemplate, exportContractFromFundPlan } from '@/lib/excel-export'
 import { BasicInfoSection } from './sections/basic-info-section'
 import { BuildingCostSection } from './sections/building-cost-section'
@@ -122,24 +122,24 @@ export function FundPlanForm({ initialData, onSave, onExportPDF }: FundPlanFormP
             {/* アクションボタン */}
             <div className="flex items-center gap-2">
               {/* ビュー切り替え */}
-              <div className="flex items-center border rounded-lg p-1">
+              <div className="flex items-center border-2 border-orange-200 rounded-lg p-1 bg-orange-50">
                 <Button
                   variant={viewMode === 'section' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('section')}
-                  className="h-7"
+                  className={`h-7 ${viewMode === 'section' ? 'bg-white shadow-sm' : ''}`}
                 >
                   <List className="w-4 h-4 mr-1" />
-                  セクション
+                  フォーム
                 </Button>
                 <Button
                   variant={viewMode === 'full' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('full')}
-                  className="h-7"
+                  className={`h-7 ${viewMode === 'full' ? 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white' : ''}`}
                 >
-                  <LayoutGrid className="w-4 h-4 mr-1" />
-                  全体表示
+                  <FileSpreadsheet className="w-4 h-4 mr-1" />
+                  Excel表示
                 </Button>
               </div>
 
@@ -246,63 +246,137 @@ export function FundPlanForm({ initialData, onSave, onExportPDF }: FundPlanFormP
   )
 }
 
-// 全体表示コンポーネント
+// 全体表示コンポーネント（Excel風編集可能ビュー）
 function FullSheetView({
   data,
   calculation,
+  onChange,
 }: {
   data: FundPlanData
   calculation: FundPlanCalculation
   onChange: (updates: Partial<FundPlanData>) => void
 }) {
+  // 編集可能なセルのスタイル
+  const editableCellClass = "bg-yellow-50 border border-yellow-200 px-2 py-1 rounded text-right font-medium focus:outline-none focus:ring-2 focus:ring-orange-400 focus:bg-white"
+  const readOnlyCellClass = "bg-gray-50 px-2 py-1 rounded text-right font-medium text-gray-700"
+  const labelClass = "text-gray-600 text-sm"
+
   return (
-    <div className="bg-white border rounded-lg overflow-auto">
+    <div className="bg-white border-2 border-orange-200 rounded-lg overflow-auto shadow-lg">
+      {/* Excel風ヘッダー */}
+      <div className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FileSpreadsheet className="w-5 h-5" />
+          <span className="font-bold">資金計画書 - Excel表示モード</span>
+        </div>
+        <div className="text-sm opacity-90">
+          黄色セル = 編集可能 | 灰色セル = 自動計算
+        </div>
+      </div>
+
       {/* Excel風の全体レイアウト */}
       <div className="p-4 min-w-[1200px]">
-        {/* ヘッダー部 */}
-        <div className="grid grid-cols-12 gap-4 mb-4 pb-4 border-b">
+        {/* ヘッダー部（Excelの1-3行に対応） */}
+        <div className="grid grid-cols-12 gap-4 mb-4 pb-4 border-b-2 border-orange-200">
           {/* 左: 邸名・仕様情報 */}
           <div className="col-span-3">
-            <div className="text-xl font-bold text-gray-900 mb-2">
-              {data.teiName || '○○様邸'} 資金計画書
+            <div className="mb-2">
+              <label className={labelClass}>邸名</label>
+              <input
+                type="text"
+                value={data.teiName}
+                onChange={(e) => onChange({ teiName: e.target.value })}
+                className={`${editableCellClass} w-full text-xl font-bold text-left`}
+                placeholder="○○様邸"
+              />
             </div>
-            <div className="text-sm text-gray-700">
-              <span className="font-medium">{data.productType}</span> 仕様
+            <div className="flex items-center gap-2">
+              <label className={labelClass}>商品:</label>
+              <select
+                value={data.productType}
+                onChange={(e) => onChange({ productType: e.target.value as FundPlanData['productType'] })}
+                className={`${editableCellClass} text-left`}
+              >
+                <option value="LIFE">LIFE</option>
+                <option value="LIFE+">LIFE+</option>
+                <option value="PLUS">PLUS</option>
+              </select>
             </div>
           </div>
 
           {/* 中央: 建物情報 */}
           <div className="col-span-5 grid grid-cols-3 gap-2 text-sm">
-            <div>
-              <span className="text-gray-600">工事名称: </span>
-              <span className="font-medium">{data.constructionName || `${data.teiName}　新築工事`}</span>
+            <div className="col-span-3 mb-1">
+              <label className={labelClass}>工事名称</label>
+              <input
+                type="text"
+                value={data.constructionName || `${data.teiName}　新築工事`}
+                onChange={(e) => onChange({ constructionName: e.target.value })}
+                className={`${editableCellClass} w-full text-left`}
+              />
+            </div>
+            <div className="col-span-2">
+              <label className={labelClass}>建築場所</label>
+              <input
+                type="text"
+                value={data.constructionAddress}
+                onChange={(e) => onChange({ constructionAddress: e.target.value })}
+                className={`${editableCellClass} w-full text-left`}
+              />
             </div>
             <div>
-              <span className="text-gray-600">建築場所: </span>
-              <span className="font-medium">{data.constructionAddress}</span>
+              <label className={labelClass}>防火区分</label>
+              <select
+                value={data.fireProtectionZone}
+                onChange={(e) => onChange({ fireProtectionZone: e.target.value as FundPlanData['fireProtectionZone'] })}
+                className={`${editableCellClass} w-full text-left`}
+              >
+                <option value="指定無し">指定無し</option>
+                <option value="準防火地域">準防火地域</option>
+                <option value="防火地域">防火地域</option>
+              </select>
             </div>
             <div>
-              <span className="text-gray-600">防火区分: </span>
-              <span className="font-medium">{data.fireProtectionZone}</span>
+              <label className={labelClass}>施工面積（坪）</label>
+              <input
+                type="number"
+                value={data.constructionArea}
+                onChange={(e) => onChange({ constructionArea: parseFloat(e.target.value) || 0 })}
+                className={`${editableCellClass} w-full`}
+              />
             </div>
             <div>
-              <span className="text-gray-600">建物構造: </span>
-              <span className="font-medium">{data.buildingStructure}</span>
+              <label className={labelClass}>坪単価</label>
+              <input
+                type="number"
+                value={data.pricePerTsubo}
+                onChange={(e) => onChange({ pricePerTsubo: parseInt(e.target.value) || 0 })}
+                className={`${editableCellClass} w-full`}
+              />
             </div>
             <div>
-              <span className="text-gray-600">施工面積: </span>
-              <span className="font-medium">{data.constructionArea}坪</span>
-            </div>
-            <div>
-              <span className="text-gray-600">階数: </span>
-              <span className="font-medium">{data.floorCount}階</span>
+              <label className={labelClass}>階数</label>
+              <select
+                value={data.floorCount}
+                onChange={(e) => onChange({ floorCount: parseInt(e.target.value) as 1 | 2 | 3 })}
+                className={`${editableCellClass} w-full`}
+              >
+                <option value={2}>2階</option>
+                <option value={3}>3階</option>
+              </select>
             </div>
           </div>
 
-          {/* 右: 見積情報 */}
-          <div className="col-span-4 text-sm text-right text-gray-700">
-            <div>見積作成日: {data.estimateDate}</div>
-            <div>見積有効期限: {data.estimateValidDate}</div>
+          {/* 右: サマリー */}
+          <div className="col-span-4 space-y-2">
+            <div className="bg-orange-100 rounded-lg p-3 text-center">
+              <div className="text-sm text-orange-600">最終合計（税込）</div>
+              <div className="text-2xl font-bold text-orange-700">{formatCurrency(calculation.grandTotal)}円</div>
+            </div>
+            <div className="bg-blue-100 rounded-lg p-3 text-center">
+              <div className="text-sm text-blue-600">月々返済額</div>
+              <div className="text-xl font-bold text-blue-700">{formatCurrency(calculation.totalMonthlyPayment)}円</div>
+            </div>
           </div>
         </div>
 
@@ -336,72 +410,175 @@ function FullSheetView({
               </div>
             </div>
 
-            {/* 建築費用 */}
-            <div className="border rounded p-3">
-              <h3 className="text-sm font-bold mb-2 bg-orange-100 px-2 py-1 -mx-3 -mt-3">建築費用</h3>
+            {/* 建築費用（Excelの左カラム対応） */}
+            <div className="border-2 border-orange-200 rounded p-3">
+              <h3 className="text-sm font-bold mb-2 bg-gradient-to-r from-orange-500 to-orange-400 text-white px-2 py-1.5 -mx-3 -mt-3 rounded-t">
+                建築費用（税抜）
+              </h3>
 
               {/* ❶建物本体 */}
               <div className="mb-3 pb-3 border-b mt-3">
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium">❶建物本体工事</span>
-                  <span className="font-bold">{formatCurrency(calculation.subtotalBuildingMain)}円</span>
+                <div className="flex justify-between items-center text-sm mb-2">
+                  <span className="font-bold text-orange-700">❶建物本体工事</span>
+                  <span className={readOnlyCellClass}>{formatCurrency(calculation.subtotalBuildingMain)}円</span>
                 </div>
-                <div className="text-sm text-gray-600 ml-4">
-                  {data.productType} × {data.constructionArea}坪 × {formatCurrency(data.pricePerTsubo)}円
+                <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                  = {data.productType} × {data.constructionArea}坪 × @{formatCurrency(data.pricePerTsubo)}円
                 </div>
               </div>
 
-              {/* ❷付帯A */}
+              {/* ❷付帯A（編集可能） */}
               <div className="mb-3 pb-3 border-b">
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium">❷付帯工事費用A</span>
-                  <span className="font-bold">{formatCurrency(calculation.subtotalIncidentalA)}円</span>
+                <div className="flex justify-between items-center text-sm mb-2">
+                  <span className="font-bold text-orange-700">❷付帯工事費用A</span>
+                  <span className={readOnlyCellClass}>{formatCurrency(calculation.subtotalIncidentalA)}円</span>
                 </div>
-                <div className="text-sm text-gray-600 ml-4 grid grid-cols-2 gap-x-2">
-                  <span>確認申請費用: {formatCurrency(data.incidentalCostA.confirmationApplicationFee)}</span>
-                  <span>構造計算: {formatCurrency(data.incidentalCostA.structuralCalculation)}</span>
-                  <span>設計・監理: {formatCurrency(data.incidentalCostA.designSupervisionFee)}</span>
-                  <span>仮設工事: {formatCurrency(data.incidentalCostA.temporaryConstructionFee)}</span>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className={labelClass}>確認申請:</span>
+                    <input
+                      type="number"
+                      value={data.incidentalCostA.confirmationApplicationFee}
+                      onChange={(e) => onChange({ incidentalCostA: { ...data.incidentalCostA, confirmationApplicationFee: parseInt(e.target.value) || 0 } })}
+                      className={`${editableCellClass} w-24 text-xs`}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={labelClass}>構造計算:</span>
+                    <input
+                      type="number"
+                      value={data.incidentalCostA.structuralCalculation}
+                      onChange={(e) => onChange({ incidentalCostA: { ...data.incidentalCostA, structuralCalculation: parseInt(e.target.value) || 0 } })}
+                      className={`${editableCellClass} w-24 text-xs`}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={labelClass}>設計・監理:</span>
+                    <input
+                      type="number"
+                      value={data.incidentalCostA.designSupervisionFee}
+                      onChange={(e) => onChange({ incidentalCostA: { ...data.incidentalCostA, designSupervisionFee: parseInt(e.target.value) || 0 } })}
+                      className={`${editableCellClass} w-24 text-xs`}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={labelClass}>仮設工事:</span>
+                    <input
+                      type="number"
+                      value={data.incidentalCostA.temporaryConstructionFee}
+                      onChange={(e) => onChange({ incidentalCostA: { ...data.incidentalCostA, temporaryConstructionFee: parseInt(e.target.value) || 0 } })}
+                      className={`${editableCellClass} w-24 text-xs`}
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* ❸付帯B */}
+              {/* ❸付帯B（編集可能） */}
               <div className="mb-3 pb-3 border-b">
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium">❸付帯工事費用B</span>
-                  <span className="font-bold">{formatCurrency(calculation.subtotalIncidentalB)}円</span>
+                <div className="flex justify-between items-center text-sm mb-2">
+                  <span className="font-bold text-orange-700">❸付帯工事費用B</span>
+                  <span className={readOnlyCellClass}>{formatCurrency(calculation.subtotalIncidentalB)}円</span>
                 </div>
-                <div className="text-sm text-gray-600 ml-4">
-                  太陽光: {formatCurrency(data.incidentalCostB.solarPanelCost)} |
-                  オプション: {formatCurrency(data.incidentalCostB.optionCost)}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className={labelClass}>太陽光kW:</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={data.incidentalCostB.solarPanelKw}
+                      onChange={(e) => onChange({ incidentalCostB: { ...data.incidentalCostB, solarPanelKw: parseFloat(e.target.value) || 0 } })}
+                      className={`${editableCellClass} w-20 text-xs`}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={labelClass}>太陽光費用:</span>
+                    <input
+                      type="number"
+                      value={data.incidentalCostB.solarPanelCost}
+                      onChange={(e) => onChange({ incidentalCostB: { ...data.incidentalCostB, solarPanelCost: parseInt(e.target.value) || 0 } })}
+                      className={`${editableCellClass} w-24 text-xs`}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={labelClass}>照明:</span>
+                    <input
+                      type="number"
+                      value={data.incidentalCostB.lightingCost}
+                      onChange={(e) => onChange({ incidentalCostB: { ...data.incidentalCostB, lightingCost: parseInt(e.target.value) || 0 } })}
+                      className={`${editableCellClass} w-24 text-xs`}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={labelClass}>オプション:</span>
+                    <input
+                      type="number"
+                      value={data.incidentalCostB.optionCost}
+                      onChange={(e) => onChange({ incidentalCostB: { ...data.incidentalCostB, optionCost: parseInt(e.target.value) || 0 } })}
+                      className={`${editableCellClass} w-24 text-xs`}
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* ❹付帯C */}
+              {/* ❹付帯C（編集可能） */}
               <div className="mb-3 pb-3 border-b">
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium">❹付帯工事費用C</span>
-                  <span className="font-bold">{formatCurrency(calculation.subtotalIncidentalC)}円</span>
+                <div className="flex justify-between items-center text-sm mb-2">
+                  <span className="font-bold text-orange-700">❹付帯工事費用C</span>
+                  <span className={readOnlyCellClass}>{formatCurrency(calculation.subtotalIncidentalC)}円</span>
                 </div>
-                <div className="text-sm text-gray-600 ml-4">
-                  地盤改良: {formatCurrency(data.incidentalCostC.groundImprovementFee)} |
-                  給排水: {formatCurrency(data.incidentalCostC.waterDrainageFee)}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className={labelClass}>地盤改良:</span>
+                    <input
+                      type="number"
+                      value={data.incidentalCostC.groundImprovementFee}
+                      onChange={(e) => onChange({ incidentalCostC: { ...data.incidentalCostC, groundImprovementFee: parseInt(e.target.value) || 0 } })}
+                      className={`${editableCellClass} w-24 text-xs`}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={labelClass}>給排水:</span>
+                    <input
+                      type="number"
+                      value={data.incidentalCostC.waterDrainageFee}
+                      onChange={(e) => onChange({ incidentalCostC: { ...data.incidentalCostC, waterDrainageFee: parseInt(e.target.value) || 0 } })}
+                      className={`${editableCellClass} w-24 text-xs`}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={labelClass}>残土処理:</span>
+                    <input
+                      type="number"
+                      value={data.incidentalCostC.soilDisposalFee}
+                      onChange={(e) => onChange({ incidentalCostC: { ...data.incidentalCostC, soilDisposalFee: parseInt(e.target.value) || 0 } })}
+                      className={`${editableCellClass} w-24 text-xs`}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={labelClass}>防火地域:</span>
+                    <input
+                      type="number"
+                      value={data.incidentalCostC.fireProtectionCost}
+                      onChange={(e) => onChange({ incidentalCostC: { ...data.incidentalCostC, fireProtectionCost: parseInt(e.target.value) || 0 } })}
+                      className={`${editableCellClass} w-24 text-xs`}
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* 合計 */}
-              <div className="bg-orange-50 p-3 rounded text-sm">
+              {/* 合計（自動計算・灰色表示） */}
+              <div className="bg-gradient-to-r from-orange-50 to-yellow-50 p-3 rounded border border-orange-200 text-sm">
                 <div className="flex justify-between mb-1">
-                  <span>最終建物工事費用（税抜）</span>
-                  <span>{formatCurrency(calculation.totalBuildingConstruction)}円</span>
+                  <span>建物工事費用（税抜）</span>
+                  <span className={readOnlyCellClass}>{formatCurrency(calculation.totalBuildingConstruction)}円</span>
                 </div>
                 <div className="flex justify-between mb-1 text-gray-600">
                   <span>消費税（10%）</span>
-                  <span>{formatCurrency(calculation.consumptionTax)}円</span>
+                  <span className={readOnlyCellClass}>{formatCurrency(calculation.consumptionTax)}円</span>
                 </div>
-                <div className="flex justify-between font-bold text-orange-700 pt-1 border-t border-orange-200">
-                  <span>最終建物工事費用（税込）</span>
-                  <span>{formatCurrency(calculation.totalBuildingConstructionWithTax)}円</span>
+                <div className="flex justify-between font-bold text-orange-700 pt-2 mt-2 border-t border-orange-300">
+                  <span>建物工事費用（税込）</span>
+                  <span className="text-lg">{formatCurrency(calculation.totalBuildingConstructionWithTax)}円</span>
                 </div>
               </div>
             </div>
