@@ -1,9 +1,12 @@
 'use client'
 
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { TextInput, NumberInput, DateInput, SectionTitle } from '../fund-plan-input'
+import { Package, ChevronDown, ChevronUp, Check } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import type { FundPlanData, ProductType, FireProtectionZone, BuildingStructure, FloorCount } from '@/types/fund-plan'
 import {
   productList,
@@ -14,12 +17,26 @@ import {
   salesRepMaster,
 } from '@/lib/fund-plan/master-data'
 
+// 主要商品（カード表示）
+const mainProducts: ProductType[] = [
+  'LIFE',
+  'LIFE +',
+  'HOURS',
+  'LACIE',
+  'G-SMART平屋',
+]
+
+// その他の商品
+const otherProducts = productList.filter(p => !mainProducts.includes(p))
+
 interface BasicInfoSectionProps {
   data: FundPlanData
   onChange: (data: Partial<FundPlanData>) => void
 }
 
 export function BasicInfoSection({ data, onChange }: BasicInfoSectionProps) {
+  const [showOtherProducts, setShowOtherProducts] = useState(false)
+
   const handleProductChange = (productType: ProductType) => {
     onChange({
       productType,
@@ -36,6 +53,9 @@ export function BasicInfoSection({ data, onChange }: BasicInfoSectionProps) {
       })
     }
   }
+
+  // 選択中の商品が主要商品かどうか
+  const isMainProduct = mainProducts.includes(data.productType)
 
   return (
     <Card>
@@ -77,21 +97,108 @@ export function BasicInfoSection({ data, onChange }: BasicInfoSectionProps) {
         {/* 建物仕様 */}
         <div className="space-y-3">
           <SectionTitle>建物仕様</SectionTitle>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs text-gray-600">商品</Label>
-              <Select value={data.productType} onValueChange={(v) => handleProductChange(v as ProductType)}>
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {productList.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
+
+          {/* 商品選択（カード形式） */}
+          <div className="space-y-3">
+            <Label className="text-xs text-gray-600">商品</Label>
+
+            {/* 主要商品カード */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+              {mainProducts.map((product) => (
+                <button
+                  key={product}
+                  type="button"
+                  onClick={() => handleProductChange(product)}
+                  className={cn(
+                    'p-3 rounded-lg border-2 transition-all text-center',
+                    data.productType === product
+                      ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200'
+                      : 'border-gray-200 hover:border-orange-300 hover:bg-gray-50'
+                  )}
+                >
+                  <Package className={cn(
+                    'w-5 h-5 mx-auto mb-1',
+                    data.productType === product ? 'text-orange-600' : 'text-gray-400'
+                  )} />
+                  <p className={cn(
+                    'text-sm font-medium',
+                    data.productType === product ? 'text-orange-700' : 'text-gray-700'
+                  )}>
+                    {product}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {(productMaster[product] / 10000).toFixed(1)}万/坪
+                  </p>
+                  {data.productType === product && (
+                    <Check className="w-4 h-4 text-orange-600 mx-auto mt-1" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* その他の商品（折りたたみ） */}
+            <div className="border rounded-lg">
+              <button
+                type="button"
+                onClick={() => setShowOtherProducts(!showOtherProducts)}
+                className={cn(
+                  'w-full px-3 py-2 flex items-center justify-between text-sm transition-colors',
+                  !isMainProduct
+                    ? 'bg-orange-50 border-orange-200'
+                    : 'bg-gray-50 hover:bg-gray-100'
+                )}
+              >
+                <span className={cn(
+                  'font-medium',
+                  !isMainProduct ? 'text-orange-700' : 'text-gray-600'
+                )}>
+                  {!isMainProduct ? `選択中: ${data.productType}` : 'その他の商品を選択'}
+                </span>
+                {showOtherProducts ? (
+                  <ChevronUp className="w-4 h-4 text-gray-500" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-500" />
+                )}
+              </button>
+
+              {showOtherProducts && (
+                <div className="p-3 border-t grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {otherProducts.map((product) => (
+                    <button
+                      key={product}
+                      type="button"
+                      onClick={() => {
+                        handleProductChange(product)
+                        setShowOtherProducts(false)
+                      }}
+                      className={cn(
+                        'p-2 rounded-lg border transition-all text-left text-sm',
+                        data.productType === product
+                          ? 'border-orange-500 bg-orange-50'
+                          : 'border-gray-200 hover:border-orange-300 hover:bg-gray-50'
+                      )}
+                    >
+                      <p className={cn(
+                        'font-medium',
+                        data.productType === product ? 'text-orange-700' : 'text-gray-700'
+                      )}>
+                        {product}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {(productMaster[product] / 10000).toFixed(1)}万/坪
+                      </p>
+                    </button>
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 坪単価表示 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-gray-50 rounded-lg p-3">
+              <Label className="text-xs text-gray-600">選択中の商品</Label>
+              <p className="font-bold text-gray-900">{data.productType}</p>
             </div>
             <NumberInput
               label="坪単価"

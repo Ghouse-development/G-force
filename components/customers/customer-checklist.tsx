@@ -39,25 +39,29 @@ interface CustomerChecklistProps {
 
 const STAGE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   '資料請求': { bg: 'bg-slate-50', border: 'border-slate-300', text: 'text-slate-700' },
+  'イベント予約': { bg: 'bg-blue-50', border: 'border-blue-300', text: 'text-blue-700' },
   'イベント参加': { bg: 'bg-purple-50', border: 'border-purple-300', text: 'text-purple-700' },
-  '限定会員': { bg: 'bg-blue-50', border: 'border-blue-300', text: 'text-blue-700' },
-  '面談': { bg: 'bg-indigo-50', border: 'border-indigo-300', text: 'text-indigo-700' },
-  '建築申込': { bg: 'bg-orange-50', border: 'border-orange-300', text: 'text-orange-700' },
-  'プラン提出': { bg: 'bg-amber-50', border: 'border-amber-300', text: 'text-amber-700' },
-  '内定': { bg: 'bg-red-50', border: 'border-red-300', text: 'text-red-700' },
-  '変更契約前': { bg: 'bg-emerald-50', border: 'border-emerald-300', text: 'text-emerald-700' },
-  '変更契約後': { bg: 'bg-green-50', border: 'border-green-300', text: 'text-green-700' },
-  'オーナー': { bg: 'bg-teal-50', border: 'border-teal-300', text: 'text-teal-700' },
+  '限定会員': { bg: 'bg-indigo-50', border: 'border-indigo-300', text: 'text-indigo-700' },
+  '面談': { bg: 'bg-cyan-50', border: 'border-cyan-300', text: 'text-cyan-700' },
+  '建築申込': { bg: 'bg-teal-50', border: 'border-teal-300', text: 'text-teal-700' },
+  'プラン提出': { bg: 'bg-sky-50', border: 'border-sky-300', text: 'text-sky-700' },
+  '内定': { bg: 'bg-emerald-50', border: 'border-emerald-300', text: 'text-emerald-700' },
+  'ボツ・他決': { bg: 'bg-gray-50', border: 'border-gray-300', text: 'text-gray-700' },
+  '変更契約前': { bg: 'bg-orange-50', border: 'border-orange-300', text: 'text-orange-700' },
+  '変更契約後': { bg: 'bg-amber-50', border: 'border-amber-300', text: 'text-amber-700' },
+  'オーナー': { bg: 'bg-green-50', border: 'border-green-300', text: 'text-green-700' },
 }
 
 const PIPELINE_ORDER: PipelineStatus[] = [
   '資料請求',
+  'イベント予約',
   'イベント参加',
   '限定会員',
   '面談',
   '建築申込',
   'プラン提出',
   '内定',
+  'ボツ・他決',
   '変更契約前',
   '変更契約後',
   'オーナー',
@@ -73,6 +77,9 @@ export function CustomerChecklist({ customerId, currentStatus }: CustomerCheckli
   const fetchChecklists = useCallback(async () => {
     try {
       const res = await fetch(`/api/customer-checklists?customerId=${customerId}`)
+      if (!res.ok) {
+        throw new Error(`HTTP error: ${res.status}`)
+      }
       const data = await res.json()
       if (data.items) {
         setItems(data.items)
@@ -80,6 +87,7 @@ export function CustomerChecklist({ customerId, currentStatus }: CustomerCheckli
       }
     } catch (error) {
       console.error('Error fetching checklists:', error)
+      toast.error('チェックリストの読み込みに失敗しました')
     } finally {
       setLoading(false)
     }

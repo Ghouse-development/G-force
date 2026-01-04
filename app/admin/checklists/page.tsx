@@ -32,26 +32,35 @@ interface ChecklistTemplate {
   is_active: boolean
 }
 
+// types/database.ts の PIPELINE_CONFIG と同期
 const PIPELINE_STAGES = [
-  '反響',
+  '資料請求',
+  'イベント予約',
   'イベント参加',
   '限定会員',
   '面談',
   '建築申込',
-  '契約',
-  '着工',
-  '引渡',
+  'プラン提出',
+  '内定',
+  'ボツ・他決',
+  '変更契約前',
+  '変更契約後',
+  'オーナー',
 ]
 
 const STAGE_COLORS: Record<string, string> = {
-  '反響': 'bg-blue-100 text-blue-800 border-blue-300',
+  '資料請求': 'bg-slate-100 text-slate-800 border-slate-300',
+  'イベント予約': 'bg-blue-100 text-blue-800 border-blue-300',
   'イベント参加': 'bg-purple-100 text-purple-800 border-purple-300',
-  '限定会員': 'bg-pink-100 text-pink-800 border-pink-300',
-  '面談': 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  '建築申込': 'bg-orange-100 text-orange-800 border-orange-300',
-  '契約': 'bg-green-100 text-green-800 border-green-300',
-  '着工': 'bg-cyan-100 text-cyan-800 border-cyan-300',
-  '引渡': 'bg-emerald-100 text-emerald-800 border-emerald-300',
+  '限定会員': 'bg-indigo-100 text-indigo-800 border-indigo-300',
+  '面談': 'bg-cyan-100 text-cyan-800 border-cyan-300',
+  '建築申込': 'bg-teal-100 text-teal-800 border-teal-300',
+  'プラン提出': 'bg-sky-100 text-sky-800 border-sky-300',
+  '内定': 'bg-emerald-100 text-emerald-800 border-emerald-300',
+  'ボツ・他決': 'bg-gray-100 text-gray-800 border-gray-300',
+  '変更契約前': 'bg-orange-100 text-orange-800 border-orange-300',
+  '変更契約後': 'bg-amber-100 text-amber-800 border-amber-300',
+  'オーナー': 'bg-green-100 text-green-800 border-green-300',
 }
 
 export default function ChecklistsAdminPage() {

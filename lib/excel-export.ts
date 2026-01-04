@@ -1,19 +1,38 @@
 /**
  * Excel出力ユーティリティ
  * 資金計画書・請負契約書のExcel出力
+ *
+ * ExcelJS版を使用して、書式・数式・印刷設定を完全に保持
  */
 
 import * as XLSX from 'xlsx'
 import type { FundPlanData } from '@/types/fund-plan'
+
+// ExcelJS版をエクスポート（完全コピー版として使用）
+export { exportFundPlanWithExcelJS } from './excel-export-exceljs'
 
 // ============================================
 // テンプレートベースExcel出力（完全一致版）
 // ============================================
 
 /**
- * テンプレートを使用して資金計画書をExcel出力（完全一致版）
+ * テンプレートを使用して資金計画書をExcel出力
+ * ExcelJS版を使用して書式・数式・印刷設定を完全に保持
  */
 export async function exportFundPlanFromTemplate(
+  data: FundPlanData,
+  filename?: string
+): Promise<void> {
+  // ExcelJS版を使用（書式・数式・印刷設定を完全保持）
+  const { exportFundPlanWithExcelJS } = await import('./excel-export-exceljs')
+  await exportFundPlanWithExcelJS(data, filename)
+}
+
+/**
+ * @deprecated SheetJS版（書式が保持されない）
+ * 下位互換性のために残しています
+ */
+export async function exportFundPlanFromTemplateSheetJS(
   data: FundPlanData,
   filename?: string
 ): Promise<void> {

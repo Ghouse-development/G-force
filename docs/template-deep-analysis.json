@@ -1,0 +1,16 @@
+{
+  "totalCells": 8063,
+  "inputCandidates": 19,
+  "foundMappings": [
+    {
+      "label": "中間時金(1)",
+      "labelAddress": "BA20",
+      "inputAddress": "BG20",
+      "dataPath": "paymentPlanConstruction.interimPayment",
+      "section": "paymentPlan",
+      "row": 20,
+      "inputValue": 0.3
+    }
+  ],
+  "numberCells": []
+}

@@ -1,5 +1,187 @@
 # G-force 開発記録
 
+## 2026年1月4日 - Excelセルマッピング完全検証・システム化
+
+### 概要
+
+資金計画書Excelテンプレートのセルマッピングを完全に検証し、システム化しました。
+
+### 成果
+
+| 項目 | 結果 |
+|---|---|
+| マッピング済みセル | 50セル（100%検証済み） |
+| 型カバレッジ | 96.7%（50マッピング + 157除外 / 214フィールド） |
+| TypeScript/ESLint | エラー0件 |
+| Excel出力テスト | 合格（21/21セル検証） |
+
+### 新規作成ファイル
+
+**セルマッピング設定:**
+- `lib/fund-plan/cell-mapping.ts` - 50セルの検証済みマッピング
+
+**検証スクリプト:**
+- `scripts/verify-mappings.ts` - セルマッピング検証
+- `scripts/validate-mapping-coverage.ts` - FundPlanData型との照合
+- `scripts/investigate-unmapped-fields.ts` - 未マッピングフィールド調査
+- `scripts/test-excel-export-node.ts` - Excel出力テスト（Node.js版）
+- `scripts/verify-excel-output.ts` - 出力ファイル検証
+
+**分析スクリプト:**
+- `scripts/analyze-template-deep.ts` - テンプレート深層分析
+- `scripts/analyze-input-cells.ts` - 入力セル検出
+- `scripts/analyze-costs.ts` - 費用セクション分析
+- `scripts/analyze-remaining.ts` - 残りセクション分析
+
+**ドキュメント:**
+- `docs/excel-mapping-system.md` - システム全体ガイド
+
+### セルマッピング詳細
+
+```
+■ ヘッダー（1行目）- 7セル
+  AH1: 邸名, N1: 商品タイプ, CA1: 施工面積
+  CJ1: 階数, BG1: 準防火地域, BM1: 建物構造, DA1: 見積日
+
+■ 付帯工事費用A（33-41行目）- 8セル
+  O35: 構造計算, O37: 構造図, O39: BELS申請
+  AI33: 屋外電気・給水, AI35: 瑕疵保険等
+  AI37: 設計監理, AI39: 安全対策, AI41: 仮設工事
+
+■ 付帯工事費用B（46-54行目）- 2セル
+  G46: 太陽光パネル枚数, AI54: オプション工事
+
+■ 付帯工事費用C（69行目）- 1セル
+  O69: 残土処理工事
+
+■ 諸費用（82-98行目）- 8セル
+  O82: 建物登記, O86: つなぎローン, O88: 印紙代
+  O90: 建物請負印紙, O92: 火災保険, O94: 先行工事
+  O96: 外構工事, O98: 造作工事
+
+■ 土地費用（AI列 82-92行目）- 5セル
+  AI82: 土地売買代金, AI86: 土地契約印紙, AI88: 仲介手数料
+  AI90: 土地登記費用, AI92: 滅失登記費用
+
+■ 借入計画（33-37行目）- 9セル
+  BA/BG/BO 33: A銀行, 35: B銀行, 37: C銀行
+
+■ 工程スケジュール（DA列 8-26行目）- 7セル
+  DA8: 土地契約, DA10: 建物契約, DA18: 仕様最終打合せ
+  DA20: 変更契約, DA22: 着工, DA24: 上棟, DA26: 竣工
+
+■ 支払計画（BG列 18-22行目）- 3セル
+  BG18: 契約金(10%), BG20: 中間時金1(30%), BG22: 中間時金2(30%)
+```
+
+### 自動計算セル（入力不要）
+
+- 坪単価(X28): 商品タイプから自動計算
+- 確認申請(O33), 長期優良(O41): 数式
+- 太陽光費用(O46), 蓄電池(O48): 数式
+- 準防火(O59), 解体(O61), 地盤改良(O67): 数式
+
+### 検証コマンド
+
+```bash
+# セルマッピングの検証
+npx tsx scripts/verify-mappings.ts
+
+# 型との照合
+npx tsx scripts/validate-mapping-coverage.ts
+
+# Excel出力テスト
+npx tsx scripts/test-excel-export-node.ts
+
+# 出力ファイル検証
+npx tsx scripts/verify-excel-output.ts
+```
+
+### 修正内容
+
+1. **paymentPlan dataPath修正**: `paymentPlanConstruction.contractFeeRatio` → `paymentPlanConstruction.contractFee.standardRate`
+2. **坪単価(X28)**: 数式と判明、マッピングから除外
+3. **土地費用追加**: AI82, AI86, AI88, AI90, AI92
+4. **諸費用追加**: O82, O94, O98
+5. **付帯工事費用A追加**: AI33, AI37, AI39, AI41
+6. **付帯工事費用B追加**: AI54
+7. **付帯工事費用C追加**: O69
+8. **レガシーコード削除**: fillFundPlanSheet関数
+
+---
+
+## 2025年1月4日 - ExcelJS導入・Excel完全コピー対応
+
+### ExcelJS導入
+
+**目的**: Excelテンプレートの書式・数式・印刷設定を完全に保持したままエクスポート
+
+**従来の問題（SheetJS無料版）**:
+- 数式が消える
+- 塗りつぶし・フォント・罫線が保持されない
+- 印刷範囲が消える
+- 行の高さ・列の幅が一部消える
+
+**ExcelJSで対応可能になった項目**:
+| 項目 | 対応状況 |
+|-----|---------|
+| セル値 | ✅ |
+| 数式 | ✅ 保持 |
+| 塗りつぶし・フォント | ✅ |
+| 罫線 | ✅ |
+| 行の高さ・列の幅 | ✅ |
+| 印刷範囲 | ✅ |
+| 結合セル | ✅ |
+
+**新規ファイル**: `lib/excel-export-exceljs.ts`
+
+**変更ファイル**: `lib/excel-export.ts`
+- `exportFundPlanFromTemplate()` が内部でExcelJS版を使用するように変更
+- 下位互換性のため `exportFundPlanFromTemplateSheetJS()` を残存
+
+### システム全体確認・修正
+
+- パイプラインステータス定義の統一（admin/checklists, customer-checklist）
+- APIエラーハンドリング改善（customer-checklist）
+
+---
+
+## 2025年1月4日 - UI/UX統一タスク完了
+
+### 完了した残タスク
+
+開発記録に記載されていた「SmartSelection/カード選択UI適用」の残タスクを完了しました。
+
+#### 確認・対応結果
+
+| 画面 | 対象項目 | 状態 |
+|-----|---------|------|
+| プラン依頼 `/plan-requests/new` | 商品選択 | 適用済み（SmartSelection） |
+| 契約ウィザード `/contract-requests/new` | 商品・紹介選択 | 適用済み（SmartSelection） |
+| 顧客詳細 `/customers/[id]` | 土地状況 | 適用済み（カード選択UI） |
+| 資金計画書作成 `/fund-plans/new` | 商品選択 | **今回対応**（カード選択UI） |
+
+#### 資金計画書の商品選択UI改善
+
+**ファイル:** `components/fund-plans/sections/basic-info-section.tsx`
+
+- 主要商品（LIFE, LIFE+, HOURS, LACIE, G-SMART平屋）をカード形式で表示
+- その他10種類の商品は「その他の商品を選択」で折りたたみ表示
+- 坪単価を商品カードに表示（例: 55.0万/坪）
+- 選択中の商品はオレンジ色でハイライト
+
+**UI構成:**
+```
+┌─────┬─────┬─────┬─────┬─────────┐
+│LIFE │LIFE+│HOURS│LACIE│G-SMART平屋│  ← 主要商品カード
+└─────┴─────┴─────┴─────┴─────────┘
+┌──────────────────────────────────┐
+│ ▼ その他の商品を選択             │  ← 折りたたみ
+└──────────────────────────────────┘
+```
+
+---
+
 ## 2024年12月27日（夜） - サンプルデータ充実化・エラー修正
 
 ### 実装した機能
@@ -107,16 +289,16 @@
 - contracts/contract-wizard.tsx
 - api/documents/route.ts
 
-### 残タスク（UI/UX統一の継続）
+### 残タスク（UI/UX統一の継続） → 2025年1月4日に完了
 
 以下の画面にSmartSelection/カード選択UIを適用する必要あり:
 
 | 画面 | 対象項目 | 状態 |
 |-----|---------|------|
-| プラン依頼 `/plan-requests/new` | 商品、工法など | 未実施 |
-| 顧客詳細 `/customers/[id]` | 土地状況、ステータス変更 | 未実施 |
-| 契約依頼 `/contract-requests/new` | 各選択項目 | 未実施 |
-| 資金計画書作成 | 商品、ローン先など | 未実施 |
+| プラン依頼 `/plan-requests/new` | 商品、工法など | ✅ 完了（SmartSelection適用済み） |
+| 顧客詳細 `/customers/[id]` | 土地状況、ステータス変更 | ✅ 完了（カード選択UI適用済み） |
+| 契約依頼 `/contract-requests/new` | 各選択項目 | ✅ 完了（SmartSelection適用済み） |
+| 資金計画書作成 | 商品、ローン先など | ✅ 完了（カード選択UI適用） |
 
 ---
 
