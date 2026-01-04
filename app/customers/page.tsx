@@ -126,9 +126,8 @@ export default function CustomersPage() {
       <div className="space-y-6">
         {/* Demo Mode Banner */}
         {isDemoMode && (
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 shadow-lg">
-            <span className="text-lg">🧪</span>
-            <span className="font-medium">デモモード：サンプルデータを表示中</span>
+          <div className="bg-gray-800 text-white px-4 py-2 rounded-lg text-center text-sm">
+            デモモード：サンプルデータを表示中
           </div>
         )}
 
@@ -154,7 +153,7 @@ export default function CustomersPage() {
               CSV出力
             </Button>
             <Link href="/customers/new">
-              <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
+              <Button className="bg-orange-500 hover:bg-orange-600">
                 <Plus className="w-4 h-4 mr-2" />
                 新規登録
               </Button>
@@ -162,73 +161,26 @@ export default function CustomersPage() {
           </div>
         </div>
 
-        {/* 当月契約予測サマリ */}
-        <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
-          <Card className="border-0 shadow-lg bg-gradient-to-r from-blue-50 to-indigo-50">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-blue-600 font-medium">契約済（当月）</p>
-                  <p className="text-2xl font-bold text-blue-700">{contractedThisMonth}</p>
-                </div>
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <FileSignature className="w-5 h-5 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-lg bg-gradient-to-r from-emerald-50 to-green-50">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-emerald-600 font-medium">内定</p>
-                  <p className="text-2xl font-bold text-emerald-700">{naiteCustomers.length}</p>
-                </div>
-                <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                  <Users className="w-5 h-5 text-emerald-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-lg bg-gradient-to-r from-orange-50 to-amber-50">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-orange-600 font-medium">チャレンジ</p>
-                  <p className="text-2xl font-bold text-orange-700">{challengeCustomers.length}</p>
-                </div>
-                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                  <Target className="w-5 h-5 text-orange-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-lg bg-gradient-to-r from-purple-50 to-violet-50 md:col-span-2">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center space-x-2">
-                  <TrendingUp className="w-5 h-5 text-purple-600" />
-                  <span className="font-medium text-gray-800 text-sm">遷移率</span>
-                </div>
-                <div className="flex items-center space-x-3 text-xs flex-wrap">
-                  <div className="flex items-center space-x-1">
-                    <span className="text-gray-600">会員→面談</span>
-                    <span className="font-bold text-purple-600">{conversionRates.memberToMeeting}%</span>
-                  </div>
-                  <ArrowRight className="w-3 h-3 text-gray-400 hidden md:block" />
-                  <div className="flex items-center space-x-1">
-                    <span className="text-gray-600">面談→申込</span>
-                    <span className="font-bold text-purple-600">{conversionRates.meetingToApplication}%</span>
-                  </div>
-                  <ArrowRight className="w-3 h-3 text-gray-400 hidden md:block" />
-                  <div className="flex items-center space-x-1">
-                    <span className="text-gray-600">申込→内定</span>
-                    <span className="font-bold text-purple-600">{conversionRates.applicationToDecision}%</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* サマリー */}
+        <div className="flex flex-wrap items-center gap-6 py-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">契約済（当月）</span>
+            <span className="text-xl font-bold text-gray-900">{contractedThisMonth}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">内定</span>
+            <span className="text-xl font-bold text-orange-600">{naiteCustomers.length}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">チャレンジ</span>
+            <span className="text-xl font-bold text-gray-900">{challengeCustomers.length}</span>
+          </div>
+          <div className="hidden md:flex items-center gap-3 text-sm text-gray-500 border-l pl-6">
+            <span>遷移率:</span>
+            <span>会員→面談 <b className="text-gray-900">{conversionRates.memberToMeeting}%</b></span>
+            <span>→申込 <b className="text-gray-900">{conversionRates.meetingToApplication}%</b></span>
+            <span>→内定 <b className="text-gray-900">{conversionRates.applicationToDecision}%</b></span>
+          </div>
         </div>
 
         {/* 検索 */}

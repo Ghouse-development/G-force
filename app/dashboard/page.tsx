@@ -265,10 +265,10 @@ export default function DashboardPage() {
         </div>
 
         {/* 今日やること：最重要 */}
-        <Card className="border-0 shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-4">
-            <h2 className="text-white font-bold text-lg flex items-center">
-              <Sparkles className="w-5 h-5 mr-2" />
+        <Card className="border-0 shadow-md overflow-hidden">
+          <div className="bg-orange-500 px-5 py-3">
+            <h2 className="text-white font-bold flex items-center">
+              <Sparkles className="w-4 h-4 mr-2" />
               今日やること
             </h2>
           </div>
@@ -319,10 +319,10 @@ export default function DashboardPage() {
         </Card>
 
         {/* 今期目標と実績 */}
-        <Card className="border-0 shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-4">
-            <h2 className="text-white font-bold text-lg flex items-center">
-              <Trophy className="w-5 h-5 mr-2" />
+        <Card className="border-0 shadow-md overflow-hidden">
+          <div className="bg-gray-800 px-5 py-3">
+            <h2 className="text-white font-bold flex items-center">
+              <Trophy className="w-4 h-4 mr-2" />
               {fiscalYear}期 目標達成状況
             </h2>
           </div>
@@ -382,12 +382,10 @@ export default function DashboardPage() {
                   <span className="text-3xl font-bold text-blue-600">{fiscalStats.activeCustomers}</span>
                   <span className="text-lg text-gray-400 mb-1">件</span>
                 </div>
-                <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full"
-                    style={{ width: `${Math.min((fiscalStats.activeCustomers / 20) * 100, 100)}%` }}
-                  />
-                </div>
+                <Progress
+                  value={Math.min((fiscalStats.activeCustomers / 20) * 100, 100)}
+                  className="h-2"
+                />
                 <p className="text-xs text-gray-500">
                   見込み金額 <span className="font-bold text-blue-600">{formatAmount(fiscalStats.estimatedAmount)}万円</span>
                 </p>
@@ -399,46 +397,42 @@ export default function DashboardPage() {
         {/* クイックアクション */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Link href="/customers/new">
-            <Card className="border-2 border-dashed border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all cursor-pointer">
+            <Card className="border hover:border-orange-300 hover:bg-orange-50/50 transition-all cursor-pointer">
               <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 mx-auto bg-orange-100 rounded-xl flex items-center justify-center mb-2">
-                  <UserPlus className="w-6 h-6 text-orange-600" />
+                <div className="w-10 h-10 mx-auto bg-gray-100 rounded-lg flex items-center justify-center mb-2">
+                  <UserPlus className="w-5 h-5 text-gray-600" />
                 </div>
-                <p className="font-bold text-sm text-gray-900">お客様登録</p>
-                <p className="text-xs text-gray-500">新規問合せ</p>
+                <p className="font-medium text-sm text-gray-900">お客様登録</p>
               </CardContent>
             </Card>
           </Link>
           <Link href="/fund-plans/new">
-            <Card className="border-2 border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50 transition-all cursor-pointer">
+            <Card className="border hover:border-orange-300 hover:bg-orange-50/50 transition-all cursor-pointer">
               <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 mx-auto bg-blue-100 rounded-xl flex items-center justify-center mb-2">
-                  <FileText className="w-6 h-6 text-blue-600" />
+                <div className="w-10 h-10 mx-auto bg-gray-100 rounded-lg flex items-center justify-center mb-2">
+                  <FileText className="w-5 h-5 text-gray-600" />
                 </div>
-                <p className="font-bold text-sm text-gray-900">資金計画</p>
-                <p className="text-xs text-gray-500">新規作成</p>
+                <p className="font-medium text-sm text-gray-900">資金計画</p>
               </CardContent>
             </Card>
           </Link>
           <Link href="/plan-requests/new">
-            <Card className="border-2 border-dashed border-purple-200 hover:border-purple-400 hover:bg-purple-50 transition-all cursor-pointer">
+            <Card className="border hover:border-orange-300 hover:bg-orange-50/50 transition-all cursor-pointer">
               <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 mx-auto bg-purple-100 rounded-xl flex items-center justify-center mb-2">
-                  <FileEdit className="w-6 h-6 text-purple-600" />
+                <div className="w-10 h-10 mx-auto bg-gray-100 rounded-lg flex items-center justify-center mb-2">
+                  <FileEdit className="w-5 h-5 text-gray-600" />
                 </div>
-                <p className="font-bold text-sm text-gray-900">プラン依頼</p>
-                <p className="text-xs text-gray-500">設計へ依頼</p>
+                <p className="font-medium text-sm text-gray-900">プラン依頼</p>
               </CardContent>
             </Card>
           </Link>
           <Link href="/contracts/new">
-            <Card className="border-2 border-dashed border-green-200 hover:border-green-400 hover:bg-green-50 transition-all cursor-pointer">
+            <Card className="border hover:border-orange-300 hover:bg-orange-50/50 transition-all cursor-pointer">
               <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 mx-auto bg-green-100 rounded-xl flex items-center justify-center mb-2">
-                  <FileSignature className="w-6 h-6 text-green-600" />
+                <div className="w-10 h-10 mx-auto bg-gray-100 rounded-lg flex items-center justify-center mb-2">
+                  <FileSignature className="w-5 h-5 text-gray-600" />
                 </div>
-                <p className="font-bold text-sm text-gray-900">契約作成</p>
-                <p className="text-xs text-gray-500">請負契約書</p>
+                <p className="font-medium text-sm text-gray-900">契約作成</p>
               </CardContent>
             </Card>
           </Link>

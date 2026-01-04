@@ -168,7 +168,7 @@ export function Header() {
                 height={36}
                 className="rounded-lg"
               />
-              <span className="hidden sm:block text-xl font-bold bg-gradient-to-r from-orange-500 to-yellow-500 bg-clip-text text-transparent">
+              <span className="hidden sm:block text-xl font-bold text-orange-500">
                 G-force
               </span>
             </Link>
@@ -184,10 +184,10 @@ export function Header() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200',
+                  'flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                   isActive
-                    ? 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white shadow-md'
-                    : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600'
+                    ? 'bg-orange-500 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -349,10 +349,10 @@ export function Header() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200',
+                  'flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                   isActive
-                    ? 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white shadow-md'
-                    : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600'
+                    ? 'bg-orange-500 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -474,7 +474,7 @@ export function Header() {
                 height={32}
                 className="rounded-lg"
               />
-              <span className="text-lg font-bold bg-gradient-to-r from-orange-500 to-yellow-500 bg-clip-text text-transparent">
+              <span className="text-lg font-bold text-orange-500">
                 G-force
               </span>
             </div>
@@ -507,10 +507,10 @@ export function Header() {
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
-                    'flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-all',
+                    'flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors',
                     isActive
-                      ? 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white'
-                      : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600'
+                      ? 'bg-orange-500 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
                   )}
                 >
                   <Icon className="h-5 w-5" />
