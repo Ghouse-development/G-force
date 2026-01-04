@@ -373,9 +373,9 @@ export default function CustomerDetailPage() {
         )}
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Customer Info */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-2 space-y-4">
             {/* お問い合わせ情報（折りたたみ可能） */}
             <Collapsible defaultOpen={false}>
               <Card className="border-0 shadow-lg">
@@ -566,7 +566,7 @@ export default function CustomerDetailPage() {
           </div>
 
           {/* カード形式セクション */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-3 space-y-4">
             {/* ジャーニー */}
             <Collapsible defaultOpen={true}>
               <Card className="border-0 shadow-lg">
