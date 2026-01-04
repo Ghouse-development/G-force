@@ -20,8 +20,6 @@ import {
   CheckCircle2,
   RotateCcw,
   Download,
-  LayoutList,
-  LayoutGrid,
   FileText,
 } from 'lucide-react'
 import {
@@ -298,7 +296,6 @@ const createMockContracts = (): Omit<StoredContract, 'id' | 'created_at' | 'upda
 export default function ContractsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<ContractStatus | 'all'>('all')
-  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list')
   const [mounted, setMounted] = useState(false)
 
   const { contracts, addContract } = useContractStore()
@@ -461,61 +458,40 @@ export default function ContractsPage() {
           </div>
         </div>
 
-        {/* Filters & View Toggle */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          {/* Status Tabs */}
-          <div className="flex space-x-2 overflow-x-auto pb-2 md:pb-0">
-            <Button
-              variant={statusFilter === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setStatusFilter('all')}
-              className={statusFilter === 'all' ? 'bg-gray-800' : ''}
-            >
-              すべて
-              <Badge variant="secondary" className="ml-2">
-                {statusCounts.all}
-              </Badge>
-            </Button>
-            {CONTRACT_STATUS_ORDER.map((status) => {
-              const config = CONTRACT_STATUS_CONFIG[status]
-              const Icon = STATUS_ICONS[status]
-              return (
-                <Button
-                  key={status}
-                  variant={statusFilter === status ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setStatusFilter(status)}
-                  className={statusFilter === status ? `${config.bgColor} ${config.color} border-0` : ''}
-                >
-                  <Icon className={`w-3 h-3 mr-1 ${statusFilter !== status ? config.color : ''}`} />
-                  <span className={statusFilter !== status ? config.color : ''}>
-                    {config.label}
-                  </span>
-                  <Badge variant="secondary" className="ml-2">
-                    {statusCounts[status] || 0}
-                  </Badge>
-                </Button>
-              )
-            })}
-          </div>
-
-          {/* View Toggle */}
-          <div className="flex items-center space-x-2">
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-            >
-              <LayoutList className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'kanban' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('kanban')}
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </Button>
-          </div>
+        {/* Status Tabs */}
+        <div className="flex space-x-2 overflow-x-auto pb-2">
+          <Button
+            variant={statusFilter === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setStatusFilter('all')}
+            className={statusFilter === 'all' ? 'bg-gray-800' : ''}
+          >
+            すべて
+            <Badge variant="secondary" className="ml-2">
+              {statusCounts.all}
+            </Badge>
+          </Button>
+          {CONTRACT_STATUS_ORDER.map((status) => {
+            const config = CONTRACT_STATUS_CONFIG[status]
+            const Icon = STATUS_ICONS[status]
+            return (
+              <Button
+                key={status}
+                variant={statusFilter === status ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setStatusFilter(status)}
+                className={statusFilter === status ? `${config.bgColor} ${config.color} border-0` : ''}
+              >
+                <Icon className={`w-3 h-3 mr-1 ${statusFilter !== status ? config.color : ''}`} />
+                <span className={statusFilter !== status ? config.color : ''}>
+                  {config.label}
+                </span>
+                <Badge variant="secondary" className="ml-2">
+                  {statusCounts[status] || 0}
+                </Badge>
+              </Button>
+            )
+          })}
         </div>
 
         {/* Search */}
@@ -530,8 +506,7 @@ export default function ContractsPage() {
         </div>
 
         {/* List View */}
-        {viewMode === 'list' && (
-          <div className="space-y-3">
+        <div className="space-y-3">
             {filteredContracts.length === 0 ? (
               <Card className="border-0 shadow-lg">
                 <CardContent className="p-12 text-center">
@@ -614,64 +589,7 @@ export default function ContractsPage() {
                 )
               })
             )}
-          </div>
-        )}
-
-        {/* Kanban View */}
-        {viewMode === 'kanban' && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {CONTRACT_STATUS_ORDER.map((status) => {
-              const config = CONTRACT_STATUS_CONFIG[status]
-              const StatusIcon = STATUS_ICONS[status]
-              const statusContracts = contracts.filter((c) => c.status === status)
-
-              return (
-                <div key={status} className="space-y-3">
-                  <div className={`flex items-center space-x-2 p-3 rounded-lg ${config.bgColor}`}>
-                    <StatusIcon className={`w-5 h-5 ${config.color}`} />
-                    <span className={`font-semibold ${config.color}`}>{config.label}</span>
-                    <Badge variant="secondary">{statusContracts.length}</Badge>
-                  </div>
-                  <div className="space-y-2">
-                    {statusContracts.map((contract) => (
-                      <Link key={contract.id} href={`/contracts/${contract.id}`}>
-                        <Card className="border-0 shadow-md hover:shadow-lg transition-shadow cursor-pointer">
-                          <CardContent className="p-4">
-                            <h4 className="font-semibold text-gray-900 mb-1">
-                              {contract.tei_name || '未設定'}
-                            </h4>
-                            <p className="text-sm text-gray-700 mb-2">
-                              {contract.customer_name || '未設定'}
-                            </p>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">
-                                {contract.contract_number || '-'}
-                              </span>
-                              <span className="text-sm font-semibold text-gray-800">
-                                ¥{((contract.total_amount || 0) / 10000).toFixed(0)}万
-                              </span>
-                            </div>
-                            {contract.return_count > 0 && (
-                              <Badge variant="destructive" className="mt-2 text-xs">
-                                <RotateCcw className="w-3 h-3 mr-1" />
-                                差戻し{contract.return_count}回
-                              </Badge>
-                            )}
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ))}
-                    {statusContracts.length === 0 && (
-                      <div className="text-center py-8 text-gray-600 text-sm">
-                        データなし
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
+        </div>
       </div>
     </Layout>
   )

@@ -14,7 +14,6 @@ import {
   ChevronRight,
   Calendar,
   User,
-  Clock,
   CheckCircle,
   AlertCircle,
   FileCheck,
@@ -24,8 +23,6 @@ import {
   Presentation,
   Eye,
   MapPin,
-  LayoutGrid,
-  LayoutList,
   Download,
 } from 'lucide-react'
 import {
@@ -52,7 +49,6 @@ const ICON_MAP = {
   Eye,
   AlertCircle,
   CheckCircle,
-  Clock,
 }
 
 // 初期モックデータ
@@ -169,12 +165,9 @@ const initialMockRequests: Partial<PlanRequest>[] = [
   },
 ]
 
-type ViewMode = 'list' | 'kanban'
-
 export default function PlanRequestsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<PlanRequestStatus | 'all'>('all')
-  const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [mounted, setMounted] = useState(false)
 
   const { planRequests: storeRequests, setPlanRequests } = usePlanRequestStore()
@@ -218,18 +211,10 @@ export default function PlanRequestsPage() {
     return counts
   }, [planRequests])
 
-  // 期限超過・期限間近のカウント
+  // 期限超過のカウント
   const overdueCount = planRequests.filter(r => {
     if (!r.deadline || r.status === '完了') return false
     return new Date(r.deadline) < new Date()
-  }).length
-
-  const upcomingCount = planRequests.filter(r => {
-    if (!r.deadline || r.status === '完了') return false
-    const deadline = new Date(r.deadline)
-    const today = new Date()
-    const diff = (deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-    return diff >= 0 && diff <= 3
   }).length
 
   // 進行中のステータス（完了以外）
@@ -262,25 +247,6 @@ export default function PlanRequestsPage() {
             </p>
           </div>
           <div className="flex items-center space-x-3">
-            {/* ビュー切り替え */}
-            <div className="flex items-center bg-gray-100 rounded-lg p-1">
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className={viewMode === 'list' ? 'bg-white shadow-sm' : ''}
-              >
-                <LayoutList className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('kanban')}
-                className={viewMode === 'kanban' ? 'bg-white shadow-sm' : ''}
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </Button>
-            </div>
             <Button
               variant="outline"
               onClick={() => exportToCSV(
@@ -299,7 +265,7 @@ export default function PlanRequestsPage() {
               <Download className="w-4 h-4 mr-2" />
               CSV出力
             </Button>
-            <Link href="/plan-requests/new">
+            <Link href="/customers">
               <Button className="bg-orange-500 hover:bg-orange-600">
                 <Plus className="w-4 h-4 mr-2" />
                 新規依頼
@@ -308,50 +274,12 @@ export default function PlanRequestsPage() {
           </div>
         </div>
 
-        {/* 統計サマリー */}
-        <div className="flex flex-wrap items-center gap-6 py-2 border-b">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">進行中</span>
-            <span className="text-xl font-bold text-gray-900">{planRequests.filter(r => r.status !== '完了').length}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">完了</span>
-            <span className="text-xl font-bold text-gray-900">{planRequests.filter(r => r.status === '完了').length}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">競合あり</span>
-            <span className="text-xl font-bold text-gray-900">{planRequests.filter(r => r.has_competitor).length}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">競合勝ち</span>
-            <span className="text-xl font-bold text-gray-900">
-              {planRequests.filter(r => (r as PlanRequest & { competitor_result?: string }).competitor_result === 'won').length || 3}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">競合負け</span>
-            <span className="text-xl font-bold text-gray-900">
-              {planRequests.filter(r => (r as PlanRequest & { competitor_result?: string }).competitor_result === 'lost').length || 1}
-            </span>
-          </div>
-        </div>
-
-        {/* アラートサマリ */}
-        {(overdueCount > 0 || upcomingCount > 0) && (
-          <div className="flex items-center space-x-4">
-            {overdueCount > 0 && (
-              <Badge variant="destructive" className="px-3 py-1">
-                <AlertCircle className="w-3 h-3 mr-1" />
-                期限超過: {overdueCount}件
-              </Badge>
-            )}
-            {upcomingCount > 0 && (
-              <Badge variant="outline" className="px-3 py-1 border-yellow-500 text-yellow-700 bg-yellow-50">
-                <Clock className="w-3 h-3 mr-1" />
-                期限間近(3日以内): {upcomingCount}件
-              </Badge>
-            )}
-          </div>
+        {/* アラート（期限超過がある場合のみ） */}
+        {overdueCount > 0 && (
+          <Badge variant="destructive" className="px-3 py-1">
+            <AlertCircle className="w-3 h-3 mr-1" />
+            期限超過: {overdueCount}件
+          </Badge>
         )}
 
         {/* Status Tabs */}
@@ -412,8 +340,7 @@ export default function PlanRequestsPage() {
         </div>
 
         {/* Request List */}
-        {viewMode === 'list' ? (
-          <div className="space-y-3">
+        <div className="space-y-3">
             {filteredRequests.length === 0 ? (
               <Card className="border-0 shadow-lg">
                 <CardContent className="p-12 text-center">
@@ -530,84 +457,7 @@ export default function PlanRequestsPage() {
                 )
               })
             )}
-          </div>
-        ) : (
-          /* カンバンビュー */
-          <div className="overflow-x-auto pb-4">
-            <div className="flex space-x-4 min-w-max">
-              {PLAN_REQUEST_STATUS_ORDER.map((status) => {
-                const config = PLAN_REQUEST_STATUS_CONFIG[status]
-                const statusRequests = filteredRequests.filter(r => r.status === status)
-                const IconComponent = ICON_MAP[config.icon as keyof typeof ICON_MAP] || FileText
-
-                return (
-                  <div key={status} className="w-72 shrink-0">
-                    {/* カラムヘッダー */}
-                    <div className={`${config.bgColor} rounded-t-xl px-4 py-3 flex items-center justify-between`}>
-                      <div className="flex items-center space-x-2">
-                        <IconComponent className={`w-4 h-4 ${config.color}`} />
-                        <span className={`font-bold text-sm ${config.color}`}>{config.label}</span>
-                      </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {statusRequests.length}
-                      </Badge>
-                    </div>
-
-                    {/* カード一覧 */}
-                    <div className="bg-gray-50 rounded-b-xl p-2 min-h-[400px] space-y-2">
-                      {statusRequests.length === 0 ? (
-                        <div className="text-center py-8 text-gray-400 text-sm">
-                          案件なし
-                        </div>
-                      ) : (
-                        statusRequests.map((request) => {
-                          const isOverdue = request.deadline && new Date(request.deadline) < new Date() && request.status !== '完了'
-
-                          return (
-                            <Link key={request.id} href={`/plan-requests/${request.id}`}>
-                              <Card className={`border-0 shadow-sm hover:shadow-md transition-all cursor-pointer ${isOverdue ? 'ring-2 ring-red-300' : ''}`}>
-                                <CardContent className="p-3">
-                                  <div className="flex items-start justify-between mb-2">
-                                    <h4 className="font-bold text-sm text-gray-900 truncate flex-1">
-                                      {request.tei_name}
-                                    </h4>
-                                    {isOverdue && (
-                                      <AlertCircle className="w-4 h-4 text-red-500 shrink-0 ml-1" />
-                                    )}
-                                  </div>
-                                  <p className="text-xs text-gray-600 mb-2 truncate">
-                                    {request.customer_name}
-                                  </p>
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className="text-gray-500">
-                                      {request.building_area && `${request.building_area}坪`}
-                                    </span>
-                                    {request.deadline && (
-                                      <span className={`flex items-center ${isOverdue ? 'text-red-600' : 'text-gray-500'}`}>
-                                        <Calendar className="w-3 h-3 mr-0.5" />
-                                        {new Date(request.deadline).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {request.designer_name && (
-                                    <div className="mt-2 pt-2 border-t flex items-center text-xs text-gray-500">
-                                      <User className="w-3 h-3 mr-1" />
-                                      {request.designer_name}
-                                    </div>
-                                  )}
-                                </CardContent>
-                              </Card>
-                            </Link>
-                          )
-                        })
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </Layout>
   )
