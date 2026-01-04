@@ -597,157 +597,158 @@ export default function CustomerDetailPage() {
               </Card>
             </Collapsible>
 
-            {/* 受付 */}
-            <Collapsible defaultOpen={false}>
-              <Card className="border-0 shadow-lg">
-                <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
-                    <CardTitle className="flex items-center justify-between text-base">
-                      <div className="flex items-center">
-                        <ClipboardList className="w-5 h-5 mr-2 text-blue-500" />
-                        受付
-                      </div>
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
-                    </CardTitle>
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="pt-0">
-                    <ReceptionRecordSection customerId={customer.id} />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
+            {/* グリッドカード形式のセクション */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {/* 受付 */}
+              <Collapsible defaultOpen={false}>
+                <Card className="border-0 shadow-lg h-full">
+                  <CollapsibleTrigger asChild>
+                    <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
+                      <CardTitle className="flex items-center justify-between text-sm">
+                        <div className="flex items-center">
+                          <ClipboardList className="w-4 h-4 mr-2 text-blue-500" />
+                          受付
+                        </div>
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                      </CardTitle>
+                    </CardHeader>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <CardContent className="pt-0">
+                      <ReceptionRecordSection customerId={customer.id} />
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
 
-            {!isPreMember && (
-              <>
-                {/* ヒアリング */}
-                <Collapsible defaultOpen={false}>
-                  <Card className="border-0 shadow-lg">
-                    <CollapsibleTrigger asChild>
-                      <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
-                        <CardTitle className="flex items-center justify-between text-base">
-                          <div className="flex items-center">
-                            <FileQuestion className="w-5 h-5 mr-2 text-purple-500" />
-                            ヒアリング
-                          </div>
-                          <ChevronDown className="w-5 h-5 text-gray-400" />
-                        </CardTitle>
-                      </CardHeader>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <CardContent className="pt-0">
-                        <HearingSheetSection customerId={customer.id} />
-                      </CardContent>
-                    </CollapsibleContent>
-                  </Card>
-                </Collapsible>
-
-                {/* 書類 */}
-                <Collapsible defaultOpen={false}>
-                  <Card className="border-0 shadow-lg">
-                    <CollapsibleTrigger asChild>
-                      <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
-                        <CardTitle className="flex items-center justify-between text-base">
-                          <div className="flex items-center">
-                            <FileText className="w-5 h-5 mr-2 text-green-500" />
-                            書類
-                          </div>
-                          <ChevronDown className="w-5 h-5 text-gray-400" />
-                        </CardTitle>
-                      </CardHeader>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <CardContent className="pt-0">
-                        <DocumentManager
-                          customerId={customer.id}
-                          landStatus={landStatus}
-                          pipelineStatus={customer.pipeline_status}
-                        />
-                      </CardContent>
-                    </CollapsibleContent>
-                  </Card>
-                </Collapsible>
-
-                {/* 土地 */}
-                <Collapsible defaultOpen={false}>
-                  <Card className="border-0 shadow-lg">
-                    <CollapsibleTrigger asChild>
-                      <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
-                        <CardTitle className="flex items-center justify-between text-base">
-                          <div className="flex items-center">
-                            <Map className="w-5 h-5 mr-2 text-emerald-500" />
-                            土地
-                          </div>
-                          <ChevronDown className="w-5 h-5 text-gray-400" />
-                        </CardTitle>
-                      </CardHeader>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <CardContent className="pt-0 space-y-4">
-                        <LandConditionsEditor
-                          customerId={customer.id}
-                          customerName={customer.name}
-                          onSave={() => toast.success('保存しました')}
-                        />
-                        <LandMatchList customerId={customer.id} />
-                      </CardContent>
-                    </CollapsibleContent>
-                  </Card>
-                </Collapsible>
-
-                {/* メモ */}
-                {customer.notes && (
+              {!isPreMember && (
+                <>
+                  {/* ヒアリング */}
                   <Collapsible defaultOpen={false}>
-                    <Card className="border-0 shadow-lg">
+                    <Card className="border-0 shadow-lg h-full">
                       <CollapsibleTrigger asChild>
                         <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
-                          <CardTitle className="flex items-center justify-between text-base">
+                          <CardTitle className="flex items-center justify-between text-sm">
                             <div className="flex items-center">
-                              <FileEdit className="w-5 h-5 mr-2 text-gray-500" />
-                              メモ
+                              <FileQuestion className="w-4 h-4 mr-2 text-purple-500" />
+                              ヒアリング
                             </div>
-                            <ChevronDown className="w-5 h-5 text-gray-400" />
+                            <ChevronDown className="w-4 h-4 text-gray-400" />
                           </CardTitle>
                         </CardHeader>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         <CardContent className="pt-0">
-                          <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap">
-                            {customer.notes}
+                          <HearingSheetSection customerId={customer.id} />
+                        </CardContent>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
+
+                  {/* 書類 */}
+                  <Collapsible defaultOpen={false}>
+                    <Card className="border-0 shadow-lg h-full">
+                      <CollapsibleTrigger asChild>
+                        <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
+                          <CardTitle className="flex items-center justify-between text-sm">
+                            <div className="flex items-center">
+                              <FileText className="w-4 h-4 mr-2 text-green-500" />
+                              書類
+                            </div>
+                            <ChevronDown className="w-4 h-4 text-gray-400" />
+                          </CardTitle>
+                        </CardHeader>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <CardContent className="pt-0">
+                          <DocumentManager
+                            customerId={customer.id}
+                            landStatus={landStatus}
+                            pipelineStatus={customer.pipeline_status}
+                          />
+                        </CardContent>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
+
+                  {/* 土地 */}
+                  <Collapsible defaultOpen={false}>
+                    <Card className="border-0 shadow-lg h-full">
+                      <CollapsibleTrigger asChild>
+                        <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
+                          <CardTitle className="flex items-center justify-between text-sm">
+                            <div className="flex items-center">
+                              <Map className="w-4 h-4 mr-2 text-emerald-500" />
+                              土地
+                            </div>
+                            <ChevronDown className="w-4 h-4 text-gray-400" />
+                          </CardTitle>
+                        </CardHeader>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <CardContent className="pt-0 space-y-4">
+                          <LandConditionsEditor
+                            customerId={customer.id}
+                            customerName={customer.name}
+                            onSave={() => toast.success('保存しました')}
+                          />
+                          <LandMatchList customerId={customer.id} />
+                        </CardContent>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
+
+                  {/* メモ */}
+                  <Collapsible defaultOpen={false}>
+                    <Card className="border-0 shadow-lg h-full">
+                      <CollapsibleTrigger asChild>
+                        <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
+                          <CardTitle className="flex items-center justify-between text-sm">
+                            <div className="flex items-center">
+                              <FileEdit className="w-4 h-4 mr-2 text-gray-500" />
+                              メモ
+                            </div>
+                            <ChevronDown className="w-4 h-4 text-gray-400" />
+                          </CardTitle>
+                        </CardHeader>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <CardContent className="pt-0">
+                          <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-sm">
+                            {customer.notes || 'メモはありません'}
                           </div>
                         </CardContent>
                       </CollapsibleContent>
                     </Card>
                   </Collapsible>
-                )}
 
-                {/* AI */}
-                <Collapsible defaultOpen={false}>
-                  <Card className="border-0 shadow-lg">
-                    <CollapsibleTrigger asChild>
-                      <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
-                        <CardTitle className="flex items-center justify-between text-base">
-                          <div className="flex items-center">
-                            <Brain className="w-5 h-5 mr-2 text-indigo-500" />
-                            AI
-                          </div>
-                          <ChevronDown className="w-5 h-5 text-gray-400" />
-                        </CardTitle>
-                      </CardHeader>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <CardContent className="pt-0">
-                        <AISalesAssistant
-                          customer={customer}
-                          journeyEvents={journeyEvents}
-                        />
-                      </CardContent>
-                    </CollapsibleContent>
-                  </Card>
-                </Collapsible>
-              </>
-            )}
+                  {/* AI */}
+                  <Collapsible defaultOpen={false}>
+                    <Card className="border-0 shadow-lg h-full">
+                      <CollapsibleTrigger asChild>
+                        <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-3">
+                          <CardTitle className="flex items-center justify-between text-sm">
+                            <div className="flex items-center">
+                              <Brain className="w-4 h-4 mr-2 text-indigo-500" />
+                              AI
+                            </div>
+                            <ChevronDown className="w-4 h-4 text-gray-400" />
+                          </CardTitle>
+                        </CardHeader>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <CardContent className="pt-0">
+                          <AISalesAssistant
+                            customer={customer}
+                            journeyEvents={journeyEvents}
+                          />
+                        </CardContent>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
