@@ -11,9 +11,6 @@ import {
   Search,
   Plus,
   Download,
-  TrendingUp,
-  ArrowRight,
-  Target,
 } from 'lucide-react'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { CustomerListSkeleton } from '@/components/ui/skeleton-loaders'
@@ -29,7 +26,6 @@ import {
 import { PipelineKanban } from '@/components/customers/pipeline-kanban'
 import { useCustomerStore, useContractStore } from '@/store'
 import { useDemoModeStore, DEMO_CUSTOMERS } from '@/store/demo-store'
-import { FileSignature } from 'lucide-react'
 
 // 遷移率を計算
 function calculateConversionRates(customers: Partial<Customer>[]) {

@@ -9,7 +9,6 @@ import {
   Users,
   Settings,
   ChevronRight,
-  Building2,
   Target,
   Bell,
   Database,

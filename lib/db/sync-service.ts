@@ -10,10 +10,9 @@ import {
   useContractStore,
   useFundPlanStore,
   useHandoverStore,
-  useFileStore,
 } from '@/store'
 import type { Customer, PlanRequest } from '@/types/database'
-import type { StoredContract, StoredFundPlan, StoredHandover, StoredFile } from '@/store'
+import type { StoredContract, StoredFundPlan, StoredHandover } from '@/store'
 
 // 同期状態
 export interface SyncState {
@@ -118,7 +117,6 @@ export async function syncFromDatabase(): Promise<void> {
     const contractStore = useContractStore.getState()
     const fundPlanStore = useFundPlanStore.getState()
     const handoverStore = useHandoverStore.getState()
-    const fileStore = useFileStore.getState()
 
     if (customers.length > 0) {
       customerStore.setCustomers(customers)

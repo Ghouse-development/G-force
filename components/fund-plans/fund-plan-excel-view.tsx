@@ -4,12 +4,11 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Save, Download, Lock, FileSpreadsheet, ZoomIn, ZoomOut, Navigation, ChevronRight } from 'lucide-react'
+import { Save, Download, Lock, FileSpreadsheet, ZoomIn, ZoomOut, Navigation } from 'lucide-react'
 import { toast } from 'sonner'
-import type { FundPlanData, ProductType } from '@/types/fund-plan'
+import type { FundPlanData } from '@/types/fund-plan'
 import { createDefaultFundPlanData } from '@/types/fund-plan'
 import {
-  FUND_PLAN_SECTIONS,
   getVerifiedMappings,
   getNestedValue,
   type CellMapping,
@@ -41,24 +40,6 @@ const EXCEL_SECTIONS = [
   { id: 'payment', label: '支払', row: 17, col: 58, description: '契約金・中間金' },
 ]
 
-// 商品マスタ
-const PRODUCT_MASTER: { name: ProductType; pricePerTsubo: number }[] = [
-  { name: 'LIFE', pricePerTsubo: 550000 },
-  { name: 'LIFE +', pricePerTsubo: 600000 },
-  { name: 'HOURS', pricePerTsubo: 650000 },
-  { name: 'LACIE', pricePerTsubo: 700000 },
-  { name: 'LIFE choose', pricePerTsubo: 520000 },
-  { name: 'LIFE X(28～30坪)', pricePerTsubo: 580000 },
-  { name: 'LIFE X(30～33坪)', pricePerTsubo: 570000 },
-  { name: 'LIFE X(33～35坪)', pricePerTsubo: 560000 },
-  { name: 'LIFE X(35～38坪)', pricePerTsubo: 550000 },
-  { name: 'LIFE Limited', pricePerTsubo: 500000 },
-  { name: 'LIFE+ Limited', pricePerTsubo: 530000 },
-  { name: 'G-SMART平屋', pricePerTsubo: 620000 },
-  { name: 'G-SMART平屋 Limited', pricePerTsubo: 580000 },
-  { name: 'G-SMART平屋+', pricePerTsubo: 660000 },
-  { name: 'G-SMART平屋+ Limited', pricePerTsubo: 620000 },
-]
 
 interface FundPlanExcelViewProps {
   initialData?: FundPlanData
@@ -97,14 +78,6 @@ function parseCellAddress(address: string): { col: number; row: number } | null 
   return { col, row }
 }
 
-// 金額フォーマット
-function formatCurrency(value: number | string | null | undefined): string {
-  if (value === null || value === undefined || value === '') return ''
-  const num = typeof value === 'string' ? parseFloat(value) : value
-  if (isNaN(num)) return ''
-  return `¥${num.toLocaleString()}`
-}
-
 export function FundPlanExcelView({
   initialData,
   version = 1,
@@ -116,6 +89,7 @@ export function FundPlanExcelView({
   const [zoom, setZoom] = useState(100)
   const [currentCell, setCurrentCell] = useState<string>('A1')
   const [activeSection, setActiveSection] = useState<string>('header')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hotRef = useRef<any>(null)
 
   // セクションにジャンプ
@@ -146,6 +120,7 @@ export function FundPlanExcelView({
   }, [verifiedMappings])
 
   // ネストされたオブジェクトに値をセット
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const setNestedValue = useCallback((obj: any, path: string, value: unknown) => {
     const keys = path.split('.')
     let current = obj
@@ -241,18 +216,6 @@ export function FundPlanExcelView({
     return headers
   }, [])
 
-  // 列設定
-  const columns = useMemo(() => {
-    const cols = []
-    for (let i = 0; i < COLS; i++) {
-      cols.push({
-        data: i,
-        width: 30, // デフォルト幅
-      })
-    }
-    return cols
-  }, [])
-
   // 編集可能なセルを特定
   const editableCells = useMemo(() => {
     const cells = new Set<string>()
@@ -262,15 +225,9 @@ export function FundPlanExcelView({
     return cells
   }, [verifiedMappings])
 
-  // セルが編集可能かチェック
-  const isCellEditable = useCallback((row: number, col: number): boolean => {
-    if (isLocked) return false
-    const address = `${getExcelColumnName(col)}${row + 1}`
-    return editableCells.has(address)
-  }, [editableCells, isLocked])
-
   // セルメタデータ
   const cellMeta = useCallback((row: number, col: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const meta: any = {}
     const address = `${getExcelColumnName(col)}${row + 1}`
 
@@ -286,6 +243,7 @@ export function FundPlanExcelView({
   }, [editableCells, isLocked])
 
   // セル変更時のハンドラ
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleAfterChange = useCallback((changes: any, source: string) => {
     if (source === 'loadData' || !changes) return
 
