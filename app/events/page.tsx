@@ -21,7 +21,6 @@ import {
   Users,
   UserCheck,
   UserPlus,
-  MapPin,
   Clock,
   Plus,
   TrendingUp,

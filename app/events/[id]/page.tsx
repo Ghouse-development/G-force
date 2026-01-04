@@ -34,14 +34,12 @@ import {
   ArrowLeft,
   Calendar,
   Clock,
-  MapPin,
   Users,
   User,
   Phone,
   Mail,
   Plus,
   MoreHorizontal,
-  CheckCircle,
   XCircle,
   AlertCircle,
   UserPlus,
@@ -57,7 +55,6 @@ import {
   EVENT_TYPE_CONFIG,
   type BookingStatus,
   type MemberConversionStatus,
-  type EventBooking,
 } from '@/types/events'
 import { toast } from 'sonner'
 
