@@ -10,6 +10,8 @@ import {
   type MemberConversionStatus,
   MODEL_HOUSES,
   INSTRUCTORS,
+  TIME_SLOTS,
+  SLOT_CAPACITY,
 } from '@/types/events'
 
 // モックイベントデータ生成
@@ -26,8 +28,11 @@ const generateMockEvents = (): Event[] => {
     const adjustedMonth = month > 11 ? month - 12 : month
 
     // 毎週土日にイベントを設定
-    for (let day = 1; day <= 28; day++) {
+    for (let day = 1; day <= 31; day++) {
       const date = new Date(year, adjustedMonth, day)
+      // 月が変わった場合はスキップ
+      if (date.getMonth() !== adjustedMonth) continue
+
       const dayOfWeek = date.getDay()
 
       // 土日のみ
@@ -36,13 +41,8 @@ const generateMockEvents = (): Event[] => {
 
         // 各モデルハウスにイベントを設定
         MODEL_HOUSES.forEach((mh, mhIndex) => {
-          // 午前・午後の2枠
-          const timeSlots = [
-            { start: '10:00', end: '12:00' },
-            { start: '14:00', end: '16:00' },
-          ]
-
-          timeSlots.forEach((slot, slotIndex) => {
+          // 3部制（10:00〜, 12:30〜, 15:00〜）
+          TIME_SLOTS.forEach((slot, slotIndex) => {
             const instructor = INSTRUCTORS[(mhIndex + slotIndex) % INSTRUCTORS.length]
             events.push({
               id: `evt-${dateStr}-${mh.id}-${slotIndex}`,
@@ -51,7 +51,7 @@ const generateMockEvents = (): Event[] => {
               model_house_name: mh.name,
               start_time: slot.start,
               end_time: slot.end,
-              slots: mh.capacity,
+              slots: SLOT_CAPACITY,
               instructor_id: instructor.id,
               instructor_name: instructor.name,
               event_type: 'MH見学会',
@@ -78,9 +78,6 @@ const generateMockBookings = (events: Event[]): EventBooking[] => {
     { name: '高橋 美咲', phone: '090-4567-8901', email: 'takahashi@example.com' },
     { name: '伊藤 健太', phone: '080-5678-9012', email: 'ito@example.com' },
   ]
-
-  const statuses: BookingStatus[] = ['予約済', '確認済', '参加', '不参加', 'キャンセル']
-  const memberConversions: MemberConversionStatus[] = ['未確認', '会員化', '見送り']
 
   // 過去のイベントには予約を入れる
   const today = new Date()

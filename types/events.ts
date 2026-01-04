@@ -137,13 +137,23 @@ export const MEMBER_CONVERSION_CONFIG: Record<MemberConversionStatus, { label: s
   '見送り': { label: '見送り', color: 'text-orange-700', bgColor: 'bg-orange-100' },
 }
 
-// モックモデルハウスデータ
+// モデルハウス（会場）データ
 export const MODEL_HOUSES: ModelHouse[] = [
-  { id: 'mh-takatsuki', name: '高槻MH', address: '大阪府高槻市〇〇町1-2-3', capacity: 4 },
-  { id: 'mh-toyonaka', name: '豊中MH', address: '大阪府豊中市〇〇町4-5-6', capacity: 4 },
-  { id: 'mh-suita', name: '吹田MH', address: '大阪府吹田市〇〇町7-8-9', capacity: 3 },
-  { id: 'mh-nara', name: '奈良MH', address: '奈良県奈良市〇〇町10-11-12', capacity: 3 },
+  { id: 'mh-toyonaka', name: '豊中', address: '大阪府豊中市〇〇町', capacity: 4 },
+  { id: 'mh-asahi', name: '旭区', address: '大阪市旭区〇〇町', capacity: 4 },
+  { id: 'mh-nagaokakyo', name: '長岡京', address: '京都府長岡京市〇〇町', capacity: 4 },
+  { id: 'mh-nishinomiya', name: '西宮', address: '兵庫県西宮市〇〇町', capacity: 4 },
 ]
+
+// 時間枠
+export const TIME_SLOTS = [
+  { id: 'slot-1', start: '10:00', end: '12:00', label: '10:00〜' },
+  { id: 'slot-2', start: '12:30', end: '14:30', label: '12:30〜' },
+  { id: 'slot-3', start: '15:00', end: '17:00', label: '15:00〜' },
+]
+
+// 1枠あたりの定員
+export const SLOT_CAPACITY = 4
 
 // モック講師データ
 export const INSTRUCTORS = [
