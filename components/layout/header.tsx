@@ -44,9 +44,9 @@ const navigation = [
 ]
 
 const customerNavigation = [
-  { name: '限定会員前顧客', href: '/pre-members', icon: Users, description: '資料請求・イベント参加' },
-  { name: '契約前顧客管理', href: '/customers', icon: Users, description: '限定会員〜内定' },
-  { name: '契約後顧客管理', href: '/post-contract', icon: Users, description: '変更契約前・後' },
+  { name: '限定会員前', href: '/pre-members', icon: Users, description: '資料請求・イベント参加' },
+  { name: '契約前お客様', href: '/customers', icon: Users, description: '限定会員〜内定' },
+  { name: '契約後お客様', href: '/post-contract', icon: Users, description: '変更契約前・後' },
   { name: 'オーナー', href: '/owners', icon: Users, description: '引渡済み' },
 ]
 
@@ -208,7 +208,7 @@ export function Header() {
                 )}
               >
                 <Users className="h-4 w-4" />
-                <span>顧客管理</span>
+                <span>お客様管理</span>
                 <ChevronDown className="h-3 w-3" />
               </button>
             </DropdownMenuTrigger>
@@ -521,7 +521,7 @@ export function Header() {
 
             <div className="pt-3 mt-3 border-t">
               <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
-                顧客管理
+                お客様管理
               </p>
               {customerNavigation.map((item) => {
                 const Icon = item.icon

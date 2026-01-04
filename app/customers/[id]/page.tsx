@@ -250,9 +250,9 @@ export default function CustomerDetailPage() {
     return (
       <Layout>
         <div className="text-center py-12">
-          <p className="text-gray-500">顧客が見つかりません</p>
+          <p className="text-gray-500">お客様が見つかりません</p>
           <Button onClick={() => router.push('/customers')} className="mt-4">
-            顧客一覧に戻る
+            お客様一覧に戻る
           </Button>
         </div>
       </Layout>
@@ -484,7 +484,7 @@ export default function CustomerDetailPage() {
                     <CardTitle className="flex items-center justify-between text-lg">
                       <div className="flex items-center">
                         <User className="w-5 h-5 mr-2 text-orange-500" />
-                        顧客情報
+                        お客様情報
                       </div>
                       <ChevronDown className="w-5 h-5 text-gray-400 transition-transform [&[data-state=open]]:rotate-180" />
                     </CardTitle>

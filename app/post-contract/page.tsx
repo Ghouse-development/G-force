@@ -157,7 +157,7 @@ export default function PostContractPage() {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">契約後お客様管理</h1>
             <p className="text-gray-600 mt-1">
-              引渡し前顧客 | 全{postContractCustomers.length}件
+              引渡し前お客様 | 全{postContractCustomers.length}件
             </p>
           </div>
           <div className="flex items-center space-x-3">
@@ -274,7 +274,7 @@ export default function PostContractPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-600 mb-4">チェックリストを表示する顧客を選択してください</p>
+                    <p className="text-gray-600 mb-4">チェックリストを表示するお客様を選択してください</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {filteredCustomers.map(customer => {
                         const progress = checklistProgress[customer.id] || []
@@ -312,7 +312,7 @@ export default function PostContractPage() {
                     onClick={() => setSelectedCustomerId(null)}
                     className="mb-2"
                   >
-                    顧客一覧に戻る
+                    お客様一覧に戻る
                   </Button>
 
                   {/* チェックリスト */}

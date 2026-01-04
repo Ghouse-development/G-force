@@ -158,7 +158,7 @@ export function TodayTasksGuide({
           id: 'first-customer',
           priority: 'medium',
           title: '最初の反響を登録しましょう',
-          description: '新規のお問い合わせを登録して、顧客管理を始めましょう',
+          description: '新規のお問い合わせを登録して、お客様管理を始めましょう',
           href: '/customers/new',
           icon: <UserPlus className="w-5 h-5 text-orange-500" />,
           actionLabel: '登録する',
@@ -171,7 +171,7 @@ export function TodayTasksGuide({
           description: '素晴らしい！すべてのタスクが完了しています',
           href: '/customers',
           icon: <CheckCircle2 className="w-5 h-5 text-green-500" />,
-          actionLabel: '顧客を見る',
+          actionLabel: 'お客様を見る',
         })
       }
     }

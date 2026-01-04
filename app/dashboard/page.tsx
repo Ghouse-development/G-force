@@ -22,7 +22,6 @@ import {
   Phone,
   ChevronRight,
   Sparkles,
-  Target,
   TrendingUp,
   Trophy,
 } from 'lucide-react'
@@ -405,7 +404,7 @@ export default function DashboardPage() {
                 <div className="w-12 h-12 mx-auto bg-orange-100 rounded-xl flex items-center justify-center mb-2">
                   <UserPlus className="w-6 h-6 text-orange-600" />
                 </div>
-                <p className="font-bold text-sm text-gray-900">顧客登録</p>
+                <p className="font-bold text-sm text-gray-900">お客様登録</p>
                 <p className="text-xs text-gray-500">新規問合せ</p>
               </CardContent>
             </Card>
@@ -499,54 +498,6 @@ export default function DashboardPage() {
 
         {/* 停滞アラート */}
         <StagnationAlerts customers={customers as Partial<Customer>[]} maxItems={3} />
-
-        {/* クイックアクション：大きなボタン */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-4">
-          <Link href="/fund-plans/new">
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow cursor-pointer h-full">
-              <CardContent className="p-4 sm:p-6 text-center">
-                <div className="w-10 h-10 sm:w-14 sm:h-14 mx-auto bg-blue-100 rounded-xl flex items-center justify-center mb-2 sm:mb-3">
-                  <FileText className="w-5 h-5 sm:w-7 sm:h-7 text-blue-600" />
-                </div>
-                <p className="font-bold text-sm sm:text-base text-gray-900">資金計画書</p>
-                <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">作成する</p>
-              </CardContent>
-            </Card>
-          </Link>
-          <Link href="/plan-requests/new">
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow cursor-pointer h-full">
-              <CardContent className="p-4 sm:p-6 text-center">
-                <div className="w-10 h-10 sm:w-14 sm:h-14 mx-auto bg-orange-100 rounded-xl flex items-center justify-center mb-2 sm:mb-3">
-                  <FileEdit className="w-5 h-5 sm:w-7 sm:h-7 text-orange-600" />
-                </div>
-                <p className="font-bold text-sm sm:text-base text-gray-900">プラン依頼</p>
-                <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">作成する</p>
-              </CardContent>
-            </Card>
-          </Link>
-          <Link href="/contract-requests/new">
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow cursor-pointer h-full">
-              <CardContent className="p-4 sm:p-6 text-center">
-                <div className="w-10 h-10 sm:w-14 sm:h-14 mx-auto bg-green-100 rounded-xl flex items-center justify-center mb-2 sm:mb-3">
-                  <FileSignature className="w-5 h-5 sm:w-7 sm:h-7 text-green-600" />
-                </div>
-                <p className="font-bold text-sm sm:text-base text-gray-900">契約依頼</p>
-                <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">作成する</p>
-              </CardContent>
-            </Card>
-          </Link>
-          <Link href="/handovers/new">
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow cursor-pointer h-full">
-              <CardContent className="p-4 sm:p-6 text-center">
-                <div className="w-10 h-10 sm:w-14 sm:h-14 mx-auto bg-purple-100 rounded-xl flex items-center justify-center mb-2 sm:mb-3">
-                  <Target className="w-5 h-5 sm:w-7 sm:h-7 text-purple-600" />
-                </div>
-                <p className="font-bold text-sm sm:text-base text-gray-900">引継書</p>
-                <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">作成する</p>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
 
         {/* 最近の動き：コンパクトに */}
         <Card className="border-0 shadow-lg">

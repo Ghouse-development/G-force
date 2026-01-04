@@ -115,7 +115,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
         <div className="flex items-center border-b px-4">
           <Search className="w-5 h-5 text-gray-400 shrink-0" />
           <Input
-            placeholder="顧客名、邸名、書類を検索..."
+            placeholder="お客様名、邸名、書類を検索..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -133,7 +133,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
             <div className="py-8 text-center text-gray-500">
               <Search className="w-12 h-12 mx-auto mb-3 text-gray-300" />
               <p>検索キーワードを入力してください</p>
-              <p className="text-sm mt-1">顧客名、邸名、書類名で検索できます</p>
+              <p className="text-sm mt-1">お客様名、邸名、書類名で検索できます</p>
             </div>
           ) : results.length === 0 ? (
             <div className="py-8 text-center text-gray-500">

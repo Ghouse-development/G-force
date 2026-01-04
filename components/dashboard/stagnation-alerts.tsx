@@ -98,7 +98,7 @@ export function StagnationAlerts({ customers, maxItems = 5 }: StagnationAlertsPr
         {(totalDanger + totalWarning) > maxItems && (
           <Link href="/customers" className="block">
             <Button variant="ghost" className="w-full text-sm">
-              すべての停滞顧客を見る
+              すべての停滞お客様を見る
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </Link>
