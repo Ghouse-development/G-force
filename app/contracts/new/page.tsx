@@ -53,6 +53,29 @@ function NewContractForm() {
   const { user } = useAuthStore()
   const { customers } = useCustomerStore()
 
+  // 選択された顧客
+  const customerId = searchParams.get('customer') || ''
+  const customer = customers.find(c => c.id === customerId)
+
+  // 顧客IDがない場合はリダイレクト
+  useEffect(() => {
+    if (!customerId) {
+      toast.error('お客様ページから書類を作成してください')
+      router.push('/customers')
+    }
+  }, [customerId, router])
+
+  // 建築申込以降のステータスでのみ作成可能
+  const allowedStatuses = ['建築申込', 'プラン提出', '内定', '変更契約前', '変更契約後']
+  const canCreateDocuments = customer && allowedStatuses.includes(customer.pipeline_status)
+
+  useEffect(() => {
+    if (customer && !canCreateDocuments) {
+      toast.error('契約書は建築申込以降のお客様のみ作成可能です')
+      router.push(`/customers/${customerId}`)
+    }
+  }, [customer, canCreateDocuments, customerId, router])
+
   useEffect(() => {
     setMounted(true)
   }, [])

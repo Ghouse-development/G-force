@@ -23,7 +23,6 @@ import {
   Send,
   LayoutList,
   LayoutGrid,
-  ClipboardList,
 } from 'lucide-react'
 import { useHandoverStore } from '@/store'
 import type { DocumentStatus } from '@/types/database'
@@ -123,7 +122,7 @@ export default function HandoversPage() {
               </Button>
             </div>
             <Link href="/handovers/new">
-              <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
+              <Button className="bg-orange-500 hover:bg-orange-600">
                 <Plus className="w-4 h-4 mr-2" />
                 新規作成
               </Button>
@@ -131,47 +130,20 @@ export default function HandoversPage() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-4">
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">全引継書</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                </div>
-                <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <ClipboardList className="w-5 h-5 text-purple-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">処理中</p>
-                  <p className="text-2xl font-bold text-orange-600">{stats.pending}</p>
-                </div>
-                <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-orange-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">完了</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
-                </div>
-                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Stats - インライン表示 */}
+        <div className="flex flex-wrap items-center gap-6 py-2 border-b">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">全引継書</span>
+            <span className="text-xl font-bold text-gray-900">{stats.total}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">処理中</span>
+            <span className="text-xl font-bold text-orange-600">{stats.pending}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">完了</span>
+            <span className="text-xl font-bold text-green-600">{stats.completed}</span>
+          </div>
         </div>
 
         {/* Status Tabs */}
@@ -239,7 +211,7 @@ export default function HandoversPage() {
                   </p>
                   {!searchQuery && statusFilter === 'all' && (
                     <Link href="/handovers/new">
-                      <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
+                      <Button className="bg-orange-500 hover:bg-orange-600">
                         <Plus className="w-4 h-4 mr-2" />
                         引継書を作成する
                       </Button>

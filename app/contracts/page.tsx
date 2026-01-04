@@ -19,8 +19,6 @@ import {
   UserCheck,
   CheckCircle2,
   RotateCcw,
-  Clock,
-  TrendingUp,
   Download,
   LayoutList,
   LayoutGrid,
@@ -435,7 +433,7 @@ export default function ContractsPage() {
               サンプル
             </Button>
             <Link href="/customers">
-              <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
+              <Button className="bg-orange-500 hover:bg-orange-600">
                 <Plus className="w-4 h-4 mr-2" />
                 新規作成
               </Button>
@@ -443,62 +441,24 @@ export default function ContractsPage() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">全契約</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                </div>
-                <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <FileSignature className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">処理中</p>
-                  <p className="text-2xl font-bold text-orange-600">{stats.pending}</p>
-                </div>
-                <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-orange-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">完了</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
-                </div>
-                <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">契約総額</p>
-                  <p className="text-xl font-bold text-gray-900">
-                    ¥{(stats.totalAmount / 10000).toLocaleString()}万
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-purple-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Stats - インライン表示 */}
+        <div className="flex flex-wrap items-center gap-6 py-2 border-b">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">全契約</span>
+            <span className="text-xl font-bold text-gray-900">{stats.total}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">処理中</span>
+            <span className="text-xl font-bold text-orange-600">{stats.pending}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">完了</span>
+            <span className="text-xl font-bold text-green-600">{stats.completed}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">契約総額</span>
+            <span className="text-xl font-bold text-gray-900">¥{(stats.totalAmount / 10000).toLocaleString()}万</span>
+          </div>
         </div>
 
         {/* Filters & View Toggle */}

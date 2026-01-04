@@ -208,7 +208,7 @@ export default function CustomersPage() {
               </p>
               {!searchQuery && (
                 <Link href="/customers/new">
-                  <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
+                  <Button className="bg-orange-500 hover:bg-orange-600">
                     <Plus className="w-4 h-4 mr-2" />
                     最初のお客様を登録する
                   </Button>

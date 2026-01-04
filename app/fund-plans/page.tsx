@@ -42,7 +42,6 @@ import {
   MoreHorizontal,
   Edit,
   Trash2,
-  Eye,
   Download,
   User,
   Calendar,
@@ -129,7 +128,7 @@ export default function FundPlansPage() {
               サンプル
             </Button>
             <Link href="/customers">
-              <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
+              <Button className="bg-orange-500 hover:bg-orange-600">
                 <Plus className="w-4 h-4 mr-2" />
                 新規作成
               </Button>
@@ -137,66 +136,24 @@ export default function FundPlansPage() {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">総数</p>
-                  <p className="text-2xl font-bold">{fundPlans.length}</p>
-                </div>
-                <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-gray-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">下書き</p>
-                  <p className="text-2xl font-bold">
-                    {fundPlans.filter((p) => p.status === 'draft').length}
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center">
-                  <Edit className="w-6 h-6 text-orange-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">提出済</p>
-                  <p className="text-2xl font-bold">
-                    {fundPlans.filter((p) => p.status === 'submitted').length}
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <Eye className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">承認済</p>
-                  <p className="text-2xl font-bold">
-                    {fundPlans.filter((p) => p.status === 'approved').length}
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Stats - インライン表示 */}
+        <div className="flex flex-wrap items-center gap-6 py-2 border-b">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">総数</span>
+            <span className="text-xl font-bold text-gray-900">{fundPlans.length}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">下書き</span>
+            <span className="text-xl font-bold text-gray-900">{fundPlans.filter((p) => p.status === 'draft').length}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">提出済</span>
+            <span className="text-xl font-bold text-gray-900">{fundPlans.filter((p) => p.status === 'submitted').length}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">承認済</span>
+            <span className="text-xl font-bold text-gray-900">{fundPlans.filter((p) => p.status === 'approved').length}</span>
+          </div>
         </div>
 
         {/* Search */}

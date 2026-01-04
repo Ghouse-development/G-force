@@ -202,7 +202,7 @@ export default function ContractRequestsPage() {
             </p>
           </div>
           <Link href="/contract-requests/new">
-            <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
+            <Button className="bg-orange-500 hover:bg-orange-600">
               <Plus className="w-4 h-4 mr-2" />
               新規契約依頼
             </Button>
@@ -270,7 +270,7 @@ export default function ContractRequestsPage() {
                 </p>
                 {!searchQuery && selectedStatus === 'all' && (
                   <Link href="/contract-requests/new">
-                    <Button className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600">
+                    <Button className="bg-orange-500 hover:bg-orange-600">
                       <Plus className="w-4 h-4 mr-2" />
                       契約依頼を作成する
                     </Button>
