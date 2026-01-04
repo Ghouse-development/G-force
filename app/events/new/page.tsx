@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -28,7 +28,7 @@ const EVENT_TYPES: EventType[] = [
   'その他',
 ]
 
-export default function NewEventPage() {
+function NewEventForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialDate = searchParams.get('date') || new Date().toISOString().split('T')[0]
@@ -246,5 +246,19 @@ export default function NewEventPage() {
         </div>
       </form>
     </div>
+  )
+}
+
+export default function NewEventPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto py-6 px-4 max-w-2xl">
+        <div className="flex items-center justify-center h-64">
+          <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
+        </div>
+      </div>
+    }>
+      <NewEventForm />
+    </Suspense>
   )
 }
