@@ -45,24 +45,24 @@ const navigation = [
 ]
 
 const customerNavigation = [
-  { name: '限定会員前', href: '/pre-members', icon: Users, description: '資料請求・イベント参加' },
-  { name: '契約前お客様', href: '/customers', icon: Users, description: '限定会員〜内定' },
-  { name: '契約後お客様', href: '/post-contract', icon: Users, description: '変更契約前・後' },
-  { name: 'オーナー', href: '/owners', icon: Users, description: '引渡済み' },
+  { name: '限定会員前', href: '/pre-members', icon: Users },
+  { name: '契約前', href: '/customers', icon: Users },
+  { name: '契約後', href: '/post-contract', icon: Users },
+  { name: 'オーナー', href: '/owners', icon: Users },
 ]
 
 const documentNavigation = [
-  { name: '資金計画書', href: '/fund-plans', icon: FileText, description: '資金計画作成' },
-  { name: 'プラン依頼', href: '/plan-requests', icon: ClipboardList, description: '設計部への依頼' },
-  { name: '契約依頼', href: '/contract-requests', icon: FileEdit, description: '契約依頼・承認・引継' },
+  { name: '資金計画書', href: '/fund-plans', icon: FileText },
+  { name: 'プラン依頼', href: '/plan-requests', icon: ClipboardList },
+  { name: '契約依頼', href: '/contract-requests', icon: FileEdit },
 ]
 
 const infoNavigation = [
-  { name: 'イベント管理', href: '/events', icon: CalendarDays, description: '見学会・予約管理' },
-  { name: '土地情報アラート', href: '/property-alerts', icon: MapPin, description: '物件通知・アラート設定' },
-  { name: '住宅ローン金利', href: '/loan-rates', icon: TrendingUp, description: '銀行別金利一覧' },
-  { name: '営業ツール', href: '/sales-tools', icon: Target, description: '競合対策・トークスクリプト' },
-  { name: 'クロール設定', href: '/crawl-settings', icon: RefreshCw, description: '自動取得の管理' },
+  { name: 'イベント', href: '/events', icon: CalendarDays },
+  { name: '土地アラート', href: '/property-alerts', icon: MapPin },
+  { name: 'ローン金利', href: '/loan-rates', icon: TrendingUp },
+  { name: '営業ツール', href: '/sales-tools', icon: Target },
+  { name: 'クロール設定', href: '/crawl-settings', icon: RefreshCw },
 ]
 
 const adminNavigation = [
@@ -214,7 +214,7 @@ export function Header() {
                 <ChevronDown className="h-3 w-3" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuContent align="start" className="w-40">
               {customerNavigation.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
@@ -223,23 +223,20 @@ export function Header() {
                     key={item.href}
                     onClick={() => router.push(item.href)}
                     className={cn(
-                      'flex items-start space-x-3 py-3 cursor-pointer',
+                      'flex items-center gap-2 cursor-pointer',
                       isActive && 'bg-orange-50'
                     )}
                   >
                     <Icon className={cn(
-                      'h-5 w-5 mt-0.5',
+                      'h-4 w-4',
                       isActive ? 'text-orange-500' : 'text-gray-400'
                     )} />
-                    <div>
-                      <p className={cn(
-                        'font-medium',
-                        isActive ? 'text-orange-600' : 'text-gray-900'
-                      )}>
-                        {item.name}
-                      </p>
-                      <p className="text-xs text-gray-500">{item.description}</p>
-                    </div>
+                    <span className={cn(
+                      'text-sm',
+                      isActive ? 'text-orange-600 font-medium' : 'text-gray-700'
+                    )}>
+                      {item.name}
+                    </span>
                   </DropdownMenuItem>
                 )
               })}
@@ -262,7 +259,7 @@ export function Header() {
                 <ChevronDown className="h-3 w-3" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuContent align="start" className="w-40">
               {documentNavigation.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
@@ -271,23 +268,20 @@ export function Header() {
                     key={item.href}
                     onClick={() => router.push(item.href)}
                     className={cn(
-                      'flex items-start space-x-3 py-3 cursor-pointer',
+                      'flex items-center gap-2 cursor-pointer',
                       isActive && 'bg-orange-50'
                     )}
                   >
                     <Icon className={cn(
-                      'h-5 w-5 mt-0.5',
+                      'h-4 w-4',
                       isActive ? 'text-orange-500' : 'text-gray-400'
                     )} />
-                    <div>
-                      <p className={cn(
-                        'font-medium',
-                        isActive ? 'text-orange-600' : 'text-gray-900'
-                      )}>
-                        {item.name}
-                      </p>
-                      <p className="text-xs text-gray-500">{item.description}</p>
-                    </div>
+                    <span className={cn(
+                      'text-sm',
+                      isActive ? 'text-orange-600 font-medium' : 'text-gray-700'
+                    )}>
+                      {item.name}
+                    </span>
                   </DropdownMenuItem>
                 )
               })}
@@ -310,7 +304,7 @@ export function Header() {
                 <ChevronDown className="h-3 w-3" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuContent align="start" className="w-40">
               {infoNavigation.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
@@ -319,23 +313,20 @@ export function Header() {
                     key={item.href}
                     onClick={() => router.push(item.href)}
                     className={cn(
-                      'flex items-start space-x-3 py-3 cursor-pointer',
+                      'flex items-center gap-2 cursor-pointer',
                       isActive && 'bg-orange-50'
                     )}
                   >
                     <Icon className={cn(
-                      'h-5 w-5 mt-0.5',
+                      'h-4 w-4',
                       isActive ? 'text-orange-500' : 'text-gray-400'
                     )} />
-                    <div>
-                      <p className={cn(
-                        'font-medium',
-                        isActive ? 'text-orange-600' : 'text-gray-900'
-                      )}>
-                        {item.name}
-                      </p>
-                      <p className="text-xs text-gray-500">{item.description}</p>
-                    </div>
+                    <span className={cn(
+                      'text-sm',
+                      isActive ? 'text-orange-600 font-medium' : 'text-gray-700'
+                    )}>
+                      {item.name}
+                    </span>
                   </DropdownMenuItem>
                 )
               })}

@@ -3,15 +3,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Layout } from '@/components/layout/layout'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Users,
-  Search,
-  Plus,
-  Download,
-} from 'lucide-react'
+import { Users, Search, Plus, Download } from 'lucide-react'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { CustomerListSkeleton } from '@/components/ui/skeleton-loaders'
 import { exportToCSV, customerExportColumns } from '@/lib/export'
@@ -21,7 +15,6 @@ import {
   type PreMemberStatus,
   PIPELINE_CONFIG,
   PRE_MEMBER_STATUS_ORDER,
-  getCurrentFiscalYear,
 } from '@/types/database'
 import { PipelineKanban } from '@/components/customers/pipeline-kanban'
 import { useCustomerStore } from '@/store'
@@ -30,7 +23,6 @@ import { useDemoModeStore, DEMO_CUSTOMERS } from '@/store/demo-store'
 export default function PreMembersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [mounted, setMounted] = useState(false)
-  const fiscalYear = getCurrentFiscalYear()
 
   useEffect(() => {
     setMounted(true)
@@ -86,69 +78,58 @@ export default function PreMembersPage() {
           </div>
         )}
 
-        <Breadcrumb items={[{ label: '限定会員前お客様' }]} />
+        <Breadcrumb items={[{ label: '限定会員前' }]} />
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">限定会員前お客様</h1>
-            <p className="text-gray-600 mt-1">
-              {fiscalYear}期 | 全{preMemberCustomers.length}件
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-bold text-gray-900">限定会員前</h1>
+            <span className="text-sm text-gray-500">{preMemberCustomers.length}件</span>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-2">
             <Button
-              variant="outline"
+              variant="ghost"
+              size="sm"
               onClick={() => exportToCSV(
                 filteredCustomers as Record<string, unknown>[],
                 customerExportColumns,
-                `限定会員前お客様_${new Date().toISOString().split('T')[0]}.csv`
+                `限定会員前_${new Date().toISOString().split('T')[0]}.csv`
               )}
             >
-              <Download className="w-4 h-4 mr-2" />
-              CSV出力
+              <Download className="w-4 h-4" />
             </Button>
             <Link href="/customers/new">
-              <Button className="bg-orange-500 hover:bg-orange-600">
-                <Plus className="w-4 h-4 mr-2" />
-                新規登録
+              <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
+                <Plus className="w-4 h-4 mr-1" />
+                新規
               </Button>
             </Link>
           </div>
         </div>
 
         {/* ステータスサマリー */}
-        <div className="flex flex-wrap items-center gap-6 py-2 border-b">
-          {PRE_MEMBER_STATUS_ORDER.map((status) => {
-            const config = PIPELINE_CONFIG[status]
-            return (
-              <div key={status} className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">{config.label}</span>
-                <span className="text-xl font-bold text-gray-900">{statusCounts[status]}</span>
-              </div>
-            )
-          })}
+        <div className="flex items-center gap-4 text-sm">
+          {PRE_MEMBER_STATUS_ORDER.map((status) => (
+            <span key={status}>{PIPELINE_CONFIG[status].label} <b className="text-lg">{statusCounts[status]}</b></span>
+          ))}
         </div>
 
         {/* 検索 */}
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder="邸名、お客様名、電話番号で検索..."
+            placeholder="検索..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 h-12 text-base rounded-xl border-gray-200"
+            className="pl-9 h-9"
           />
         </div>
 
         {/* カンバンビュー */}
         {filteredCustomers.length === 0 ? (
-          <Card className="border-0 shadow-lg">
-            <CardContent className="p-12 text-center">
-              <Users className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-700 text-base">限定会員前お客様がいません</p>
-              <p className="text-gray-600 text-sm mt-2">新規登録してください</p>
-            </CardContent>
-          </Card>
+          <div className="text-center py-12 text-gray-500">
+            <Users className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+            <p>{searchQuery ? '該当なし' : 'お客様なし'}</p>
+          </div>
         ) : (
           <div className="bg-white rounded-xl shadow-lg p-4">
             <PipelineKanban

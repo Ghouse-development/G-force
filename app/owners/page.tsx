@@ -3,25 +3,15 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Layout } from '@/components/layout/layout'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import {
-  Users,
-  Search,
-  Download,
-  Home,
-  Phone,
-  Calendar,
-  ChevronRight,
-} from 'lucide-react'
+import { Users, Search, Download, Home, Phone, Calendar, ChevronRight } from 'lucide-react'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { CustomerListSkeleton } from '@/components/ui/skeleton-loaders'
 import { exportToCSV, customerExportColumns } from '@/lib/export'
 import {
   type OwnerStatus,
-  PIPELINE_CONFIG,
   OWNER_STATUS,
   getCurrentFiscalYear,
 } from '@/types/database'
@@ -96,123 +86,87 @@ export default function OwnersPage() {
 
         <Breadcrumb items={[{ label: 'オーナー' }]} />
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">オーナー</h1>
-            <p className="text-gray-600 mt-1">
-              引渡済み | 全{owners.length}件
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-bold text-gray-900">オーナー</h1>
+            <span className="text-sm text-gray-500">{owners.length}件</span>
           </div>
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="outline"
-              onClick={() => exportToCSV(
-                filteredOwners as Record<string, unknown>[],
-                customerExportColumns,
-                `オーナー_${new Date().toISOString().split('T')[0]}.csv`
-              )}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              CSV出力
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => exportToCSV(
+              filteredOwners as Record<string, unknown>[],
+              customerExportColumns,
+              `オーナー_${new Date().toISOString().split('T')[0]}.csv`
+            )}
+          >
+            <Download className="w-4 h-4" />
+          </Button>
         </div>
 
         {/* サマリー */}
-        <div className="flex flex-wrap items-center gap-6 py-2 border-b">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">オーナー数</span>
-            <span className="text-xl font-bold text-gray-900">{owners.length}件</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">契約金額合計</span>
-            <span className="text-xl font-bold text-gray-900">¥{totalContractAmount.toLocaleString()}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">{fiscalYear}期引渡</span>
-            <span className="text-xl font-bold text-gray-900">{ownersByYear[fiscalYear] || 0}件</span>
-          </div>
+        <div className="flex items-center gap-4 text-sm">
+          <span>合計 <b className="text-lg">¥{(totalContractAmount / 10000).toFixed(0)}万</b></span>
+          <span>今期引渡 <b className="text-lg">{ownersByYear[fiscalYear] || 0}</b></span>
         </div>
 
         {/* 検索 */}
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder="邸名、顧客名、電話番号で検索..."
+            placeholder="検索..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 h-12 text-base rounded-xl border-gray-200"
+            className="pl-9 h-9"
           />
         </div>
 
         {/* オーナーリスト */}
         {filteredOwners.length === 0 ? (
-          <Card className="border-0 shadow-lg">
-            <CardContent className="p-12 text-center">
-              <Users className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-700 text-base">オーナーがいません</p>
-              <p className="text-gray-600 text-sm mt-2">引渡が完了するとオーナーとして表示されます</p>
-            </CardContent>
-          </Card>
+          <div className="text-center py-12 text-gray-500">
+            <Users className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+            <p>{searchQuery ? '該当なし' : 'オーナーなし'}</p>
+          </div>
         ) : (
-          <div className="space-y-3">
-            {filteredOwners.map((owner) => {
-              const statusConfig = PIPELINE_CONFIG['オーナー']
-              return (
-                <Link key={owner.id} href={`/customers/${owner.id}`}>
-                  <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer group">
-                    <CardContent className="p-5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
-                            <Home className="w-6 h-6 text-gray-600" />
-                          </div>
-                          <div>
-                            <div className="flex items-center space-x-3 mb-1">
-                              <h3 className="text-lg font-bold text-gray-900">
-                                {owner.tei_name}
-                              </h3>
-                              <Badge
-                                variant="outline"
-                                className={`${statusConfig?.bgColor} ${statusConfig?.color} border-0`}
-                              >
-                                {statusConfig?.label}
-                              </Badge>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-700">
-                              <span>{owner.name}</span>
-                              {owner.phone && (
-                                <span className="flex items-center">
-                                  <Phone className="w-4 h-4 mr-1" />
-                                  {owner.phone}
-                                </span>
-                              )}
-                              {owner.handover_date && (
-                                <span className="flex items-center">
-                                  <Calendar className="w-4 h-4 mr-1" />
-                                  引渡: {new Date(owner.handover_date).toLocaleDateString('ja-JP')}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          {owner.contract_amount && (
-                            <div className="text-right hidden md:block">
-                              <p className="text-sm text-gray-600">契約金額</p>
-                              <p className="font-bold text-gray-900">
-                                ¥{owner.contract_amount.toLocaleString()}
-                              </p>
-                            </div>
-                          )}
-                          <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-green-500 transition-colors" />
-                        </div>
+          <div className="bg-white border rounded-lg divide-y">
+            {filteredOwners.map((owner) => (
+              <Link key={owner.id} href={`/customers/${owner.id}`}>
+                <div className="flex items-center justify-between p-3 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <Home className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 text-sm">{owner.tei_name}</p>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span>{owner.name}</span>
+                        {owner.phone && (
+                          <span className="flex items-center">
+                            <Phone className="w-3 h-3 mr-0.5" />
+                            {owner.phone}
+                          </span>
+                        )}
+                        {owner.handover_date && (
+                          <span className="flex items-center">
+                            <Calendar className="w-3 h-3 mr-0.5" />
+                            {new Date(owner.handover_date).toLocaleDateString('ja-JP')}
+                          </span>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              )
-            })}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {owner.contract_amount && (
+                      <span className="text-sm font-medium text-gray-700 hidden md:block">
+                        ¥{(owner.contract_amount / 10000).toFixed(0)}万
+                      </span>
+                    )}
+                    <Badge className="bg-green-100 text-green-700 border-0 text-xs">オーナー</Badge>
+                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         )}
       </div>

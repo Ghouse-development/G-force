@@ -149,67 +149,51 @@ export default function PostContractPage() {
           </div>
         )}
 
-        <Breadcrumb items={[{ label: '契約後お客様管理' }]} />
+        <Breadcrumb items={[{ label: '契約後' }]} />
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">契約後お客様管理</h1>
-            <p className="text-gray-600 mt-1">
-              引渡し前お客様 | 全{postContractCustomers.length}件
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-bold text-gray-900">契約後</h1>
+            <span className="text-sm text-gray-500">{postContractCustomers.length}件</span>
           </div>
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="outline"
-              onClick={() => exportToCSV(
-                filteredCustomers as Record<string, unknown>[],
-                customerExportColumns,
-                `契約後お客様_${new Date().toISOString().split('T')[0]}.csv`
-              )}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              CSV出力
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => exportToCSV(
+              filteredCustomers as Record<string, unknown>[],
+              customerExportColumns,
+              `契約後_${new Date().toISOString().split('T')[0]}.csv`
+            )}
+          >
+            <Download className="w-4 h-4" />
+          </Button>
         </div>
 
         {/* サマリー */}
-        <div className="flex flex-wrap items-center gap-6 py-2 border-b">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">契約金額合計</span>
-            <span className="text-xl font-bold text-gray-900">¥{totalContractAmount.toLocaleString()}</span>
-          </div>
-          {POST_CONTRACT_STATUS_ORDER.map((status) => {
-            const config = PIPELINE_CONFIG[status]
-            return (
-              <div key={status} className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">{config.label}</span>
-                <span className="text-xl font-bold text-gray-900">{statusCounts[status]}</span>
-              </div>
-            )
-          })}
+        <div className="flex items-center gap-4 text-sm">
+          <span>合計 <b className="text-lg">¥{(totalContractAmount / 10000).toFixed(0)}万</b></span>
+          {POST_CONTRACT_STATUS_ORDER.map((status) => (
+            <span key={status}>{PIPELINE_CONFIG[status].label} <b className="text-lg">{statusCounts[status]}</b></span>
+          ))}
         </div>
 
         {/* 検索 */}
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder="邸名、お客様名、電話番号で検索..."
+            placeholder="検索..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 h-12 text-base rounded-xl border-gray-200"
+            className="pl-9 h-9"
           />
         </div>
 
         {/* メインコンテンツ */}
         {filteredCustomers.length === 0 ? (
-          <Card className="border-0 shadow-lg">
-            <CardContent className="p-12 text-center">
-              <Users className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-700 text-base">契約後お客様がいません</p>
-              <p className="text-gray-600 text-sm mt-2">契約が完了すると表示されます</p>
-            </CardContent>
-          </Card>
+          <div className="text-center py-12 text-gray-500">
+            <Users className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+            <p>{searchQuery ? '該当なし' : '契約後お客様なし'}</p>
+          </div>
         ) : (
           <Tabs defaultValue="kanban" className="space-y-4">
             <TabsList>

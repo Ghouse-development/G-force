@@ -3,15 +3,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Layout } from '@/components/layout/layout'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Users,
-  Search,
-  Plus,
-  Download,
-} from 'lucide-react'
+import { Users, Search, Plus, Download } from 'lucide-react'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { CustomerListSkeleton } from '@/components/ui/skeleton-loaders'
 import { exportToCSV, customerExportColumns } from '@/lib/export'
@@ -21,7 +15,6 @@ import {
   type PreContractStatus,
   PRE_CONTRACT_STATUS_ORDER,
   PRE_CONTRACT_LOST,
-  getCurrentFiscalYear,
 } from '@/types/database'
 import { PipelineKanban } from '@/components/customers/pipeline-kanban'
 import { useCustomerStore, useContractStore } from '@/store'
@@ -45,7 +38,6 @@ function calculateConversionRates(customers: Partial<Customer>[]) {
 export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [mounted, setMounted] = useState(false)
-  const fiscalYear = getCurrentFiscalYear()
 
   useEffect(() => {
     setMounted(true)
@@ -127,95 +119,65 @@ export default function CustomersPage() {
           </div>
         )}
 
-        <Breadcrumb items={[{ label: '契約前お客様管理' }]} />
+        <Breadcrumb items={[{ label: '契約前' }]} />
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">契約前お客様管理</h1>
-            <p className="text-gray-600 mt-1">
-              {fiscalYear}期 | アクティブ {activeCustomers.length}件 / ボツ・他決 {lostCustomers.length}件
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-bold text-gray-900">契約前</h1>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-gray-500">{activeCustomers.length}件</span>
+              <span className="text-gray-400">|</span>
+              <span className="text-gray-400">ボツ {lostCustomers.length}</span>
+            </div>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-2">
             <Button
-              variant="outline"
+              variant="ghost"
+              size="sm"
               onClick={() => exportToCSV(
                 filteredCustomers as Record<string, unknown>[],
                 customerExportColumns,
-                `契約前お客様_${new Date().toISOString().split('T')[0]}.csv`
+                `契約前_${new Date().toISOString().split('T')[0]}.csv`
               )}
             >
-              <Download className="w-4 h-4 mr-2" />
-              CSV出力
+              <Download className="w-4 h-4" />
             </Button>
             <Link href="/customers/new">
-              <Button className="bg-orange-500 hover:bg-orange-600">
-                <Plus className="w-4 h-4 mr-2" />
-                新規登録
+              <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
+                <Plus className="w-4 h-4 mr-1" />
+                新規
               </Button>
             </Link>
           </div>
         </div>
 
         {/* サマリー */}
-        <div className="flex flex-wrap items-center gap-6 py-2">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">契約済（当月）</span>
-            <span className="text-xl font-bold text-gray-900">{contractedThisMonth}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">内定</span>
-            <span className="text-xl font-bold text-orange-600">{naiteCustomers.length}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">チャレンジ</span>
-            <span className="text-xl font-bold text-gray-900">{challengeCustomers.length}</span>
-          </div>
-          <div className="hidden md:flex items-center gap-3 text-sm text-gray-500 border-l pl-6">
-            <span>遷移率:</span>
-            <span>会員→面談 <b className="text-gray-900">{conversionRates.memberToMeeting}%</b></span>
-            <span>→申込 <b className="text-gray-900">{conversionRates.meetingToApplication}%</b></span>
-            <span>→内定 <b className="text-gray-900">{conversionRates.applicationToDecision}%</b></span>
-          </div>
+        <div className="flex items-center gap-4 text-sm">
+          <span>契約 <b className="text-lg">{contractedThisMonth}</b></span>
+          <span>内定 <b className="text-lg text-orange-600">{naiteCustomers.length}</b></span>
+          <span>チャレンジ <b className="text-lg">{challengeCustomers.length}</b></span>
+          <span className="hidden md:inline text-gray-400 ml-2">
+            遷移: {conversionRates.memberToMeeting}% → {conversionRates.meetingToApplication}% → {conversionRates.applicationToDecision}%
+          </span>
         </div>
 
         {/* 検索 */}
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder="邸名、お客様名、電話番号で検索..."
+            placeholder="検索..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 h-12 text-base rounded-xl border-gray-200"
+            className="pl-9 h-9"
           />
         </div>
 
         {/* カンバンビュー */}
         {filteredCustomers.length === 0 ? (
-          <Card className="border-0 shadow-lg">
-            <CardContent className="p-12 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-orange-50 rounded-full flex items-center justify-center">
-                <Users className="w-8 h-8 text-orange-400" />
-              </div>
-              <h3 className="font-medium text-gray-900 mb-2">
-                {searchQuery ? '検索結果がありません' : 'お客様がまだ登録されていません'}
-              </h3>
-              <p className="text-gray-500 text-sm mb-4">
-                {searchQuery
-                  ? '検索条件を変更してお試しください'
-                  : '新しいお問い合わせを登録して、お客様管理を始めましょう'
-                }
-              </p>
-              {!searchQuery && (
-                <Link href="/customers/new">
-                  <Button className="bg-orange-500 hover:bg-orange-600">
-                    <Plus className="w-4 h-4 mr-2" />
-                    最初のお客様を登録する
-                  </Button>
-                </Link>
-              )}
-            </CardContent>
-          </Card>
+          <div className="text-center py-12 text-gray-500">
+            <Users className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+            <p>{searchQuery ? '該当なし' : 'お客様なし'}</p>
+          </div>
         ) : (
           <div className="bg-white rounded-xl shadow-lg p-4">
             <PipelineKanban
